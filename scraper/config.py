@@ -97,29 +97,40 @@ FIRMS: dict[str, dict] = {
     # --- ApplicantStack ---------------------------------------------------
     "Hinshaw & Culbertson": {
         "adapter": ApplicantStackAdapter,
-        "board_url": "https://www.applicantpro.com/openings/hinshawculbertson/jobs",  # TODO verify
-        "notes": "PENDING VERIFICATION -- research agent for this firm did not return before "
-        "this config was written. Confirm actual ATS platform and board_url before relying "
-        "on this entry.",
+        "board_url": "https://hinshawlaw.applicantstack.com/x/openings",
+        "link_selector": "a[href*='/x/detail/']",
+        "notes": "Confirmed ApplicantStack tenant 'hinshawlaw'. Job detail URLs look like "
+        "/x/detail/<jobid>. No public JSON feed found -- HTML scrape only. Example current "
+        "posting seen during research: 'Senior IT Systems & Infrastructure Engineer'.",
     },
     # --- Custom / structured ---------------------------------------------------
     "Marshall Dennehey": {
         "adapter": CustomHTMLAdapter,
-        "list_url": "https://www.marshalldennehey.com/careers",  # TODO verify
-        "link_selector": "a.job-title, a[href*='/careers/']",
-        "notes": "PENDING VERIFICATION -- confirm actual platform/listing URL/selector.",
+        "list_url": "https://www.marshalldennehey.com/careers/current-openings",
+        "link_selector": "a[href*='/careers/']",
+        "notes": "Confirmed native CMS (no third-party ATS domain found) -- each posting is "
+        "its own page at marshalldennehey.com/careers/<title-location-slug>. No IT/KM example "
+        "posting was open during research; verify link_selector against live markup.",
     },
     "Goldberg Segalla": {
         "adapter": CustomHTMLAdapter,
-        "list_url": "https://www.goldbergsegalla.com/careers/",  # TODO verify
-        "link_selector": "a.job-title, a[href*='/careers/']",
-        "notes": "PENDING VERIFICATION -- confirm actual platform/listing URL/selector.",
+        "list_url": "https://www.goldbergsegalla.com/our-story/career-opportunities-at-goldberg-segalla/",
+        "link_selector": "a[href*='/opportunities/']",
+        "notes": "Weakest-verified entry: no third-party ATS domain found, but listings appear "
+        "split across per-state landing pages (.../opportunities/new-york/, /new-jersey/, etc.) "
+        "rather than one flat list -- this adapter config likely needs per-state list_urls once "
+        "verified, not a single page.",
     },
     "Reed Smith": {
+        # NOT a bespoke custom site -- confirmed Oracle PeopleSoft HCM (Candidate Gateway).
         "adapter": CustomHTMLAdapter,
-        "list_url": "https://www.reedsmith.com/en/careers",  # TODO verify
-        "link_selector": "a.job-title, a[href*='/careers/']",
-        "notes": "PENDING VERIFICATION -- confirm actual platform/listing URL/selector.",
+        "list_url": "https://careers.reedsmith.com/jobs/vacancy/find/results",
+        "link_selector": "a[href*='JobOpeningId']",
+        "notes": "Confirmed backend is Oracle PeopleSoft HCM Recruiting (Fluid Candidate "
+        "Gateway) at recruit.reedsmith.com, with numeric JobOpeningId identifiers. "
+        "careers.reedsmith.com/jobs/... is a front-end search/results layer over that backend; "
+        "unclear if it's server-rendered or JS-driven -- verify before trusting CustomHTMLAdapter "
+        "here, may need a PeopleSoft-specific adapter instead.",
     },
     # --- Recently merged, verify structure ---------------------------------------------------
     "Ashurst Perkins Coie (fka Perkins Coie)": {
@@ -132,35 +143,56 @@ FIRMS: dict[str, dict] = {
         "tenant as of this research (July 2026); no evidence of migration to a unified "
         "Ashurst-branded ATS yet. Re-verify tenant/site periodically as integration continues.",
     },
-    # --- Still need ATS ID -- to fill in from research ---------------------------------------------------
+    # --- Still need ATS ID -- resolved via research ---------------------------------------------------
     "Tucker Ellis": {
         "adapter": CustomHTMLAdapter,
-        "list_url": "https://www.tuckerellis.com/careers/",  # TODO verify
+        "list_url": "https://www.tuckerellis.com/careers/",
         "link_selector": "a.job-title, a[href*='/careers/']",
-        "notes": "PENDING VERIFICATION -- confirm actual platform/listing URL/selector.",
+        "notes": "ATS platform UNCONFIRMED -- no search evidence ties this firm to any named "
+        "ATS vendor; the page may embed a widget/iframe. list_url/link_selector are guesses "
+        "against the marketing page and must be verified directly (view page source for an "
+        "iframe src or embedded script pointing at an ATS domain) before this adapter will work.",
     },
     "Fisher Phillips": {
         "adapter": CustomHTMLAdapter,
-        "list_url": "https://www.fisherphillips.com/en/careers.html",  # TODO verify
-        "link_selector": "a.job-title, a[href*='/careers/']",
-        "notes": "PENDING VERIFICATION -- confirm actual platform/listing URL/selector.",
+        "list_url": "https://fisherphillips.hrmdirect.com/employment/job-openings.php",
+        "link_selector": "a[href*='job-opening.php'], a[href*='view.php?req=']",
+        "notes": "Confirmed ClearCompany/HRM Direct ATS at fisherphillips.hrmdirect.com "
+        "(server-rendered PHP pages, no JSON feed). Business-professional roles are listed "
+        "together with attorney/paralegal reqs in one feed, filterable by office -- rely on "
+        "keyword filtering, not URL splitting. Example current posting: 'IT Application "
+        "Specialist' (Atlanta).",
     },
     "Seyfarth Shaw": {
         "adapter": CustomHTMLAdapter,
-        "list_url": "https://www.seyfarth.com/careers.html",  # TODO verify
-        "link_selector": "a.job-title, a[href*='/careers/']",
-        "notes": "PENDING VERIFICATION -- confirm actual platform/listing URL/selector.",
+        "list_url": "https://careers.seyfarth.com/jobs",
+        "link_selector": "a[href*='/jobs/']",
+        "notes": "ATS vendor UNCONFIRMED (career site migrated off recruiting.seyfarth.com at "
+        "some point) but URL pattern is stable: careers.seyfarth.com/jobs/<numeric-id>. "
+        "Business-professional and attorney roles are listed together in one feed -- rely on "
+        "keyword filtering. Example current posting seen: 'Director of Knowledge Management' "
+        "(Office of General Counsel, Wilmington DE, hybrid) -- a strong direct match.",
     },
     "Littler Mendelson": {
         "adapter": CustomHTMLAdapter,
-        "list_url": "https://www.littler.com/careers",  # TODO verify
+        "list_url": "https://www.littler.com/careers/us/professional-staff",
         "link_selector": "a.job-title, a[href*='/careers/']",
-        "notes": "PENDING VERIFICATION -- confirm actual platform/listing URL/selector.",
+        "notes": "ATS platform UNCONFIRMED -- no external ATS domain surfaced in research; "
+        "likely an embedded widget/iframe on this page. list_url targets the professional-"
+        "staff (non-attorney) track, which explicitly covers applications development and "
+        "knowledge management disciplines. Verify page source for the real ATS/iframe target "
+        "before trusting this adapter.",
     },
     "Orrick": {
-        "adapter": CustomHTMLAdapter,
-        "list_url": "https://www.orrick.com/en/Careers",  # TODO verify
-        "link_selector": "a.job-title, a[href*='/careers/']",
-        "notes": "PENDING VERIFICATION -- confirm actual platform/listing URL/selector.",
+        # Confirmed iCIMS (vanity domain talent.orrick.com fronts careers-orrick.icims.com).
+        "adapter": ICIMSAdapter,
+        "tenant": "orrick",
+        "search_url": "https://careers-orrick.icims.com/jobs/search?pr=0&in_iframe=1",
+        "notes": "Confirmed iCIMS tenant 'orrick'. Public-facing vanity front-end is "
+        "talent.orrick.com, with separate tracks: talent.orrick.com/staff-us/jobs (business "
+        "professional -- the relevant one), /non-partner-attorney-us/jobs, /campus-us/jobs. "
+        "The ICIMSAdapter here hits the underlying careers-orrick.icims.com search page "
+        "directly, which lists all tracks together -- keyword filtering handles the split. "
+        "Example current posting: 'IT Service Operations Intern' (Wheeling, WV).",
     },
 }
