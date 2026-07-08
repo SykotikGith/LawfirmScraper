@@ -55,6 +55,11 @@ HARD_EXCLUDE_TERMS = [
     "Billing",
     "Accounting",
     "Accountant",
+    # JD/bar-required or support-staff tracks -- not IC-eligible regardless
+    # of an AI/KM keyword also being present in the title.
+    "Attorney",
+    "Associate",
+    "Paralegal",
 ]
 
 # Short/ambiguous tokens need word-boundary matching so they don't match
