@@ -19,6 +19,7 @@ from .adapters import (
     GreenhouseAdapter,
     ICIMSAdapter,
     OracleRecruitingAdapter,
+    ViGlobalAdapter,
     WorkdayAdapter,
 )
 
@@ -321,6 +322,24 @@ FIRMS: dict[str, dict] = {
         "Direct hit on target roles: 'AI Business Systems Developer'. Job links use a "
         "javascript: self.popup(...) pseudo-href rather than a plain <a href> URL -- "
         "CircaWorksAdapter regexes the real path out of the popup() call.",
+    },
+    "O'Melveny & Myers": {
+        # NOT actually Workday for external postings, despite a real tenant existing on wd1
+        # (confirmed via ats_probe.py's verified path-specific-error signal) -- same pattern
+        # as Debevoise & Plimpton: likely a dormant/internal Workday tenant. Real external ATS
+        # is viGlobal/viRecruit (viglobalcloud.com), a legal-industry-specific platform not
+        # seen anywhere else in this project.
+        "adapter": ViGlobalAdapter,
+        "list_url": "https://ommcareers.viglobalcloud.com/viRecruitSelfApply/RecDefault.aspx"
+        "?Tag=84c08942-ea6c-4707-a535-258e400c6b3d",
+        "notes": "CONFIRMED via live probe -- 49 real postings server-rendered directly in an "
+        "ASP.NET GridView table (id=contentPlaceHolder_gridviewList), no separate API call "
+        "needed. Per-job 'Apply' controls are ASP.NET postback LinkButtons "
+        "(javascript:__doPostBack(...)), not real navigable URLs, so ViGlobalAdapter regexes "
+        "title/office/group/date directly out of each row's concatenated cell text instead, "
+        "and every posting shares the same list_url since there's no per-job URL to link to. "
+        "Sample titles found: 'Assistant' (Dallas), 'Billing and Collections Coordinator' "
+        "(multiple offices) -- plausible law-firm business-professional roles.",
     },
     # Firms probed but deliberately NOT added, pending more evidence or explicitly rejected:
     #

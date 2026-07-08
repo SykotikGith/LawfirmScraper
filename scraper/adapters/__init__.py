@@ -6,6 +6,7 @@ from .oracle import OracleRecruitingAdapter
 from .custom_html import CustomHTMLAdapter
 from .greenhouse import GreenhouseAdapter
 from .circaworks import CircaWorksAdapter
+from .viglobal import ViGlobalAdapter
 
 __all__ = [
     "Adapter",
@@ -16,4 +17,5 @@ __all__ = [
     "CustomHTMLAdapter",
     "GreenhouseAdapter",
     "CircaWorksAdapter",
+    "ViGlobalAdapter",
 ]
