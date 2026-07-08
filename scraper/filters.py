@@ -60,6 +60,9 @@ HARD_EXCLUDE_TERMS = [
     "Attorney",
     "Associate",
     "Paralegal",
+    "Legal Secretary",
+    "Of Counsel",
+    "Partner",
 ]
 
 # Short/ambiguous tokens need word-boundary matching so they don't match
