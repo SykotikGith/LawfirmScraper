@@ -265,6 +265,23 @@ FIRMS: dict[str, dict] = {
         "required)' confirms genuine law-firm identity -- Relativity is eDiscovery software "
         "specifically used by law firms.",
     },
+    "Alston & Bird": {
+        "adapter": WorkdayAdapter,
+        "tenant": "alston",
+        "wd": "wd1",
+        "site": "ExternalCareer",
+        "notes": "CONFIRMED via live probe -- 23 real postings, found embedded directly in "
+        "alston.com/careers. Direct hit on target roles: 'Legal AI Solutions Analyst'.",
+    },
+    "Holland & Knight": {
+        "adapter": WorkdayAdapter,
+        "tenant": "hklaw",
+        "wd": "wd1",
+        "site": "Holland_Knight",
+        "notes": "CONFIRMED via live probe -- 89 real postings, found embedded directly in "
+        "hklaw.com/careers. Sample titles plausibly law-firm business-professional roles "
+        "('Business Development Coordinator', 'Practice Assistant - Labor & Employment').",
+    },
     # Firms probed but deliberately NOT added, pending more evidence or explicitly rejected:
     #
     # - Winston & Strawn (HRMdirect, winston.hrmdirect.com): REJECTED -- confirmed collision.
