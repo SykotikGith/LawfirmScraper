@@ -52,7 +52,15 @@ class WorkdayAdapter(Adapter):
 
             for job in job_postings:
                 external_path = job.get("externalPath", "")
-                posting_id = job.get("bulletFields", [None])[0] or external_path
+                # bulletFields[0] is supposed to be the requisition ID, but its
+                # meaning isn't consistent across tenants -- confirmed via live
+                # data that Jackson Lewis's bulletFields[0] is actually a
+                # semicolon-joined location list, not an ID, which broke
+                # dedup (two different postings with the same location list
+                # would collide). externalPath reliably ends with the real
+                # requisition ID after the last underscore across every
+                # Workday tenant seen in this project, so use that instead.
+                posting_id = external_path.rsplit("_", 1)[-1] if "_" in external_path else external_path
                 postings.append(
                     Posting(
                         firm=self.firm,
