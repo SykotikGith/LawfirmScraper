@@ -259,9 +259,12 @@ FIRMS: dict[str, dict] = {
     #   law-firm-shaped. Confirmed: this "winston" tenant belongs to Winston Taylor
     #   (winstontaylor.com), an unrelated company -- not Winston & Strawn.
     #
-    # - Goodwin Procter (Greenhouse, board_token "goodwin"): UNCERTAIN -- only 1 posting
-    #   returned ("Aviation Operations Coordinator"), thin evidence and not obviously
-    #   law-firm-specific. Pending a decision on whether to include as-is.
+    # - Goodwin Procter: the Greenhouse guess (board_token "goodwin") is LIKELY ALSO A
+    #   COLLISION like Winston & Strawn's -- its 1 thin, non-legal-sounding posting
+    #   ("Aviation Operations Coordinator") is now doubly suspect because the REAL ATS was
+    #   found embedded directly in goodwinlaw.com/en/careers: Workday, tenant
+    #   "goodwinprocter", pod wd5 (not in ats_probe.py's original wd1/wd103/wd115 list),
+    #   site "External_Careers". Pending live-fetch confirmation before adding.
     #
     # - Ropes & Gray (ApplicantStack, ropesgray.applicantstack.com/x/openings): UNCERTAIN --
     #   0 postings returned, so there are no titles to confirm this is genuinely Ropes & Gray

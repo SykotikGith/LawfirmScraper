@@ -1,67 +1,29 @@
-"""Diagnostic: verify/refute the Goodwin Procter (Greenhouse "goodwin") and
-Ropes & Gray (ApplicantStack "ropesgray") guesses by checking their real
-official sites for an embedded ATS link, the same way Wilson Elser's real
-Greenhouse token was found in its React bundle. Also a quick sanity check
-that winstontaylor.com is genuinely an unrelated company (confirming the
-Winston & Strawn/HRMdirect "winston" collision is a real rejection, not a
-mistake).
+"""Diagnostic: verify Goodwin Procter's real Workday endpoint, found
+embedded in goodwinlaw.com/en/careers
+(https://goodwinprocter.wd5.myworkdayjobs.com/External_Careers) -- a
+completely different tenant/pod/site than the Greenhouse "goodwin" guess
+that returned only 1 thin, non-obviously-legal posting earlier. That
+Greenhouse hit was very likely also a false collision, the same way the
+Winston & Strawn/HRMdirect "winston" guess turned out to belong to an
+unrelated company.
 
 Usage: python -m scraper.diagnose
 """
 from __future__ import annotations
 
-import re
-
-import requests
-
-from .adapters.base import DEFAULT_HEADERS
-
-TIMEOUT = 20
-
-ATS_HINTS = [
-    "greenhouse.io", "myworkdayjobs.com", "icims.com", "applicantstack.com",
-    "hrmdirect.com", "avature.net", "phenompeople.com", "oraclecloud.com",
-    "smartrecruiters.com", "lever.co", "ultipro.com", "successfactors.com",
-    "taleo.net", "pageuppeople.com",
-]
-
-
-def sniff_ats(label: str, url: str) -> None:
-    try:
-        resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=TIMEOUT)
-        print(f"\n{label}: {url}")
-        print(f"  status={resp.status_code} len={len(resp.text)}")
-        text = resp.text
-        found_any = False
-        for hint in ATS_HINTS:
-            if hint in text.lower():
-                found_any = True
-                idx = text.lower().find(hint)
-                snippet = text[max(0, idx - 80):idx + 100].replace("\n", " ")
-                print(f"  found '{hint}': {snippet}")
-        if not found_any:
-            print("  no known ATS hint found in this page's raw HTML")
-            # Check for referenced JS bundles, in case it's client-rendered
-            # like Wilson Elser was.
-            js_paths = re.findall(r'src="([^"]+\.js[^"]*)"', text)
-            same_origin_js = [j for j in js_paths if j.startswith("/") or url.split("/")[2] in j]
-            print(f"  {len(same_origin_js)} same-origin JS bundle(s) referenced "
-                  f"(check these by hand if nothing else here helps): {same_origin_js[:5]}")
-    except requests.exceptions.RequestException as exc:
-        print(f"\n{label}: {url}\n  EXCEPTION {type(exc).__name__}: {exc}")
+from .adapters.workday import WorkdayAdapter
 
 
 def main() -> None:
-    print("=== Winston Taylor sanity check (confirm unrelated to Winston & Strawn) ===")
-    sniff_ats("Winston Taylor", "https://www.winstontaylor.com/")
-
-    print("\n=== Goodwin Procter: hunting for the real Greenhouse token (or other ATS) ===")
-    for path in ["/en", "/en/careers", "/en/careers/opportunities", "/careers"]:
-        sniff_ats("Goodwin Procter", f"https://www.goodwinlaw.com{path}")
-
-    print("\n=== Ropes & Gray: hunting for the real ApplicantStack tenant (or other ATS) ===")
-    for path in ["/en", "/en/careers", "/en/careers/professional-staff-careers", "/careers"]:
-        sniff_ats("Ropes & Gray", f"https://www.ropesgray.com{path}")
+    adapter = WorkdayAdapter(
+        "Goodwin Procter",
+        {"tenant": "goodwinprocter", "wd": "wd5", "site": "External_Careers"},
+    )
+    postings = adapter.fetch()
+    print(f"Goodwin Procter (Workday, goodwinprocter.wd5, site=External_Careers): "
+          f"{len(postings)} postings")
+    for p in postings[:10]:
+        print(f"  - {p.title} — {p.location}")
 
 
 if __name__ == "__main__":
