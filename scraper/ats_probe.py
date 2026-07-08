@@ -43,6 +43,18 @@ corroboration (indexed job posting URLs), not by hitting the tenant
 directly -- that's the only reliable method for this platform short of
 solving the WAF challenge with real browser automation.
 
+ApplicantStack has a subtler version of the same problem: a fake slug
+still returns HTTP 200 (status code alone is useless here), but silently
+redirects to a generic https://www.applicantstack.com/job-not-found/
+marketing page instead of the tenant's own /public/login page -- a real
+tenant (confirmed with hinshawlaw) stays on its own subdomain. So
+ApplicantStack hits are validated by checking the final URL after
+redirects, not just the status code.
+
+HRMdirect and Greenhouse were checked the same way (known-real vs
+known-fake slugs) and cleanly return 404 for fake slugs -- no special
+handling needed there.
+
 Usage: python -m scraper.ats_probe
 Writes ats_probe_results.md alongside printing the table to stdout.
 """
@@ -143,16 +155,23 @@ PATTERNS: list[tuple[str, str]] = [
     ("Greenhouse", "https://job-boards.greenhouse.io/{slug}"),
 ]
 
+# Platform label -> substring that, if present in the FINAL url after
+# redirects, means we got bounced to a generic "not found" page rather
+# than a real tenant, even though the status code was 200.
+REJECT_IF_REDIRECTED_TO = {
+    "ApplicantStack": "job-not-found",
+}
 
-def probe_url(url: str) -> tuple[int | None, str | None, str | None]:
-    """Return (status_code, body, error). error is None for any real HTTP
-    response (even 403/404); it's set only for connection-level failures
-    (DNS resolution, timeout, refused connection, etc.)."""
+
+def probe_url(url: str) -> tuple[int | None, str | None, str | None, str | None]:
+    """Return (status_code, body, final_url, error). error is None for any
+    real HTTP response (even 403/404); it's set only for connection-level
+    failures (DNS resolution, timeout, refused connection, etc.)."""
     try:
         resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=TIMEOUT, allow_redirects=True)
-        return resp.status_code, resp.text, None
+        return resp.status_code, resp.text, resp.url, None
     except requests.exceptions.RequestException as exc:
-        return None, None, type(exc).__name__
+        return None, None, None, type(exc).__name__
 
 
 def confidence_for(status: int) -> str:
@@ -171,7 +190,7 @@ def probe_workday(slug: str) -> dict | None:
     docstring. Returns a result dict on a confirmed hit, else None."""
     for pod in WORKDAY_PODS:
         url = f"https://{slug}.{pod}.myworkdayjobs.com/{_WORKDAY_PROBE_PATH}"
-        status, body, error = probe_url(url)
+        status, body, _final_url, error = probe_url(url)
         if error is not None or status != 200 or body is None:
             continue
         if _WORKDAY_TENANT_EXISTS_MARKER in body:
@@ -194,8 +213,11 @@ def probe_firm(firm: str, slugs: list[str]) -> dict:
 
         for label, template in PATTERNS:
             url = template.format(slug=slug)
-            status, _body, error = probe_url(url)
+            status, _body, final_url, error = probe_url(url)
             if error is not None or status == 404:
+                continue
+            reject_marker = REJECT_IF_REDIRECTED_TO.get(label)
+            if reject_marker and final_url is not None and reject_marker in final_url:
                 continue
             return {
                 "firm": firm,
