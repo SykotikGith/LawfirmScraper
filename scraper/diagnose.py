@@ -1,78 +1,53 @@
-"""Diagnostic: stop assuming Workday for Blank Rome and Covington &
-Burling -- the word "workday" doesn't appear on either page at all,
-despite both having a confirmed-real (but likely dormant, same as
-Milbank/Debevoise/O'Melveny) Workday tenant. Extract every external
-domain referenced anywhere on the page instead, to find whatever the
-real ATS actually is without guessing.
+"""Diagnostic: verify 2 new Workday leads (Troutman Pepper Locke, Fenwick
+& West), plus check whether White & Case's newer myworkdaysite.com URL
+format still works with our existing WorkdayAdapter (which assumes the
+older {tenant}.{pod}.myworkdayjobs.com pattern) by hitting the same
+underlying CXS API directly.
 
 Usage: python -m scraper.diagnose
 """
 from __future__ import annotations
 
-import re
-from urllib.parse import urlparse
-
 import requests
-from bs4 import BeautifulSoup
 
 from .adapters.base import DEFAULT_HEADERS
+from .adapters.workday import WorkdayAdapter
 
-TIMEOUT = 20
-
-KNOWN_ATS_HINTS = [
-    "icims", "myworkdayjobs", "myworkdaysite", "greenhouse.io", "applicantstack",
-    "hrmdirect", "avature", "phenompeople", "oraclecloud", "smartrecruiters",
-    "lever.co", "ultipro", "successfactors", "taleo", "pageuppeople", "circaworks",
-    "viglobalcloud", "clearcompany", "jazzhr", "bamboohr", "workable", "breezy",
-    "jobvite", "cornerstoneondemand", "adp.com", "recruiterbox",
-]
+TIMEOUT = 30
 
 
-def dump_external_domains(label: str, url: str) -> None:
-    print(f"\n=== {label}: {url} ===")
-    resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=TIMEOUT)
-    print(f"status={resp.status_code} len={len(resp.text)}")
-    soup = BeautifulSoup(resp.text, "lxml")
-    own_host = urlparse(url).netloc
+def check_workday(firm: str, tenant: str, pod: str, site: str) -> None:
+    print(f"\n=== {firm} (Workday {tenant}.{pod}, site={site}) ===")
+    adapter = WorkdayAdapter(firm, {"tenant": tenant, "wd": pod, "site": site})
+    try:
+        postings = adapter.fetch()
+    except Exception as exc:  # noqa: BLE001
+        print(f"  FETCH FAILED: {type(exc).__name__}: {exc}")
+        return
+    print(f"  {len(postings)} postings")
+    for p in postings[:6]:
+        print(f"    - {p.title} — {p.location}")
 
-    domains: dict[str, list[str]] = {}
-    for tag, attr in [("a", "href"), ("iframe", "src"), ("script", "src"), ("link", "href")]:
-        for el in soup.find_all(tag):
-            val = el.get(attr)
-            if not val or not val.startswith("http"):
-                continue
-            host = urlparse(val).netloc
-            if not host or own_host in host or host in own_host:
-                continue
-            domains.setdefault(host, []).append(val)
 
-    print(f"{len(domains)} distinct external domain(s) referenced:")
-    for host, urls in sorted(domains.items()):
-        hint_hit = next((h for h in KNOWN_ATS_HINTS if h in host.lower()), None)
-        marker = "  <-- KNOWN ATS PATTERN" if hint_hit else ""
-        print(f"  {host} ({len(urls)} ref(s)){marker}")
-        for u in urls[:2]:
-            print(f"      {u}")
+def check_white_case_new_domain() -> None:
+    print("\n=== White & Case: myworkdaysite.com front-end vs. underlying CXS API ===")
+    front_end = "https://wd1.myworkdaysite.com/recruiting/whitecase/External"
+    resp = requests.get(front_end, headers=DEFAULT_HEADERS, timeout=TIMEOUT)
+    print(f"  front-end {front_end}: status={resp.status_code} len={len(resp.text)}")
 
-    # Also look for a "search jobs" / "view openings" / "current openings"
-    # style link even if it stays same-domain (might be a sub-page we
-    # haven't tried yet).
-    candidates = [
-        a.get("href") for a in soup.find_all("a")
-        if a.get("href") and re.search(r"search|opening|opportunit|apply|current", a.get_text(" ", strip=True), re.IGNORECASE)
-    ]
-    print(f"\nsame-page links with 'search'/'opening'/'opportunit'/'apply'/'current' in their text "
-          f"(first 10 of {len(candidates)}):")
-    for c in candidates[:10]:
-        print(f"  {c}")
+    # Test whether the OLD-style tenant subdomain + standard CXS API path
+    # still works underneath, same as every other confirmed Workday firm.
+    api_url = "https://whitecase.wd1.myworkdayjobs.com/wday/cxs/whitecase/External/jobs"
+    body = {"appliedFacets": {}, "limit": 5, "offset": 0, "searchText": ""}
+    api_resp = requests.post(api_url, headers=DEFAULT_HEADERS, json=body, timeout=TIMEOUT)
+    print(f"  API {api_url}: status={api_resp.status_code}")
+    print(f"    body[:400]: {api_resp.text[:400]!r}")
 
 
 def main() -> None:
-    dump_external_domains("Blank Rome", "https://www.blankrome.com/careers/overview/business-professionals/")
-    dump_external_domains(
-        "Covington & Burling",
-        "https://www.cov.com/en/careers/business-professionals/employment-opportunities",
-    )
+    check_workday("Troutman Pepper Locke", "troutman", "wd5", "TPRecruit1")
+    check_workday("Fenwick & West", "fenwick", "wd1", "Fenwick_External_Careers")
+    check_white_case_new_domain()
 
 
 if __name__ == "__main__":
