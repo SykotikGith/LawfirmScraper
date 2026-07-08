@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from .config import FIRMS
-from .filters import is_relevant
+from .filters import Classification, classify
 from .models import Posting
 from .store import SeenStore
 
@@ -20,6 +20,22 @@ def scrape_firm(firm_name: str, firm_cfg: dict) -> tuple[list[Posting], str | No
         return adapter.fetch(), None
     except Exception as exc:  # noqa: BLE001 - report per-firm failures, don't crash the run
         return [], f"{type(exc).__name__}: {exc}"
+
+
+def _print_bucket(label: str, entries: list[tuple[Posting, Classification, bool]]) -> int:
+    if not entries:
+        return 0
+    new_count = 0
+    print(f"\n   --- {label} ---")
+    for posting, cls, is_new in entries:
+        flag = "NEW" if is_new else "seen"
+        new_count += 1 if is_new else 0
+        print(f"   [{flag}] {posting.title} — {posting.location}")
+        print(f"         matched: {', '.join(cls.ai_km_hits)}")
+        if cls.tier == "review":
+            print(f"         ⚠ review — may be program/people-management-heavy ({', '.join(cls.mgmt_hits)})")
+        print(f"         {posting.url}")
+    return new_count
 
 
 def run(reset_seen: bool = False) -> int:
@@ -49,25 +65,25 @@ def run(reset_seen: bool = False) -> int:
             debug_file.write(f"{firm_name} | {posting.title} | {posting.url}\n")
         debug_file.flush()
 
-        matches = []
+        auto_matches = []
+        review_matches = []
         for posting in postings:
-            keep, include_hits, _exclude_hits = is_relevant(posting.title)
-            if not keep:
+            cls = classify(posting.title)
+            if cls.tier not in ("auto_match", "review"):
                 continue
             is_new = store.is_new(firm_name, posting.posting_id)
-            matches.append((posting, include_hits, is_new))
             store.mark_seen(firm_name, posting.posting_id)
+            if cls.tier == "auto_match":
+                auto_matches.append((posting, cls, is_new))
+            else:
+                review_matches.append((posting, cls, is_new))
 
-        if not matches:
+        if not auto_matches and not review_matches:
             print(f"   {len(postings)} postings scraped, none matched filters")
             continue
 
-        for posting, include_hits, is_new in matches:
-            flag = "NEW" if is_new else "seen"
-            total_new += 1 if is_new else 0
-            print(f"   [{flag}] {posting.title} — {posting.location}")
-            print(f"         matched: {', '.join(include_hits)}")
-            print(f"         {posting.url}")
+        total_new += _print_bucket("AUTO-MATCH", auto_matches)
+        total_new += _print_bucket("REVIEW MANUALLY", review_matches)
 
     debug_file.close()
     store.save()

@@ -1,38 +1,65 @@
-"""Keyword-based include/exclude filtering for scraped job postings."""
+"""Three-tier keyword classification for scraped job postings.
+
+Tiers, in evaluation order:
+  excluded    -- a hard-exclude term is present. Never shown in either
+                 bucket, regardless of any AI/KM keyword match.
+  none        -- no AI/KM keyword hit at all. Not shown.
+  auto_match  -- an AI/KM keyword hit, and no Director/Manager/Program
+                 Manager/Project Manager term present.
+  review      -- an AI/KM keyword hit, disqualified from auto_match by a
+                 Director/Program Manager/Project Manager term specifically.
+                 A title disqualified only by a bare "Manager" that isn't
+                 "Program Manager" / "Project Manager" (e.g. "IT Manager")
+                 falls through to "none" instead -- it's deliberately not in
+                 the review-trigger list, so it's dropped rather than
+                 flagged.
+"""
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass, field
 
-INCLUDE_KEYWORDS = [
-    "IT",
-    "Information Technology",
+AI_KM_KEYWORDS = [
     "Knowledge Management",
     "KM",
-    "AI Enablement",
     "Legal AI",
-    "Application Support",
+    "AI Enablement",
+    "AI Practice Transformation",
+    "Legal Technology",
+    "Legal Tech",
     "IAM",
     "Identity and Access Management",
+    "Application Support",
     "Process Improvement",
-    "Innovation",
+    "Business Process Optimization",
 ]
 
-EXCLUDE_KEYWORDS = [
-    "attorney",
-    "associate",
-    "paralegal",
-    "legal secretary",
-    "network engineer",
-    "on-call",
-    "on call",
-    "24/7",
-    "healthcare provider",
-    "clinical",
+# Disqualifies a title from the auto-match tier.
+AUTO_EXCLUDE_MGMT_TERMS = ["Director", "Manager", "Program Manager", "Project Manager"]
+
+# Subset of AUTO_EXCLUDE_MGMT_TERMS that routes a disqualified title into the
+# review-manually bucket instead of dropping it silently.
+REVIEW_MGMT_TERMS = ["Director", "Program Manager", "Project Manager"]
+
+HARD_EXCLUDE_TERMS = [
+    "Aderant",
+    "IT Asset",
+    "IT Asset Specialist",
+    "IT Asset Lead",
+    "Network Engineer",
+    "Engineering Manager",
+    "Development Manager",
+    # Finance/Billing/Accounting
+    "Finance",
+    "Financial",
+    "Billing",
+    "Accounting",
+    "Accountant",
 ]
 
-# Short/ambiguous tokens (like "IT" or "KM") need word-boundary matching so
-# they don't match substrings inside unrelated words (e.g. "IT" in "Litigation").
-_SHORT_TOKENS = {"IT", "KM", "IAM", "AI"}
+# Short/ambiguous tokens need word-boundary matching so they don't match
+# substrings inside unrelated words.
+_SHORT_TOKENS = {"KM", "IAM"}
 
 
 def _pattern_for(keyword: str) -> re.Pattern:
@@ -41,34 +68,34 @@ def _pattern_for(keyword: str) -> re.Pattern:
     return re.compile(re.escape(keyword), re.IGNORECASE)
 
 
-_INCLUDE_PATTERNS = [(kw, _pattern_for(kw)) for kw in INCLUDE_KEYWORDS]
-_EXCLUDE_PATTERNS = [(kw, _pattern_for(kw)) for kw in EXCLUDE_KEYWORDS]
-
-# "Manager" is excluded unless paired with "IT" as a judgment-call IC-adjacent
-# title (e.g. "IT Manager"), per the exclusion rule's carve-out.
-_MANAGER_RE = re.compile(r"\bmanager\b", re.IGNORECASE)
-_IT_MANAGER_RE = re.compile(r"\bIT\s+Manager\b", re.IGNORECASE)
+def _hits(title: str, keywords: list[str]) -> list[str]:
+    return [kw for kw in keywords if _pattern_for(kw).search(title)]
 
 
-def matches_include(title: str) -> list[str]:
-    """Return the include keywords found in the title."""
-    return [kw for kw, pat in _INCLUDE_PATTERNS if pat.search(title)]
+@dataclass
+class Classification:
+    tier: str  # "auto_match" | "review" | "excluded" | "none"
+    ai_km_hits: list[str] = field(default_factory=list)
+    mgmt_hits: list[str] = field(default_factory=list)
+    hard_exclude_hits: list[str] = field(default_factory=list)
 
 
-def matches_exclude(title: str) -> list[str]:
-    """Return the exclude keywords found in the title."""
-    hits = [kw for kw, pat in _EXCLUDE_PATTERNS if pat.search(title)]
-    if _MANAGER_RE.search(title) and not _IT_MANAGER_RE.search(title):
-        hits.append("manager (non-IT)")
-    return hits
+def classify(title: str) -> Classification:
+    """Classify a posting title into one of the four tiers above."""
+    hard_hits = _hits(title, HARD_EXCLUDE_TERMS)
+    if hard_hits:
+        return Classification(tier="excluded", hard_exclude_hits=hard_hits)
 
+    ai_km_hits = _hits(title, AI_KM_KEYWORDS)
+    if not ai_km_hits:
+        return Classification(tier="none")
 
-def is_relevant(title: str) -> tuple[bool, list[str], list[str]]:
-    """Decide whether a posting title is relevant.
+    auto_disqualifiers = _hits(title, AUTO_EXCLUDE_MGMT_TERMS)
+    if not auto_disqualifiers:
+        return Classification(tier="auto_match", ai_km_hits=ai_km_hits)
 
-    Returns (keep, include_hits, exclude_hits).
-    """
-    include_hits = matches_include(title)
-    exclude_hits = matches_exclude(title)
-    keep = bool(include_hits) and not exclude_hits
-    return keep, include_hits, exclude_hits
+    review_triggers = _hits(title, REVIEW_MGMT_TERMS)
+    if review_triggers:
+        return Classification(tier="review", ai_km_hits=ai_km_hits, mgmt_hits=review_triggers)
+
+    return Classification(tier="none")
