@@ -2,5 +2,4 @@ __pycache__/
 *.pyc
 .venv/
 venv/
-data/seen_postings.json
 debug_all_titles.txt
