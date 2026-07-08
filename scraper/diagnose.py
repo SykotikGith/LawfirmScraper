@@ -1,24 +1,17 @@
-"""Round 6 diagnostic: Fisher Phillips only.
+"""Round 7 diagnostic: Wilson Elser.
 
-job-openings.php is a *search form* -- it shows "Select options from the
-menus above and click Search" until submitted. Parse the form and submit
-it with empty/default values to get the full results list, then inspect
-what comes back. (Round 5's attempt at this crashed on a urljoin bug --
-fixed here.)
-
-Marshall Dennehey and Reed Smith are dropped from this round:
-Marshall Dennehey's /careers/administrative-professionals turned out to be
-another marketing page with no listings ("submit your resume" model, not
-a job board) -- treat it as needing a periodic manual check rather than a
-scraper. Reed Smith needs an actual browser DevTools Network tab to find
-its real data call; static URL guessing hit a dead end.
+Config currently points at
+https://www.wilsonelser.com/careers/professional_staff/current-opportunities
+with link_selector "a[href*='/job_openings/']" -- a guess from research,
+never live-verified. It returned 0 postings on the last two live runs.
+Check whether the URL/path is even right, and if not, hunt for the real
+listing page.
 
 Usage: python -m scraper.diagnose
 """
 from __future__ import annotations
 
 import re
-from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
@@ -28,49 +21,35 @@ from .adapters.base import DEFAULT_HEADERS
 TIMEOUT = 20
 
 
-def fisher_phillips() -> None:
-    print("\n=== Fisher Phillips: submitting the search form ===")
-    url = "https://fisherphillips.hrmdirect.com/employment/job-openings.php"
-    session = requests.Session()
-    session.headers.update(DEFAULT_HEADERS)
-    resp = session.get(url, timeout=TIMEOUT)
-    soup = BeautifulSoup(resp.text, "lxml")
-    form = soup.find("form")
-    if form is None:
-        print("no <form> found on the page")
-        return
-    action = form.get("action") or url
-    method = (form.get("method") or "GET").upper()
-    print(f"form action={action!r} method={method}")
-
-    fields = {}
-    for inp in form.find_all(["input", "select"]):
-        name = inp.get("name")
-        if not name:
-            continue
-        if inp.name == "select":
-            selected = inp.find("option", selected=True) or inp.find("option")
-            fields[name] = selected.get("value", "") if selected else ""
-        else:
-            fields[name] = inp.get("value", "")
-    print(f"form fields: {fields}")
-
-    submit_url = urljoin(url, action)
-    if method == "POST":
-        result = session.post(submit_url, data=fields, timeout=TIMEOUT)
-    else:
-        result = session.get(submit_url, params=fields, timeout=TIMEOUT)
-    print(f"submitted search -> status={result.status_code} url={result.url} len={len(result.text)}")
-    print(f"'reqResult' occurrences in response: {result.text.count('reqResult')}")
-    print(f"'noResultsMsg' occurrences: {result.text.count('noResultsMsg')}")
-    hrefs = re.findall(r'href="([^"]*(?:job-opening|view\.php\?req)[^"]*)"', result.text)
-    print(f"job hrefs found (first 10 of {len(hrefs)}):")
-    for h in hrefs[:10]:
-        print(" ", h)
-
-
 def main() -> None:
-    fisher_phillips()
+    print("=== Wilson Elser: current config URL ===")
+    url = "https://www.wilsonelser.com/careers/professional_staff/current-opportunities"
+    resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=TIMEOUT)
+    print(f"status={resp.status_code} final_url={resp.url} len={len(resp.text)}")
+    if resp.status_code == 200:
+        text = resp.text
+        print(f"'/job_openings/' occurrences: {text.count('/job_openings/')}")
+        soup = BeautifulSoup(text, "lxml")
+        links = [a.get("href", "") for a in soup.select("a[href]")]
+        career_like = sorted(set(h for h in links if "career" in h.lower() or "job" in h.lower()))
+        print(f"career/job-like hrefs found ({len(career_like)}):")
+        for h in career_like[:25]:
+            print(" ", h)
+
+    print("\n=== Wilson Elser: base careers page ===")
+    for path in [
+        "/careers",
+        "/careers-attorneys",
+        "/careers-business-legal-professionals",
+        "/careers/all_openings",
+        "/careers/professional_staff",
+    ]:
+        u = f"https://www.wilsonelser.com{path}"
+        try:
+            r = requests.get(u, headers=DEFAULT_HEADERS, timeout=TIMEOUT)
+            print(f"{path}: status={r.status_code} final_url={r.url} len={len(r.text)}")
+        except Exception as exc:  # noqa: BLE001
+            print(f"{path}: EXCEPTION {type(exc).__name__}: {exc}")
 
 
 if __name__ == "__main__":

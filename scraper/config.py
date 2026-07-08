@@ -111,8 +111,12 @@ FIRMS: dict[str, dict] = {
     "Marshall Dennehey": {
         "adapter": CustomHTMLAdapter,
         "list_url": "https://www.marshalldennehey.com/careers/administrative-professionals",
-        "link_selector": "a[href*='/careers/']",
-        "notes": "LIKELY NOT SCRAPABLE, needs manual periodic check instead. Confirmed via live "
+        # Deliberately a selector that can't match anything real: this page has no job
+        # listings (see notes), only nav links back to /careers/*. A broader selector like
+        # "a[href*='/careers/']" was confirmed to scrape those nav links as fake "postings"
+        # instead of returning the honest zero-results state.
+        "link_selector": "a.job-posting-title",
+        "notes": "NOT SCRAPABLE, needs manual periodic check instead. Confirmed via live "
         "probe: /careers/current-openings 404s; the sitemap (884KB, 4498 URLs) has zero "
         "individual job-posting URLs, only marketing landing pages (/careers, /attorneys, "
         "/summer-associates, /paralegals, /administrative-professionals); and the "
