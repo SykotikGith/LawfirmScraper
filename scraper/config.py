@@ -110,11 +110,16 @@ FIRMS: dict[str, dict] = {
     # --- Custom / structured ---------------------------------------------------
     "Marshall Dennehey": {
         "adapter": CustomHTMLAdapter,
-        "list_url": "https://www.marshalldennehey.com/careers/current-openings",
+        "list_url": "https://www.marshalldennehey.com/careers/administrative-professionals",
         "link_selector": "a[href*='/careers/']",
-        "notes": "Confirmed native CMS (no third-party ATS domain found) -- each posting is "
-        "its own page at marshalldennehey.com/careers/<title-location-slug>. No IT/KM example "
-        "posting was open during research; verify link_selector against live markup.",
+        "notes": "LIKELY NOT SCRAPABLE, needs manual periodic check instead. Confirmed via live "
+        "probe: /careers/current-openings 404s; the sitemap (884KB, 4498 URLs) has zero "
+        "individual job-posting URLs, only marketing landing pages (/careers, /attorneys, "
+        "/summer-associates, /paralegals, /administrative-professionals); and the "
+        "administrative-professionals page itself has no listings, just 'Submit your resume "
+        "today to be considered for any of our current administrative positions.' This firm "
+        "may not run an online job board for staff/business-professional roles at all -- "
+        "treat as a manual-check firm, not an automatable one, until evidence says otherwise.",
     },
     "Goldberg Segalla": {
         "adapter": CustomHTMLAdapter,

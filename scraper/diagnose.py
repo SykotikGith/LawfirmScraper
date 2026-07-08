@@ -1,24 +1,24 @@
-"""Round 5 diagnostic.
+"""Round 6 diagnostic: Fisher Phillips only.
 
-- Marshall Dennehey: the sitemap only has marketing landing pages, but
-  /careers/administrative-professionals (the business-professional track,
-  found via sitemap) hasn't been inspected yet -- check whether it lists
-  real openings or embeds a widget.
-- Fisher Phillips: job-openings.php is a *search form* -- it shows
-  "Select options from the menus above and click Search" until submitted.
-  Parse the form and submit it with empty/default values to get the full
-  results list, then inspect what comes back.
+job-openings.php is a *search form* -- it shows "Select options from the
+menus above and click Search" until submitted. Parse the form and submit
+it with empty/default values to get the full results list, then inspect
+what comes back. (Round 5's attempt at this crashed on a urljoin bug --
+fixed here.)
 
-Reed Smith is intentionally left out of this round -- every URL guess so
-far returns the same ~141KB SPA shell regardless of path, meaning the
-real data call isn't discoverable by guessing. That one needs an actual
-browser DevTools Network tab to find the XHR/fetch call.
+Marshall Dennehey and Reed Smith are dropped from this round:
+Marshall Dennehey's /careers/administrative-professionals turned out to be
+another marketing page with no listings ("submit your resume" model, not
+a job board) -- treat it as needing a periodic manual check rather than a
+scraper. Reed Smith needs an actual browser DevTools Network tab to find
+its real data call; static URL guessing hit a dead end.
 
 Usage: python -m scraper.diagnose
 """
 from __future__ import annotations
 
 import re
+from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
@@ -26,28 +26,6 @@ from bs4 import BeautifulSoup
 from .adapters.base import DEFAULT_HEADERS
 
 TIMEOUT = 20
-
-
-def marshall_dennehey() -> None:
-    print("\n=== Marshall Dennehey: /careers/administrative-professionals ===")
-    url = "https://www.marshalldennehey.com/careers/administrative-professionals"
-    resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=TIMEOUT)
-    print(f"status={resp.status_code} len={len(resp.text)}")
-    text = resp.text
-    iframes = re.findall(r'<iframe[^>]+src="([^"]+)"', text)
-    print(f"iframes: {iframes}")
-    for hint in ["icims", "workday", "greenhouse", "lever.co", "smartrecruiters",
-                 "clearcompany", "hrmdirect", "applicantstack", "paylocity",
-                 "oraclecloud", "avature", "phenompeople", "adp.com"]:
-        if hint in text.lower():
-            idx = text.lower().find(hint)
-            print(f"  found ATS hint '{hint}':", text[max(0, idx - 100):idx + 150].replace("\n", " "))
-    soup = BeautifulSoup(text, "lxml")
-    links = [a.get("href", "") for a in soup.select("a[href]")]
-    job_like = [h for h in links if any(k in h.lower() for k in ["job", "opening", "position", "career"])]
-    print(f"job-like links found (first 15 of {len(job_like)}):")
-    for h in job_like[:15]:
-        print(" ", h)
 
 
 def fisher_phillips() -> None:
@@ -77,7 +55,7 @@ def fisher_phillips() -> None:
             fields[name] = inp.get("value", "")
     print(f"form fields: {fields}")
 
-    submit_url = action if action.startswith("http") else f"https://fisherphillips.hrmdirect.com{action}"
+    submit_url = urljoin(url, action)
     if method == "POST":
         result = session.post(submit_url, data=fields, timeout=TIMEOUT)
     else:
@@ -92,7 +70,6 @@ def fisher_phillips() -> None:
 
 
 def main() -> None:
-    marshall_dennehey()
     fisher_phillips()
 
 
