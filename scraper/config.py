@@ -256,7 +256,8 @@ FIRMS: dict[str, dict] = {
     # - Winston & Strawn (HRMdirect, winston.hrmdirect.com): REJECTED -- confirmed collision.
     #   Sample titles ("R&D Culinary Technologist", "Quality Assurance Inspector", "Quality
     #   Engineering Manager") are food/manufacturing-industry titles, not remotely
-    #   law-firm-shaped. This "winston" tenant belongs to a different company entirely.
+    #   law-firm-shaped. Confirmed: this "winston" tenant belongs to Winston Taylor
+    #   (winstontaylor.com), an unrelated company -- not Winston & Strawn.
     #
     # - Goodwin Procter (Greenhouse, board_token "goodwin"): UNCERTAIN -- only 1 posting
     #   returned ("Aviation Operations Coordinator"), thin evidence and not obviously
