@@ -1,54 +1,67 @@
-"""Round 9 diagnostic: Wilson Elser -- inspect the React bundle for API hints.
-
-Confirmed: the site is a bare React SPA (<div id="root"></div> +
-/static/js/main.<hash>.js) served identically for every route. No
-server-rendered HTML exists to scrape. Last automated attempt: fetch the
-JS bundle itself and grep for an API base URL / endpoint pattern before
-falling back to manual DevTools inspection (same as Reed Smith).
+"""Diagnostic: why did ats_probe.py's Workday check return 406 for all 69
+firms uniformly? That's not believable as real per-tenant signal -- test
+known-good Workday tenants (dlapiper=wd1, clydeco=wd103,
+perkinscoie=wd115, all confirmed real elsewhere in this project) against
+a definitely-fake tenant name, with full headers/body, to find whatever
+actually differentiates a real tenant from a nonexistent one despite the
+shared 406 status.
 
 Usage: python -m scraper.diagnose
 """
 from __future__ import annotations
 
-import re
-
 import requests
 
 from .adapters.base import DEFAULT_HEADERS
 
-TIMEOUT = 30
+TIMEOUT = 15
+
+CONTROLS = [
+    ("dlapiper", "wd1", "known-good"),
+    ("clydeco", "wd103", "known-good"),
+    ("perkinscoie", "wd115", "known-good"),
+    ("thisisnotarealfirmxyz123", "wd1", "known-fake"),
+    ("kirkland", "wd1", "unknown (Wave 1 result)"),
+]
+
+
+def probe(host: str, headers: dict, label: str) -> None:
+    try:
+        resp = requests.get(f"https://{host}/", headers=headers, timeout=TIMEOUT, allow_redirects=True)
+        print(f"  [{label}] status={resp.status_code} len={len(resp.text)} "
+              f"content-type={resp.headers.get('content-type')}")
+        print(f"    headers: {dict(resp.headers)}")
+        print(f"    body[:300]: {resp.text[:300]!r}")
+    except requests.exceptions.RequestException as exc:
+        print(f"  [{label}] EXCEPTION {type(exc).__name__}: {exc}")
 
 
 def main() -> None:
-    page = requests.get("https://www.wilsonelser.com/careers", headers=DEFAULT_HEADERS, timeout=TIMEOUT)
-    js_paths = re.findall(r'src="(/static/js/main\.[^"]+\.js)"', page.text)
-    print(f"JS bundle paths found: {js_paths}")
-    if not js_paths:
-        print("no main bundle found in HTML")
-        return
+    print("=== Round A: default probe headers (same as ats_probe.py) ===")
+    for tenant, wd, kind in CONTROLS:
+        host = f"{tenant}.{wd}.myworkdayjobs.com"
+        print(f"\n{host} ({kind})")
+        probe(host, DEFAULT_HEADERS, "default-headers")
 
-    js_url = "https://www.wilsonelser.com" + js_paths[0]
-    print(f"fetching {js_url} ...")
-    js_resp = requests.get(js_url, headers=DEFAULT_HEADERS, timeout=TIMEOUT)
-    js_text = js_resp.text
-    print(f"bundle size: {len(js_text)} chars")
+    print("\n\n=== Round B: browser-like Accept header ===")
+    browser_headers = {
+        **DEFAULT_HEADERS,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    }
+    for tenant, wd, kind in CONTROLS:
+        host = f"{tenant}.{wd}.myworkdayjobs.com"
+        print(f"\n{host} ({kind})")
+        probe(host, browser_headers, "browser-headers")
 
-    # Look for absolute API hosts, /api/ paths, graphql, or job-related endpoint strings.
-    patterns = [
-        r'https?://[a-zA-Z0-9.\-]+\.(?:icims|myworkdayjobs|greenhouse|lever|smartrecruiters|'
-        r'applicantstack|clearcompany|hrmdirect|avature|oraclecloud|phenompeople)\.[a-z]+[^"\'\s]*',
-        r'["\'](/api/[^"\']{0,80})["\']',
-        r'["\']([^"\']{0,40}graphql[^"\']{0,40})["\']',
-        r'["\']([^"\']{0,40}job[_-]?openings?[^"\']{0,40})["\']',
-        r'["\']([^"\']{0,40}careers?[/_-][a-z]{2,40}[^"\']{0,40})["\']',
-    ]
-    found = set()
-    for pat in patterns:
-        for m in re.findall(pat, js_text, re.IGNORECASE):
-            found.add(m if isinstance(m, str) else m[0])
-    print(f"\ncandidate API/endpoint strings found ({len(found)}):")
-    for s in sorted(found)[:40]:
-        print(" ", s)
+    print("\n\n=== Round C: DNS resolution only (no HTTP) ===")
+    import socket
+    for tenant, wd, kind in CONTROLS:
+        host = f"{tenant}.{wd}.myworkdayjobs.com"
+        try:
+            ip = socket.gethostbyname(host)
+            print(f"  {host} ({kind}): resolves to {ip}")
+        except socket.gaierror as exc:
+            print(f"  {host} ({kind}): DNS FAILURE {exc}")
 
 
 if __name__ == "__main__":
