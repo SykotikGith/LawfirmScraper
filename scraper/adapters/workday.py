@@ -3,6 +3,15 @@
 Workday-hosted career sites expose a JSON search API at
 https://<tenant>.<wd>.myworkdayjobs.com/wday/cxs/<tenant>/<site>/jobs
 which we POST an empty search against and page through with limit/offset.
+
+Confirmed via live probing: `total` is only reliably reported on the
+*first* page of a search -- subsequent pages can report total=0 even
+though they keep returning genuinely different (not stale/duplicate)
+results. So we capture total once, from the first response, and use
+jobPostings-empty as the real stopping condition, capped by a safety
+limit derived from that first total. We also prime the session with a
+GET to the HTML careers page first, matching what a browser does and
+what worked in testing, before hitting the JSON API.
 """
 from __future__ import annotations
 
@@ -10,6 +19,7 @@ from ..models import Posting
 from .base import Adapter
 
 PAGE_SIZE = 20
+MAX_PAGES_FALLBACK = 50  # safety cap if the first page's total is missing/zero
 
 
 class WorkdayAdapter(Adapter):
@@ -25,8 +35,12 @@ class WorkdayAdapter(Adapter):
         )
         base_job_url = f"https://{tenant}.{wd}.myworkdayjobs.com/en-US/{site}"
 
+        # Prime the session (cookies) with a normal page load first.
+        self.session.get(f"https://{tenant}.{wd}.myworkdayjobs.com/{site}", timeout=30)
+
         postings: list[Posting] = []
         offset = 0
+        total = None
         while True:
             body = {"appliedFacets": {}, "limit": PAGE_SIZE, "offset": offset, "searchText": ""}
             resp = self.session.post(api_url, json=body, timeout=30)
@@ -50,9 +64,12 @@ class WorkdayAdapter(Adapter):
                     )
                 )
 
-            total = data.get("total", 0)
+            if total is None:
+                total = data.get("total") or 0
+
             offset += PAGE_SIZE
-            if offset >= total:
+            page_limit = total if total else PAGE_SIZE * MAX_PAGES_FALLBACK
+            if offset >= page_limit:
                 break
 
         return postings
