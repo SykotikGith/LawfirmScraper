@@ -165,13 +165,18 @@ FIRMS: dict[str, dict] = {
     },
     "Fisher Phillips": {
         "adapter": CustomHTMLAdapter,
-        "list_url": "https://fisherphillips.hrmdirect.com/employment/job-openings.php",
-        "link_selector": "a[href*='job-opening.php'], a[href*='view.php?req=']",
+        "list_url": "https://fisherphillips.hrmdirect.com/employment/job-openings.php?search=true&state=-1&office=-1",
+        "link_selector": "a[href*='job-opening.php?req=']",
         "notes": "Confirmed ClearCompany/HRM Direct ATS at fisherphillips.hrmdirect.com "
-        "(server-rendered PHP pages, no JSON feed). Business-professional roles are listed "
-        "together with attorney/paralegal reqs in one feed, filterable by office -- rely on "
-        "keyword filtering, not URL splitting. Example current posting: 'IT Application "
-        "Specialist' (Atlanta).",
+        "(server-rendered PHP pages, no JSON feed). CONFIRMED via live probe: job-openings.php "
+        "is a search FORM, not a static list -- it shows 'Select options... and click Search' "
+        "until submitted. list_url now submits the form with default/empty filters "
+        "(search=true&state=-1&office=-1), which returns 46 real job links "
+        "(job-opening.php?req=<id>&req_loc=<locid>). Same req can appear multiple times with "
+        "different req_loc for multi-location postings -- expect occasional duplicate titles, "
+        "each a distinct location listing rather than a scraper bug. Business-professional "
+        "roles are listed together with attorney/paralegal reqs -- rely on keyword filtering, "
+        "not URL splitting. Example current posting: 'IT Application Specialist' (Atlanta).",
     },
     "Seyfarth Shaw": {
         "adapter": CustomHTMLAdapter,

@@ -8,6 +8,7 @@ iCIMS does not expose a stable public JSON API for external scraping.
 from __future__ import annotations
 
 import re
+from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
@@ -55,7 +56,7 @@ class ICIMSAdapter(Adapter):
             title = link.get_text(strip=True)
             if not title:
                 continue
-            url = href if href.startswith("http") else f"https://careers-{tenant}.icims.com{href}"
+            url = urljoin(search_url, href)
 
             location = ""
             row = link.find_parent(["tr", "li", "div"])

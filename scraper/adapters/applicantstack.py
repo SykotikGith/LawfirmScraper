@@ -6,6 +6,7 @@ public job board page and parse job title links.
 from __future__ import annotations
 
 import hashlib
+from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
@@ -29,7 +30,7 @@ class ApplicantStackAdapter(Adapter):
             title = link.get_text(strip=True)
             if not href or not title:
                 continue
-            url = href if href.startswith("http") else f"{board_url.rstrip('/')}{href}"
+            url = urljoin(board_url, href)
             posting_id = hashlib.sha1(url.encode()).hexdigest()[:12]
 
             location = ""
