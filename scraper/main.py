@@ -3,11 +3,14 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 from .config import FIRMS
 from .filters import is_relevant
 from .models import Posting
 from .store import SeenStore
+
+DEBUG_TITLES_PATH = Path(__file__).resolve().parent.parent / "debug_all_titles.txt"
 
 
 def scrape_firm(firm_name: str, firm_cfg: dict) -> tuple[list[Posting], str | None]:
@@ -29,6 +32,8 @@ def run(reset_seen: bool = False) -> int:
     print("Law firm ATS scrape — IT / KM / Legal-AI role filter")
     print("=" * 72)
 
+    debug_file = DEBUG_TITLES_PATH.open("w", encoding="utf-8")
+
     for firm_name, firm_cfg in FIRMS.items():
         postings, error = scrape_firm(firm_name, firm_cfg)
         print(f"\n## {firm_name} ({firm_cfg['adapter'].ats_name})")
@@ -39,6 +44,10 @@ def run(reset_seen: bool = False) -> int:
         if not postings:
             print("   (no postings returned — check adapter config)")
             continue
+
+        for posting in postings:
+            debug_file.write(f"{firm_name} | {posting.title} | {posting.url}\n")
+        debug_file.flush()
 
         matches = []
         for posting in postings:
@@ -60,9 +69,11 @@ def run(reset_seen: bool = False) -> int:
             print(f"         matched: {', '.join(include_hits)}")
             print(f"         {posting.url}")
 
+    debug_file.close()
     store.save()
     print("\n" + "=" * 72)
     print(f"Done. {total_new} new posting(s) since last run.")
+    print(f"Raw pre-filter titles for every scraped posting written to {DEBUG_TITLES_PATH}")
     return 0
 
 
