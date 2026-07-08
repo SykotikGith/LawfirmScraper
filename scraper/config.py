@@ -17,7 +17,6 @@ from .adapters import (
     CircaWorksAdapter,
     CustomHTMLAdapter,
     GreenhouseAdapter,
-    ICIMSAdapter,
     OracleRecruitingAdapter,
     ViGlobalAdapter,
     WorkdayAdapter,
@@ -101,23 +100,6 @@ FIRMS: dict[str, dict] = {
         "posting seen during research: 'Senior IT Systems & Infrastructure Engineer'.",
     },
     # --- Custom / structured ---------------------------------------------------
-    "Marshall Dennehey": {
-        "adapter": CustomHTMLAdapter,
-        "list_url": "https://www.marshalldennehey.com/careers/administrative-professionals",
-        # Deliberately a selector that can't match anything real: this page has no job
-        # listings (see notes), only nav links back to /careers/*. A broader selector like
-        # "a[href*='/careers/']" was confirmed to scrape those nav links as fake "postings"
-        # instead of returning the honest zero-results state.
-        "link_selector": "a.job-posting-title",
-        "notes": "NOT SCRAPABLE, needs manual periodic check instead. Confirmed via live "
-        "probe: /careers/current-openings 404s; the sitemap (884KB, 4498 URLs) has zero "
-        "individual job-posting URLs, only marketing landing pages (/careers, /attorneys, "
-        "/summer-associates, /paralegals, /administrative-professionals); and the "
-        "administrative-professionals page itself has no listings, just 'Submit your resume "
-        "today to be considered for any of our current administrative positions.' This firm "
-        "may not run an online job board for staff/business-professional roles at all -- "
-        "treat as a manual-check firm, not an automatable one, until evidence says otherwise.",
-    },
     "Goldberg Segalla": {
         "adapter": CustomHTMLAdapter,
         "list_url": "https://www.goldbergsegalla.com/our-story/career-opportunities-at-goldberg-segalla/",
@@ -194,28 +176,6 @@ FIRMS: dict[str, dict] = {
         "staff (non-attorney) track, which explicitly covers applications development and "
         "knowledge management disciplines. Verify page source for the real ATS/iframe target "
         "before trusting this adapter.",
-    },
-    "Orrick": {
-        # Confirmed iCIMS (vanity domain talent.orrick.com fronts careers-orrick.icims.com).
-        "adapter": ICIMSAdapter,
-        "tenant": "orrick",
-        "search_url": "https://careers-orrick.icims.com/jobs/search?pr=0&in_iframe=1",
-        "notes": "Confirmed iCIMS tenant 'orrick'. CONFIRMED BLOCKED via live probe -- same "
-        "AWS WAF 'Human Verification' challenge as Lewis Brisbois/GRSM. Not scrapable with a "
-        "plain HTTP client. Public-facing vanity front-end is talent.orrick.com, with separate "
-        "tracks: talent.orrick.com/staff-us/jobs (business professional -- the relevant one), "
-        "/non-partner-attorney-us/jobs, /campus-us/jobs -- worth checking manually.",
-    },
-    "Milbank": {
-        # NOT actually Workday for external postings, despite a real tenant existing on wd1
-        # (confirmed via ats_probe.py's verified path-specific-error signal) -- same pattern
-        # as Debevoise/O'Melveny: real external ATS is iCIMS, found via the firm's own
-        # careers page. Same treatment as Lewis Brisbois/GRSM/Orrick.
-        "adapter": ICIMSAdapter,
-        "tenant": "milbank",
-        "search_url": "https://careers-milbank.icims.com/jobs/intro?hashed=-435594439",
-        "notes": "CONFIRMED BLOCKED via the same AWS WAF 'Human Verification' challenge as "
-        "Lewis Brisbois/GRSM/Orrick -- not scrapable with a plain HTTP client.",
     },
     # --- Batch 2: 69-firm expansion, resolved via ats_probe.py + verify_batch.py -----------
     "Simpson Thacher": {
@@ -373,41 +333,85 @@ FIRMS: dict[str, dict] = {
         "Analyst', 'Patent Client Services Administrator', 'Mid-Level Trademark "
         "Paralegal').",
     },
-    # Firms probed but deliberately NOT added, pending more evidence or explicitly rejected:
-    #
-    # - Winston & Strawn (HRMdirect, winston.hrmdirect.com): REJECTED -- confirmed collision.
-    #   Sample titles ("R&D Culinary Technologist", "Quality Assurance Inspector", "Quality
-    #   Engineering Manager") are food/manufacturing-industry titles, not remotely
-    #   law-firm-shaped. Confirmed: this "winston" tenant belongs to Winston Taylor
-    #   (winstontaylor.com), an unrelated company -- not Winston & Strawn.
-    #
-    # - "Goodwin" Greenhouse board_token: REJECTED -- confirmed collision, same shape as
-    #   Winston & Strawn's. Goodwin Procter's real ATS is Workday (see entry above); this
-    #   Greenhouse tenant with its 1 thin, non-legal posting belongs to some other company.
-    #
-    # - Ropes & Gray (ApplicantStack, ropesgray.applicantstack.com/x/openings): DROPPED --
-    #   ropesgray.com 403s on every path (bot protection), blocking the same
-    #   embedded-link-discovery technique used for every other firm here. Explicit call not
-    #   to keep pursuing this one.
-    #
-    # - Weil Gotshal: checked manually -- no listings for business-professional/staff roles,
-    #   only attorney postings. Not worth an adapter; there's nothing for our filters to find
-    #   even if scraping worked.
-    #
-    # - Blank Rome: DROPPED. Real tenant confirmed on Workday wd1 (path-specific-error
-    #   signal) but the site slug was never found -- blankrome.com/careers/overview/
-    #   business-professionals/ has zero ATS trace of any kind in its static HTML (no
-    #   Workday link old or new format, no other known ATS domain, no
-    #   search/openings-labeled links). Whatever renders the job list is pure client-side JS
-    #   with no static fallback. Same category as Ropes & Gray -- needs a manual DevTools
-    #   check, not more automated probing.
-    #
-    # - Covington & Burling: DROPPED. Real tenant confirmed on Workday wd1 (path-specific-
-    #   error signal) but the site slug was never found -- cov.com's business-professionals
-    #   page uses Coveo (static.cloud.coveo.com), an enterprise search layer on their
-    #   Sitecore CMS, not a job board ATS directly. The #sort=@offices ascending URL
-    #   fragment is Coveo's own search-state syntax. Job data is fetched via a JS search API
-    #   call after page load, invisible to static HTML scraping. Same category as Ropes &
-    #   Gray -- needs a manual DevTools check to find the Coveo API call, not more automated
-    #   probing.
+}
+
+
+# ---------------------------------------------------------------------------
+# Firms requiring MANUAL CHECK -- confirmed real target firms that cannot be
+# reliably automated (WAF/bot-blocked, no ATS trace in static HTML, or a
+# real ATS exists but has no relevant listings). Not iterated by main.py --
+# these are documented here (with whatever config data research turned up,
+# in case a future fix becomes possible) rather than left as live FIRMS
+# entries that fail every run.
+# ---------------------------------------------------------------------------
+MANUAL_CHECK_FIRMS: dict[str, dict] = {
+    "Orrick": {
+        "reason": "Confirmed iCIMS tenant 'orrick', but blocked by an AWS WAF 'Human "
+        "Verification' challenge -- not scrapable with a plain HTTP client.",
+        "tenant": "orrick",
+        "search_url": "https://careers-orrick.icims.com/jobs/search?pr=0&in_iframe=1",
+        "check_url": "https://talent.orrick.com/staff-us/jobs",
+        "notes": "Public-facing vanity front-end is talent.orrick.com, with separate tracks: "
+        "/staff-us/jobs (business professional -- the relevant one), "
+        "/non-partner-attorney-us/jobs, /campus-us/jobs.",
+    },
+    "Milbank": {
+        "reason": "Real ATS is iCIMS (found via the firm's own careers page), blocked by the "
+        "same AWS WAF 'Human Verification' challenge as Orrick. A Workday tenant also exists "
+        "on wd1 but is apparently dormant/internal, not used for external recruiting.",
+        "tenant": "milbank",
+        "search_url": "https://careers-milbank.icims.com/jobs/intro?hashed=-435594439",
+    },
+    "Marshall Dennehey": {
+        "reason": "No scrapable job board found at all. /careers/current-openings 404s; the "
+        "sitemap (884KB, 4498 URLs) has zero individual job-posting URLs, only marketing "
+        "landing pages; and /careers/administrative-professionals has no listings, just "
+        "'Submit your resume today...'. May not run an online job board for staff/"
+        "business-professional roles at all.",
+        "check_url": "https://www.marshalldennehey.com/careers/administrative-professionals",
+    },
+    "Ropes & Gray": {
+        "reason": "ropesgray.com 403s on every path (bot protection), blocking the "
+        "embedded-link-discovery technique used for every other firm here. A real "
+        "ApplicantStack tenant may exist (ropesgray.applicantstack.com/x/openings returned "
+        "0 postings), but that's not enough to confirm identity.",
+        "check_url": "https://ropesgray.applicantstack.com/x/openings",
+    },
+    "Blank Rome": {
+        "reason": "Real tenant confirmed on Workday wd1 (path-specific-error signal) but the "
+        "site slug was never found -- the business-professionals careers page has zero ATS "
+        "trace of any kind in its static HTML (no Workday link old or new format, no other "
+        "known ATS domain, no search/openings-labeled links). Whatever renders the job list "
+        "is pure client-side JS with no static fallback.",
+        "check_url": "https://www.blankrome.com/careers/overview/business-professionals/",
+    },
+    "Covington & Burling": {
+        "reason": "Real tenant confirmed on Workday wd1 (path-specific-error signal) but the "
+        "site slug was never found -- the business-professionals page uses Coveo "
+        "(static.cloud.coveo.com), an enterprise search layer on their Sitecore CMS, not a "
+        "job board ATS directly. Job data is fetched via a JS search API call after page "
+        "load, invisible to static HTML scraping.",
+        "check_url": "https://www.cov.com/en/careers/business-professionals/employment-opportunities",
+    },
+    "Weil Gotshal": {
+        "reason": "Checked manually -- no listings for business-professional/staff roles, "
+        "only attorney postings. Not worth an adapter; there's nothing for our filters to "
+        "find even if scraping worked.",
+    },
+}
+
+# ---------------------------------------------------------------------------
+# Rejected leads: not target firms at all, just slug collisions on a shared
+# platform host that were confirmed via real sample titles to belong to an
+# unrelated company. Kept here so these guesses aren't accidentally retried.
+# ---------------------------------------------------------------------------
+REJECTED_LEADS: dict[str, str] = {
+    "winston (HRMdirect)": "Guessed for Winston & Strawn -- confirmed collision. Sample "
+    "titles ('R&D Culinary Technologist', 'Quality Assurance Inspector', 'Quality "
+    "Engineering Manager') are food/manufacturing-industry titles. This tenant belongs to "
+    "Winston Taylor (winstontaylor.com), an unrelated company.",
+    "goodwin (Greenhouse board_token)": "Guessed for Goodwin Procter -- confirmed collision, "
+    "same shape as Winston & Strawn's. Goodwin Procter's real ATS is Workday (see "
+    "FIRMS['Goodwin Procter']); this Greenhouse tenant with its 1 thin, non-legal posting "
+    "belongs to some other company.",
 }
