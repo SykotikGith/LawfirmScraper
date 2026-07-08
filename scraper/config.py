@@ -352,6 +352,39 @@ FIRMS: dict[str, dict] = {
         "Sample titles found: 'Assistant' (Dallas), 'Billing and Collections Coordinator' "
         "(multiple offices) -- plausible law-firm business-professional roles.",
     },
+    "White & Case": {
+        "adapter": WorkdayAdapter,
+        "tenant": "whitecase",
+        "wd": "wd1",
+        "site": "External",
+        "notes": "CONFIRMED via live probe -- 118 real postings. Front-end now redirects "
+        "through the newer wd1.myworkdaysite.com/recruiting/whitecase/External domain, but "
+        "the underlying CXS API at the old-style tenant subdomain "
+        "(whitecase.wd1.myworkdayjobs.com/wday/cxs/whitecase/External/jobs) still works fine "
+        "-- WorkdayAdapter needed no changes.",
+    },
+    "Troutman Pepper Locke": {
+        # Locke Lord merged into Troutman Pepper Locke Jan 1, 2025. This entry supersedes
+        # the separately-confirmed "lockelord" Workday tenant from ats_probe.py -- troutman's
+        # own tenant is the one actually in use post-merger.
+        "adapter": WorkdayAdapter,
+        "tenant": "troutman",
+        "wd": "wd5",
+        "site": "TPRecruit1",
+        "notes": "CONFIRMED via live probe -- 33 real postings, plausible law-firm titles "
+        "('Legal Practice Assistant', 'Business Development Manager', 'Conflicts "
+        "Researcher').",
+    },
+    "Fenwick & West": {
+        "adapter": WorkdayAdapter,
+        "tenant": "fenwick",
+        "wd": "wd1",
+        "site": "Fenwick_External_Careers",
+        "notes": "CONFIRMED via live probe -- 35 real postings, unmistakably law-firm-"
+        "specific titles ('Trademark Operations Supervisor', 'Senior Legal Support "
+        "Analyst', 'Patent Client Services Administrator', 'Mid-Level Trademark "
+        "Paralegal').",
+    },
     # Firms probed but deliberately NOT added, pending more evidence or explicitly rejected:
     #
     # - Winston & Strawn (HRMdirect, winston.hrmdirect.com): REJECTED -- confirmed collision.
