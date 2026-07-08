@@ -251,6 +251,20 @@ FIRMS: dict[str, dict] = {
         "Manager' confirms this is genuinely the law firm, not a slug collision with an "
         "unrelated company on Greenhouse.",
     },
+    "Goodwin Procter": {
+        "adapter": WorkdayAdapter,
+        "tenant": "goodwinprocter",
+        "wd": "wd5",
+        "site": "External_Careers",
+        "notes": "CONFIRMED via live probe -- 44 real postings. This is Workday, NOT the "
+        "Greenhouse 'goodwin' board_token ats_probe.py originally found (that was a false "
+        "collision with an unrelated company, same shape as Winston & Strawn's -- see "
+        "rejected list below). Real endpoint found embedded directly in "
+        "goodwinlaw.com/en/careers, on pod wd5 which wasn't even in ats_probe.py's original "
+        "wd1/wd103/wd115 list. 'eDiscovery Project Manager (Relativity certification "
+        "required)' confirms genuine law-firm identity -- Relativity is eDiscovery software "
+        "specifically used by law firms.",
+    },
     # Firms probed but deliberately NOT added, pending more evidence or explicitly rejected:
     #
     # - Winston & Strawn (HRMdirect, winston.hrmdirect.com): REJECTED -- confirmed collision.
@@ -259,12 +273,9 @@ FIRMS: dict[str, dict] = {
     #   law-firm-shaped. Confirmed: this "winston" tenant belongs to Winston Taylor
     #   (winstontaylor.com), an unrelated company -- not Winston & Strawn.
     #
-    # - Goodwin Procter: the Greenhouse guess (board_token "goodwin") is LIKELY ALSO A
-    #   COLLISION like Winston & Strawn's -- its 1 thin, non-legal-sounding posting
-    #   ("Aviation Operations Coordinator") is now doubly suspect because the REAL ATS was
-    #   found embedded directly in goodwinlaw.com/en/careers: Workday, tenant
-    #   "goodwinprocter", pod wd5 (not in ats_probe.py's original wd1/wd103/wd115 list),
-    #   site "External_Careers". Pending live-fetch confirmation before adding.
+    # - "Goodwin" Greenhouse board_token: REJECTED -- confirmed collision, same shape as
+    #   Winston & Strawn's. Goodwin Procter's real ATS is Workday (see entry above); this
+    #   Greenhouse tenant with its 1 thin, non-legal posting belongs to some other company.
     #
     # - Ropes & Gray (ApplicantStack, ropesgray.applicantstack.com/x/openings): UNCERTAIN --
     #   0 postings returned, so there are no titles to confirm this is genuinely Ropes & Gray
