@@ -39,7 +39,13 @@ jobs:
 
       - name: Add scrape output to job summary
         if: always()
-        run: cat scrape_output.txt >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          {
+            echo '### scrape output'
+            echo '```'
+            cat scrape_output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload raw pre-filter titles
         if: always()
