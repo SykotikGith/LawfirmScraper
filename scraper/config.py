@@ -216,4 +216,53 @@ FIRMS: dict[str, dict] = {
         "tracks: talent.orrick.com/staff-us/jobs (business professional -- the relevant one), "
         "/non-partner-attorney-us/jobs, /campus-us/jobs -- worth checking manually.",
     },
+    # --- Batch 2: 69-firm expansion, resolved via ats_probe.py + verify_batch.py -----------
+    "Simpson Thacher": {
+        "adapter": WorkdayAdapter,
+        "tenant": "stblaw",
+        "wd": "wd1",
+        "site": "careers",
+        "notes": "CONFIRMED via live probe -- 63 real postings, sample titles unmistakably "
+        "law-firm-specific ('Knowledge Management Lawyer - Energy & Infrastructure', 'Senior "
+        "AI Enablement & Adoption Analyst' -- direct hits on target roles). Note the slug "
+        "guess 'simpsonthacher' is NOT the real tenant -- it's 'stblaw'.",
+    },
+    "Greenberg Traurig": {
+        "adapter": WorkdayAdapter,
+        "tenant": "gtlaw",
+        "wd": "wd1",
+        "site": "gtlaw",
+        "notes": "CONFIRMED via live probe -- 249 real postings, sample titles unmistakably "
+        "law-firm-specific ('Trademark Paralegal', 'Corporate M&A Associate', 'Innovation "
+        "Manager, Applied AI').",
+    },
+    "King & Spalding": {
+        "adapter": WorkdayAdapter,
+        "tenant": "kslaw",
+        "wd": "wd1",
+        "site": "careers",
+        "notes": "CONFIRMED via live probe -- 36 real postings, sample titles plausibly "
+        "law-firm business-professional roles ('Paralegal', 'Business Development Manager').",
+    },
+    "Gibson Dunn": {
+        "adapter": GreenhouseAdapter,
+        "board_token": "gibsondunn",
+        "notes": "CONFIRMED via live probe -- 89 real postings, 'Assistant Litigation Docket "
+        "Manager' confirms this is genuinely the law firm, not a slug collision with an "
+        "unrelated company on Greenhouse.",
+    },
+    # Firms probed but deliberately NOT added, pending more evidence or explicitly rejected:
+    #
+    # - Winston & Strawn (HRMdirect, winston.hrmdirect.com): REJECTED -- confirmed collision.
+    #   Sample titles ("R&D Culinary Technologist", "Quality Assurance Inspector", "Quality
+    #   Engineering Manager") are food/manufacturing-industry titles, not remotely
+    #   law-firm-shaped. This "winston" tenant belongs to a different company entirely.
+    #
+    # - Goodwin Procter (Greenhouse, board_token "goodwin"): UNCERTAIN -- only 1 posting
+    #   returned ("Aviation Operations Coordinator"), thin evidence and not obviously
+    #   law-firm-specific. Pending a decision on whether to include as-is.
+    #
+    # - Ropes & Gray (ApplicantStack, ropesgray.applicantstack.com/x/openings): UNCERTAIN --
+    #   0 postings returned, so there are no titles to confirm this is genuinely Ropes & Gray
+    #   rather than an empty/wrong tenant sharing the slug. Needs more evidence before adding.
 }
