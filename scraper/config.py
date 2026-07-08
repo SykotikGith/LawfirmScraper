@@ -74,17 +74,18 @@ FIRMS: dict[str, dict] = {
         "adapter": OracleRecruitingAdapter,
         "api_url": (
             "https://hctq.fa.us2.oraclecloud.com/hcmRestApi/resources/latest/"
-            "recruitingCEJobRequisitions?onlyData=true&finder=findReqs;"
-            "siteNumber=CX_1,limit=100"
+            "recruitingCEJobRequisitions?onlyData=true&expand=requisitionList"
+            "&finder=findReqs;siteNumber=CX_1,limit=100"
         ),
         "job_url_template": (
             "https://hctq.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/{id}"
         ),
         "notes": "Business-professionals careers page: cozen.com/careers/business-professionals. "
-        "Confirmed Oracle Recruiting Cloud tenant (hctq / us2 / siteNumber CX_1) via indexed "
-        "job URLs. Exact REST query params are the standard ORC convention, not captured "
-        "live (site 403'd sandboxed fetch) -- verify response shape (items[0].requisitionList) "
-        "on first real run and adjust OracleRecruitingAdapter parsing if the schema differs.",
+        "Confirmed Oracle Recruiting Cloud tenant (hctq / us2 / siteNumber CX_1). CONFIRMED via "
+        "live probe: without expand=requisitionList the API returns only a facets echo "
+        "(TotalJobsCount populated but no job list) -- fixed by adding that query param. "
+        "Still need to verify the exact field names inside requisitionList entries match "
+        "OracleRecruitingAdapter's assumptions (Id/Title/PrimaryLocation).",
     },
     "Baker McKenzie": {
         # NOT Oracle/Taleo despite the original grouping guess -- confirmed Avature.
