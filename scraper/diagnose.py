@@ -1,24 +1,8 @@
-"""Diagnostic: investigate 4 new leads.
-
-- Blank Rome and Covington & Burling: both already confirmed as real
-  Workday tenants (via ats_probe.py's path-specific-error signal) but
-  missing their site slug. Check the specific business-professionals
-  careers URLs found manually for an embedded myworkdayjobs.com link.
-- O'Melveny & Myers: the URL found is viglobalcloud.com
-  (viGlobal/viRecruit), a legal-industry-specific ATS not seen anywhere
-  else in this project -- like Debevoise's Circa Works surprise, this
-  means the "omm" Workday tenant ats_probe.py found is likely a
-  dormant/internal tenant, not the real external recruiting system.
-  Inspect the page's raw structure to figure out how to scrape it.
-- Locke Lord / Troutman Pepper Locke: Locke Lord merged into Troutman
-  Pepper Locke on Jan 1, 2025. "Troutman Pepper Locke" is a SEPARATE
-  entry in ats_probe.py's original 69-firm list (slug
-  "troutmanpepperlocke"/"troutman") that came back "needs manual check"
-  in the last full run, while "Locke Lord" (slug "lockelord") was
-  separately confirmed as a real Workday tenant. Check whether the
-  merged firm's real careers page (troutman.com or similar) embeds a
-  Workday link, and whether it points at the same lockelord tenant or
-  something else entirely.
+"""Diagnostic: deep-dive O'Melveny & Myers' viGlobal (viRecruit) page --
+it's clearly the actual job application portal itself ("viDesktop", 1.3MB),
+not a marketing shell, so the real job data must be somewhere in that
+page: an embedded table, an inline JSON blob, or an API endpoint the page
+calls. Look for all of those.
 
 Usage: python -m scraper.diagnose
 """
@@ -27,43 +11,50 @@ from __future__ import annotations
 import re
 
 import requests
+from bs4 import BeautifulSoup
 
 from .adapters.base import DEFAULT_HEADERS
 
-TIMEOUT = 20
-WORKDAY_URL_RE = re.compile(
-    r"https?://([a-zA-Z0-9\-]+)\.(wd\d+)\.myworkdayjobs\.com/([a-zA-Z0-9_\-]+)"
-)
-
-
-def sniff_page(label: str, url: str) -> None:
-    print(f"\n{label}: {url}")
-    try:
-        resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=TIMEOUT)
-    except requests.exceptions.RequestException as exc:
-        print(f"  EXCEPTION {type(exc).__name__}: {exc}")
-        return
-    print(f"  status={resp.status_code} len={len(resp.text)} content-type={resp.headers.get('content-type')}")
-    text = resp.text
-    match = WORKDAY_URL_RE.search(text)
-    if match:
-        tenant, pod, site = match.groups()
-        print(f"  FOUND WORKDAY LINK: tenant={tenant} pod={pod} site={site}")
-    else:
-        print("  no myworkdayjobs.com link found")
-    print(f"  body[:500]: {text[:500]!r}")
+TIMEOUT = 30
+URL = "https://ommcareers.viglobalcloud.com/viRecruitSelfApply/RecDefault.aspx?Tag=84c08942-ea6c-4707-a535-258e400c6b3d"
 
 
 def main() -> None:
-    sniff_page("Blank Rome", "https://www.blankrome.com/careers/overview/business-professionals/")
-    sniff_page("Covington & Burling", "https://www.cov.com/en/careers/business-professionals/employment-opportunities")
-    sniff_page(
-        "O'Melveny & Myers (viGlobal)",
-        "https://ommcareers.viglobalcloud.com/viRecruitSelfApply/RecDefault.aspx"
-        "?Tag=84c08942-ea6c-4707-a535-258e400c6b3d",
-    )
-    for path in ["", "/careers", "/en/careers", "/en-us/careers"]:
-        sniff_page("Troutman Pepper Locke", f"https://www.troutman.com{path}")
+    resp = requests.get(URL, headers=DEFAULT_HEADERS, timeout=TIMEOUT)
+    text = resp.text
+    print(f"status={resp.status_code} len={len(text)}")
+
+    soup = BeautifulSoup(text, "lxml")
+
+    tables = soup.find_all("table")
+    print(f"\n<table> elements: {len(tables)}")
+    for i, t in enumerate(tables[:5]):
+        rows = t.find_all("tr")
+        print(f"  table[{i}]: {len(rows)} rows, id={t.get('id')!r} class={t.get('class')!r}")
+
+    grids = soup.select("[id*='grid' i], [class*='grid' i], [id*='job' i], [class*='job' i]")
+    print(f"\nelements with 'grid' or 'job' in id/class: {len(grids)}")
+    for el in grids[:15]:
+        print(f"  <{el.name}> id={el.get('id')!r} class={el.get('class')!r} text={el.get_text(strip=True)[:60]!r}")
+
+    # Inline JSON blobs (common in ASP.NET apps using a JS-side grid/datatable).
+    json_like = re.findall(r'var\s+\w+\s*=\s*(\{.{0,200}|\[.{0,200})', text)
+    print(f"\ninline var-assigned JSON-looking blobs (first 10 of {len(json_like)}):")
+    for j in json_like[:10]:
+        print(f"  {j!r}")
+
+    # API/ajax endpoint references.
+    api_like = sorted(set(re.findall(r'["\']([^"\']*(?:\.asmx|\.ashx|/api/|WebMethod|GetJobs|SearchJobs)[^"\']*)["\']', text, re.IGNORECASE)))
+    print(f"\napi/handler-like strings (first 15 of {len(api_like)}):")
+    for a in api_like[:15]:
+        print(f"  {a}")
+
+    # Same-origin script src references, in case data loads from a separate JS file.
+    scripts = re.findall(r'<script[^>]+src="([^"]+)"', text)
+    same_origin = [s for s in scripts if "viglobalcloud.com" in s or s.startswith("/") or s.startswith("../")]
+    print(f"\nsame-origin script srcs (first 15 of {len(same_origin)}):")
+    for s in same_origin[:15]:
+        print(f"  {s}")
 
 
 if __name__ == "__main__":
