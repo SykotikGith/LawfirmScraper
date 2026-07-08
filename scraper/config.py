@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from .adapters import (
     ApplicantStackAdapter,
+    CircaWorksAdapter,
     CustomHTMLAdapter,
     GreenhouseAdapter,
     ICIMSAdapter,
@@ -281,6 +282,45 @@ FIRMS: dict[str, dict] = {
         "notes": "CONFIRMED via live probe -- 89 real postings, found embedded directly in "
         "hklaw.com/careers. Sample titles plausibly law-firm business-professional roles "
         "('Business Development Coordinator', 'Practice Assistant - Labor & Employment').",
+    },
+    "Paul Hastings": {
+        "adapter": WorkdayAdapter,
+        "tenant": "paulhastings",
+        "wd": "wd1",
+        "site": "PH-Staff",
+        "notes": "CONFIRMED via live probe -- 29 real postings, plausible business-"
+        "professional titles ('Senior IT Project Manager', 'Senior Integration Engineer').",
+    },
+    "Cooley": {
+        "adapter": WorkdayAdapter,
+        "tenant": "cooley",
+        "wd": "wd1",
+        "site": "Cooley_US_LLP",
+        "notes": "CONFIRMED via live probe -- 87 real postings, unmistakably law-firm-"
+        "specific titles ('Conflicts Staff Attorney', 'Senior Practice Innovation Manager', "
+        "'Litigation Marketing Senior Manager').",
+    },
+    "Jackson Lewis": {
+        "adapter": WorkdayAdapter,
+        "tenant": "jacksonlewis",
+        "wd": "wd1",
+        "site": "JacksonLewisBusinessandLegalProfessionalsCareers",
+        "notes": "CONFIRMED via live probe -- 113 real postings, unmistakably law-firm-"
+        "specific titles ('Litigation Paralegal', '2027 Summer Associate', 'Legal Secretary').",
+    },
+    "Debevoise & Plimpton": {
+        # NOT actually Workday for external postings, despite a real tenant existing on wd1
+        # (confirmed via ats_probe.py's path-specific-error signal, which we verified is
+        # reliable -- not a fluke). Likely a dormant/internal Workday tenant not used for
+        # external recruiting. Real external ATS is Circa Works (circaworks.com /
+        # LocalJobNetwork), a platform not seen anywhere else in this project.
+        "adapter": CircaWorksAdapter,
+        "list_url": "https://employer.circaworks.com/s/e-Debevoise-Plimpton-LLP-jobs-e87905.html?pbid=68216",
+        "notes": "CONFIRMED via live probe -- 14 real postings found, title/location encoded "
+        "directly in each job link's URL slug rather than relying on unverified anchor text. "
+        "Direct hit on target roles: 'AI Business Systems Developer'. Job links use a "
+        "javascript: self.popup(...) pseudo-href rather than a plain <a href> URL -- "
+        "CircaWorksAdapter regexes the real path out of the popup() call.",
     },
     # Firms probed but deliberately NOT added, pending more evidence or explicitly rejected:
     #

@@ -5,6 +5,7 @@ from .applicantstack import ApplicantStackAdapter
 from .oracle import OracleRecruitingAdapter
 from .custom_html import CustomHTMLAdapter
 from .greenhouse import GreenhouseAdapter
+from .circaworks import CircaWorksAdapter
 
 __all__ = [
     "Adapter",
@@ -14,4 +15,5 @@ __all__ = [
     "OracleRecruitingAdapter",
     "CustomHTMLAdapter",
     "GreenhouseAdapter",
+    "CircaWorksAdapter",
 ]
