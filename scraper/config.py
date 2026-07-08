@@ -25,22 +25,10 @@ from .adapters import (
 
 FIRMS: dict[str, dict] = {
     # --- iCIMS group ---------------------------------------------------
-    "Lewis Brisbois": {
-        "adapter": ICIMSAdapter,
-        "tenant": "lewisbrisbois",
-        "search_url": "https://careers-lewisbrisbois.icims.com/jobs/search?pr=0&in_iframe=1",
-        "notes": "CONFIRMED BLOCKED via live probe (both /jobs/intro and /jobs/search returned "
-        "405 with an AWS WAF 'Human Verification' challenge page, not a URL/method problem). "
-        "This tenant cannot be scraped with a plain HTTP client -- needs real browser "
-        "automation (Playwright solving the WAF JS challenge) or manual checking.",
-    },
-    "Gordon Rees Scully Mansukhani": {
-        "adapter": ICIMSAdapter,
-        "tenant": "grsm",
-        "search_url": "https://careers-grsm.icims.com/jobs/search?pr=0&in_iframe=1",
-        "notes": "CONFIRMED BLOCKED via live probe -- same AWS WAF 'Human Verification' "
-        "challenge as Lewis Brisbois. Not scrapable with a plain HTTP client.",
-    },
+    # Lewis Brisbois and Gordon Rees Scully Mansukhani dropped per explicit request -- both
+    # were confirmed iCIMS tenants (lewisbrisbois, grsm) blocked by the same AWS WAF
+    # "Human Verification" challenge as Milbank/Orrick, never scrapable with a plain HTTP
+    # client.
     "Wilson Elser": {
         # NOT iCIMS, and NOT the bespoke HTML site originally guessed either -- confirmed
         # Greenhouse via live probe (the site is a bare React SPA with no server-rendered
