@@ -372,4 +372,21 @@ FIRMS: dict[str, dict] = {
     # - Weil Gotshal: checked manually -- no listings for business-professional/staff roles,
     #   only attorney postings. Not worth an adapter; there's nothing for our filters to find
     #   even if scraping worked.
+    #
+    # - Blank Rome: DROPPED. Real tenant confirmed on Workday wd1 (path-specific-error
+    #   signal) but the site slug was never found -- blankrome.com/careers/overview/
+    #   business-professionals/ has zero ATS trace of any kind in its static HTML (no
+    #   Workday link old or new format, no other known ATS domain, no
+    #   search/openings-labeled links). Whatever renders the job list is pure client-side JS
+    #   with no static fallback. Same category as Ropes & Gray -- needs a manual DevTools
+    #   check, not more automated probing.
+    #
+    # - Covington & Burling: DROPPED. Real tenant confirmed on Workday wd1 (path-specific-
+    #   error signal) but the site slug was never found -- cov.com's business-professionals
+    #   page uses Coveo (static.cloud.coveo.com), an enterprise search layer on their
+    #   Sitecore CMS, not a job board ATS directly. The #sort=@offices ascending URL
+    #   fragment is Coveo's own search-state syntax. Job data is fetched via a JS search API
+    #   call after page load, invisible to static HTML scraping. Same category as Ropes &
+    #   Gray -- needs a manual DevTools check to find the Coveo API call, not more automated
+    #   probing.
 }
