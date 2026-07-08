@@ -15,6 +15,7 @@ from __future__ import annotations
 from .adapters import (
     ApplicantStackAdapter,
     CustomHTMLAdapter,
+    GreenhouseAdapter,
     ICIMSAdapter,
     OracleRecruitingAdapter,
     WorkdayAdapter,
@@ -39,15 +40,17 @@ FIRMS: dict[str, dict] = {
         "challenge as Lewis Brisbois. Not scrapable with a plain HTTP client.",
     },
     "Wilson Elser": {
-        # NOT iCIMS despite the original grouping guess -- confirmed custom site.
-        "adapter": CustomHTMLAdapter,
-        "list_url": "https://www.wilsonelser.com/careers/professional_staff/current-opportunities",
-        "link_selector": "a[href*='/job_openings/']",
-        "notes": "Research found NO icims.com reference for this firm -- it runs a bespoke "
-        "careers module at wilsonelser.com (job URLs like /careers/professional_staff/"
-        "job_openings/{id}-{slug}). list_url is a best guess at the listing page for the "
-        "business/professional-staff track and should be verified; attorney roles live "
-        "under /careers/attorneys/job_openings/ and should stay excluded.",
+        # NOT iCIMS, and NOT the bespoke HTML site originally guessed either -- confirmed
+        # Greenhouse via live probe (the site is a bare React SPA with no server-rendered
+        # content; its JS bundle references the Greenhouse public boards API directly).
+        "adapter": GreenhouseAdapter,
+        "board_token": "wilsonelser",
+        "notes": "CONFIRMED via live probe: wilsonelser.com/careers is a client-side-only "
+        "React app (Great Jakes CMS) that calls "
+        "https://boards-api.greenhouse.io/v1/boards/wilsonelser/jobs?content=true directly -- "
+        "a clean public JSON API, no HTML scraping needed. Greenhouse doesn't distinguish "
+        "attorney vs business-professional roles at the API level -- rely on keyword "
+        "filtering.",
     },
     # --- Workday group ---------------------------------------------------
     "DLA Piper": {
