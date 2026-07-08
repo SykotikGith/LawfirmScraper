@@ -1,66 +1,69 @@
-"""Diagnostic: verify the 4 real ATS URLs found manually --
-3 Workday (Paul Hastings, Cooley, Jackson Lewis) via the existing
-WorkdayAdapter, and 1 new platform never seen in this project before:
-Debevoise & Plimpton on "Circa Works" (circaworks.com). Circa Works needs
-its own investigation -- fetch the page raw and see whether it's
-server-rendered HTML (scrapable with CustomHTMLAdapter) or JS-driven
-(needs its own adapter or a different approach).
+"""Diagnostic: investigate 4 new leads.
+
+- Blank Rome and Covington & Burling: both already confirmed as real
+  Workday tenants (via ats_probe.py's path-specific-error signal) but
+  missing their site slug. Check the specific business-professionals
+  careers URLs found manually for an embedded myworkdayjobs.com link.
+- O'Melveny & Myers: the URL found is viglobalcloud.com
+  (viGlobal/viRecruit), a legal-industry-specific ATS not seen anywhere
+  else in this project -- like Debevoise's Circa Works surprise, this
+  means the "omm" Workday tenant ats_probe.py found is likely a
+  dormant/internal tenant, not the real external recruiting system.
+  Inspect the page's raw structure to figure out how to scrape it.
+- Locke Lord / Troutman Pepper Locke: Locke Lord merged into Troutman
+  Pepper Locke on Jan 1, 2025. "Troutman Pepper Locke" is a SEPARATE
+  entry in ats_probe.py's original 69-firm list (slug
+  "troutmanpepperlocke"/"troutman") that came back "needs manual check"
+  in the last full run, while "Locke Lord" (slug "lockelord") was
+  separately confirmed as a real Workday tenant. Check whether the
+  merged firm's real careers page (troutman.com or similar) embeds a
+  Workday link, and whether it points at the same lockelord tenant or
+  something else entirely.
 
 Usage: python -m scraper.diagnose
 """
 from __future__ import annotations
 
+import re
+
 import requests
 
 from .adapters.base import DEFAULT_HEADERS
-from .adapters.workday import WorkdayAdapter
 
 TIMEOUT = 20
-
-WORKDAY_CHECKS = [
-    ("Paul Hastings", "paulhastings", "wd1", "PH-Staff"),
-    ("Cooley", "cooley", "wd1", "Cooley_US_LLP"),
-    ("Jackson Lewis", "jacksonlewis", "wd1", "JacksonLewisBusinessandLegalProfessionalsCareers"),
-]
+WORKDAY_URL_RE = re.compile(
+    r"https?://([a-zA-Z0-9\-]+)\.(wd\d+)\.myworkdayjobs\.com/([a-zA-Z0-9_\-]+)"
+)
 
 
-def check_workday(firm: str, tenant: str, pod: str, site: str) -> None:
-    print(f"\n=== {firm} (Workday {tenant}.{pod}, site={site}) ===")
-    adapter = WorkdayAdapter(firm, {"tenant": tenant, "wd": pod, "site": site})
+def sniff_page(label: str, url: str) -> None:
+    print(f"\n{label}: {url}")
     try:
-        postings = adapter.fetch()
-    except Exception as exc:  # noqa: BLE001
-        print(f"  FETCH FAILED: {type(exc).__name__}: {exc}")
+        resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=TIMEOUT)
+    except requests.exceptions.RequestException as exc:
+        print(f"  EXCEPTION {type(exc).__name__}: {exc}")
         return
-    print(f"  {len(postings)} postings")
-    for p in postings[:6]:
-        print(f"    - {p.title} — {p.location}")
-
-
-def check_circaworks() -> None:
-    print("\n=== Debevoise & Plimpton (Circa Works -- new platform) ===")
-    url = "https://employer.circaworks.com/s/e-Debevoise-Plimpton-LLP-jobs-e87905.html?pbid=68216"
-    resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=TIMEOUT)
     print(f"  status={resp.status_code} len={len(resp.text)} content-type={resp.headers.get('content-type')}")
     text = resp.text
-    print(f"  body[:800]: {text[:800]!r}")
-    # Look for job-listing-shaped links/data in the raw HTML.
-    import re
-    job_hrefs = re.findall(r'href="([^"]*job[^"]*)"', text, re.IGNORECASE)
-    print(f"  'job'-containing hrefs found (first 15 of {len(job_hrefs)}):")
-    for h in job_hrefs[:15]:
-        print(f"    {h}")
-    # Check for an API/JSON reference (common for JS-driven boards).
-    api_like = sorted(set(re.findall(r'["\']([^"\']*(?:/api/|\.json|/graphql)[^"\']*)["\']', text)))
-    print(f"  api-like strings found (first 10 of {len(api_like)}):")
-    for s in api_like[:10]:
-        print(f"    {s}")
+    match = WORKDAY_URL_RE.search(text)
+    if match:
+        tenant, pod, site = match.groups()
+        print(f"  FOUND WORKDAY LINK: tenant={tenant} pod={pod} site={site}")
+    else:
+        print("  no myworkdayjobs.com link found")
+    print(f"  body[:500]: {text[:500]!r}")
 
 
 def main() -> None:
-    for firm, tenant, pod, site in WORKDAY_CHECKS:
-        check_workday(firm, tenant, pod, site)
-    check_circaworks()
+    sniff_page("Blank Rome", "https://www.blankrome.com/careers/overview/business-professionals/")
+    sniff_page("Covington & Burling", "https://www.cov.com/en/careers/business-professionals/employment-opportunities")
+    sniff_page(
+        "O'Melveny & Myers (viGlobal)",
+        "https://ommcareers.viglobalcloud.com/viRecruitSelfApply/RecDefault.aspx"
+        "?Tag=84c08942-ea6c-4707-a535-258e400c6b3d",
+    )
+    for path in ["", "/careers", "/en/careers", "/en-us/careers"]:
+        sniff_page("Troutman Pepper Locke", f"https://www.troutman.com{path}")
 
 
 if __name__ == "__main__":
