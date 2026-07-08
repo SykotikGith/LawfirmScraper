@@ -56,8 +56,11 @@ HARD_EXCLUDE_TERMS = [
     "Accounting",
     "Accountant",
     # JD/bar-required or support-staff tracks -- not IC-eligible regardless
-    # of an AI/KM keyword also being present in the title.
+    # of an AI/KM keyword also being present in the title. Excludes roles
+    # like "Knowledge Management Lawyer" / "Knowledge Management Attorney"
+    # even though they'd otherwise hit an AI/KM keyword above.
     "Attorney",
+    "Lawyer",
     "Associate",
     "Paralegal",
     "Legal Secretary",
@@ -65,14 +68,20 @@ HARD_EXCLUDE_TERMS = [
     "Partner",
 ]
 
-# Short/ambiguous tokens need word-boundary matching so they don't match
-# substrings inside unrelated words.
+# Short/ambiguous tokens need case-sensitive, word-boundary matching so they
+# don't match substrings inside unrelated words or lowercase false positives.
 _SHORT_TOKENS = {"KM", "IAM"}
+
+# Terms that need whole-word matching (case-insensitive) so they never match
+# as a partial substring inside an unrelated word.
+_WHOLE_WORD_TERMS = {"lawyer", "attorney"}
 
 
 def _pattern_for(keyword: str) -> re.Pattern:
     if keyword.upper() in _SHORT_TOKENS and keyword == keyword.upper():
         return re.compile(rf"\b{re.escape(keyword)}\b")
+    if keyword.lower() in _WHOLE_WORD_TERMS:
+        return re.compile(rf"\b{re.escape(keyword)}\b", re.IGNORECASE)
     return re.compile(re.escape(keyword), re.IGNORECASE)
 
 
