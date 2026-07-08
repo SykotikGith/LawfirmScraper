@@ -5,7 +5,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from .config import FIRMS
+from .config import FIRMS, MANUAL_CHECK_FIRMS
 from .filters import Classification, classify
 from .models import Posting
 from .store import SeenStore
@@ -87,6 +87,17 @@ def run(reset_seen: bool = False) -> int:
 
     debug_file.close()
     store.save()
+
+    print("\n" + "=" * 72)
+    print(f"MANUAL CHECK NEEDED ({len(MANUAL_CHECK_FIRMS)} firms not automated) — see notes below")
+    print("=" * 72)
+    for firm_name, info in MANUAL_CHECK_FIRMS.items():
+        url = info.get("check_url") or info.get("search_url") or info.get("list_url")
+        print(f"\n## {firm_name}")
+        if url:
+            print(f"   {url}")
+        print(f"   {info['reason']}")
+
     print("\n" + "=" * 72)
     print(f"Done. {total_new} new posting(s) since last run.")
     print(f"Raw pre-filter titles for every scraped posting written to {DEBUG_TITLES_PATH}")
