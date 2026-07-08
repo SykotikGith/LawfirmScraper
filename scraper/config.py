@@ -218,6 +218,17 @@ FIRMS: dict[str, dict] = {
         "tracks: talent.orrick.com/staff-us/jobs (business professional -- the relevant one), "
         "/non-partner-attorney-us/jobs, /campus-us/jobs -- worth checking manually.",
     },
+    "Milbank": {
+        # NOT actually Workday for external postings, despite a real tenant existing on wd1
+        # (confirmed via ats_probe.py's verified path-specific-error signal) -- same pattern
+        # as Debevoise/O'Melveny: real external ATS is iCIMS, found via the firm's own
+        # careers page. Same treatment as Lewis Brisbois/GRSM/Orrick.
+        "adapter": ICIMSAdapter,
+        "tenant": "milbank",
+        "search_url": "https://careers-milbank.icims.com/jobs/intro?hashed=-435594439",
+        "notes": "CONFIRMED BLOCKED via the same AWS WAF 'Human Verification' challenge as "
+        "Lewis Brisbois/GRSM/Orrick -- not scrapable with a plain HTTP client.",
+    },
     # --- Batch 2: 69-firm expansion, resolved via ats_probe.py + verify_batch.py -----------
     "Simpson Thacher": {
         "adapter": WorkdayAdapter,
@@ -353,7 +364,12 @@ FIRMS: dict[str, dict] = {
     #   Winston & Strawn's. Goodwin Procter's real ATS is Workday (see entry above); this
     #   Greenhouse tenant with its 1 thin, non-legal posting belongs to some other company.
     #
-    # - Ropes & Gray (ApplicantStack, ropesgray.applicantstack.com/x/openings): UNCERTAIN --
-    #   0 postings returned, so there are no titles to confirm this is genuinely Ropes & Gray
-    #   rather than an empty/wrong tenant sharing the slug. Needs more evidence before adding.
+    # - Ropes & Gray (ApplicantStack, ropesgray.applicantstack.com/x/openings): DROPPED --
+    #   ropesgray.com 403s on every path (bot protection), blocking the same
+    #   embedded-link-discovery technique used for every other firm here. Explicit call not
+    #   to keep pursuing this one.
+    #
+    # - Weil Gotshal: checked manually -- no listings for business-professional/staff roles,
+    #   only attorney postings. Not worth an adapter; there's nothing for our filters to find
+    #   even if scraping worked.
 }
