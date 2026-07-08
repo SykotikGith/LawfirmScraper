@@ -14,11 +14,20 @@ adapter config -- the same way Wilson Elser's real ATS (Greenhouse) and
 Baker McKenzie's (Avature, not Oracle) turned out to differ from the
 first guess earlier in this project.
 
-Workday detection hits the bare tenant root (no site path), since we
-don't know each firm's site slug yet -- a "needs manual check" result
-doesn't rule out Workday entirely; it might just need the right
-pod number/site name once someone digs further (this happened with
-Perkins Coie: wd1 gave a real-but-wrong-pod error, wd115 was correct).
+Workday detection: myworkdayjobs.com is wildcard-DNS'd to a shared
+Cloudflare edge, so both DNS resolution and a bare-root "/" GET are
+IDENTICAL for a real tenant and a completely made-up one -- confirmed by
+live probing (thisisnotarealfirmxyz123.wd1.myworkdayjobs.com resolves to
+the same IP and returns the same blank 406 as dlapiper's real tenant).
+Neither can be used for detection. What DOES differentiate them: hitting
+ANY throwaway path under a tenant that actually exists on that pod
+returns a path-specific Workday application error
+("Requested page not found /whatever-you-asked"), while a tenant that
+doesn't exist on that pod (fake, or real-but-wrong-pod) returns an
+identical generic fallback ("Internal Server Error. (id: )", always the
+same byte length) no matter what path is requested. So we only need one
+throwaway path per pod to confirm tenant existence -- no need to guess
+the real site slug at all.
 
 Usage: python -m scraper.ats_probe
 Writes ats_probe_results.md alongside printing the table to stdout.
@@ -34,6 +43,9 @@ from .adapters.base import DEFAULT_HEADERS
 
 TIMEOUT = 8
 MAX_WORKERS = 12
+WORKDAY_PODS = ["wd1", "wd103", "wd115"]
+_WORKDAY_PROBE_PATH = "ats-probe-nonexistent-path-check"
+_WORKDAY_TENANT_EXISTS_MARKER = "Requested page not found"
 
 # (firm name, [slug candidates])
 FIRMS: list[tuple[str, list[str]]] = [
@@ -109,9 +121,6 @@ FIRMS: list[tuple[str, list[str]]] = [
 ]
 
 PATTERNS: list[tuple[str, str]] = [
-    ("Workday (wd1)", "https://{slug}.wd1.myworkdayjobs.com/"),
-    ("Workday (wd103)", "https://{slug}.wd103.myworkdayjobs.com/"),
-    ("Workday (wd115)", "https://{slug}.wd115.myworkdayjobs.com/"),
     ("iCIMS", "https://careers-{slug}.icims.com/"),
     ("ApplicantStack", "https://{slug}.applicantstack.com/"),
     ("HRMdirect", "https://{slug}.hrmdirect.com/"),
@@ -119,15 +128,15 @@ PATTERNS: list[tuple[str, str]] = [
 ]
 
 
-def probe_url(url: str) -> tuple[int | None, str | None]:
-    """Return (status_code, error). error is None for any real HTTP
+def probe_url(url: str) -> tuple[int | None, str | None, str | None]:
+    """Return (status_code, body, error). error is None for any real HTTP
     response (even 403/404); it's set only for connection-level failures
     (DNS resolution, timeout, refused connection, etc.)."""
     try:
         resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=TIMEOUT, allow_redirects=True)
-        return resp.status_code, None
+        return resp.status_code, resp.text, None
     except requests.exceptions.RequestException as exc:
-        return None, type(exc).__name__
+        return None, None, type(exc).__name__
 
 
 def confidence_for(status: int) -> str:
@@ -140,11 +149,36 @@ def confidence_for(status: int) -> str:
     return "Low"
 
 
+def probe_workday(slug: str) -> dict | None:
+    """Check whether `slug` is a real Workday tenant on any of WORKDAY_PODS,
+    using the path-specific-vs-generic-error signal described in the module
+    docstring. Returns a result dict on a confirmed hit, else None."""
+    for pod in WORKDAY_PODS:
+        url = f"https://{slug}.{pod}.myworkdayjobs.com/{_WORKDAY_PROBE_PATH}"
+        status, body, error = probe_url(url)
+        if error is not None or status != 200 or body is None:
+            continue
+        if _WORKDAY_TENANT_EXISTS_MARKER in body:
+            return {
+                "firm": None,  # filled in by caller
+                "platform": f"Workday ({pod})",
+                "url": f"https://{slug}.{pod}.myworkdayjobs.com/",
+                "status": status,
+                "confidence": "High (tenant confirmed via path-specific error)",
+            }
+    return None
+
+
 def probe_firm(firm: str, slugs: list[str]) -> dict:
     for slug in slugs:
+        workday_hit = probe_workday(slug)
+        if workday_hit is not None:
+            workday_hit["firm"] = firm
+            return workday_hit
+
         for label, template in PATTERNS:
             url = template.format(slug=slug)
-            status, error = probe_url(url)
+            status, _body, error = probe_url(url)
             if error is not None or status == 404:
                 continue
             return {
