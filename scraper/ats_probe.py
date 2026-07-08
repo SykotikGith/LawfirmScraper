@@ -29,6 +29,20 @@ same byte length) no matter what path is requested. So we only need one
 throwaway path per pod to confirm tenant existence -- no need to guess
 the real site slug at all.
 
+iCIMS detection is NOT attempted here, unlike Workday. careers-{slug}.icims.com
+sits behind an AWS WAF "Human Verification" challenge that returns a
+BYTE-FOR-BYTE IDENTICAL 405 page (confirmed via live probing: same DNS
+edge IP range, same 2115-byte body) whether the tenant is one of our 3
+confirmed-real ones (grsm, lewisbrisbois, orrick) or a completely
+made-up slug. Unlike Workday's wrong-pod case, there's no legitimate
+app-layer response to fall back on here -- WAF challenges are designed
+specifically to look identical regardless of the underlying resource, so
+there is no reliable way to confirm an iCIMS tenant via plain HTTP
+probing. Our 3 known iCIMS tenants were confirmed via external
+corroboration (indexed job posting URLs), not by hitting the tenant
+directly -- that's the only reliable method for this platform short of
+solving the WAF challenge with real browser automation.
+
 Usage: python -m scraper.ats_probe
 Writes ats_probe_results.md alongside printing the table to stdout.
 """
@@ -121,7 +135,9 @@ FIRMS: list[tuple[str, list[str]]] = [
 ]
 
 PATTERNS: list[tuple[str, str]] = [
-    ("iCIMS", "https://careers-{slug}.icims.com/"),
+    # iCIMS deliberately excluded -- see module docstring. It sits behind
+    # an AWS WAF challenge that responds identically for real and fake
+    # tenants, so a "hit" here is not real signal.
     ("ApplicantStack", "https://{slug}.applicantstack.com/"),
     ("HRMdirect", "https://{slug}.hrmdirect.com/"),
     ("Greenhouse", "https://job-boards.greenhouse.io/{slug}"),
