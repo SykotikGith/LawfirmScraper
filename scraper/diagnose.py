@@ -1,10 +1,14 @@
-"""Diagnostic: why did ats_probe.py's Workday check return 406 for all 69
-firms uniformly? That's not believable as real per-tenant signal -- test
-known-good Workday tenants (dlapiper=wd1, clydeco=wd103,
-perkinscoie=wd115, all confirmed real elsewhere in this project) against
-a definitely-fake tenant name, with full headers/body, to find whatever
-actually differentiates a real tenant from a nonexistent one despite the
-shared 406 status.
+"""Diagnostic: does appending ANY path (even a wrong guess) to a Workday
+tenant differentiate a real tenant from a fake one, the way it did for
+Perkins Coie earlier (wd1 was the wrong pod, but /perkinscoieexternal
+still returned a 200 XML "Internal Server Error" body -- a real,
+non-generic response -- rather than the blank edge-level 406 we now know
+bare "/" gives for literally any subdomain, real or fake).
+
+If a wrong-but-plausible site path differs between a known-real tenant
+and a known-fake one, that's usable signal even without knowing the
+exact site slug. If it doesn't differ, Workday can't be reliably
+auto-detected this way at all, and ats_probe.py needs to drop it.
 
 Usage: python -m scraper.diagnose
 """
@@ -16,52 +20,37 @@ from .adapters.base import DEFAULT_HEADERS
 
 TIMEOUT = 15
 
-CONTROLS = [
-    ("dlapiper", "wd1", "known-good"),
-    ("clydeco", "wd103", "known-good"),
-    ("perkinscoie", "wd115", "known-good"),
-    ("thisisnotarealfirmxyz123", "wd1", "known-fake"),
-    ("kirkland", "wd1", "unknown (Wave 1 result)"),
-]
 
-
-def probe(host: str, headers: dict, label: str) -> None:
+def probe(url: str, label: str) -> None:
     try:
-        resp = requests.get(f"https://{host}/", headers=headers, timeout=TIMEOUT, allow_redirects=True)
-        print(f"  [{label}] status={resp.status_code} len={len(resp.text)} "
-              f"content-type={resp.headers.get('content-type')}")
-        print(f"    headers: {dict(resp.headers)}")
+        resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=TIMEOUT, allow_redirects=True)
+        print(f"  [{label}] {url}")
+        print(f"    status={resp.status_code} len={len(resp.text)} content-type={resp.headers.get('content-type')}")
         print(f"    body[:300]: {resp.text[:300]!r}")
     except requests.exceptions.RequestException as exc:
-        print(f"  [{label}] EXCEPTION {type(exc).__name__}: {exc}")
+        print(f"  [{label}] {url}\n    EXCEPTION {type(exc).__name__}: {exc}")
 
 
 def main() -> None:
-    print("=== Round A: default probe headers (same as ats_probe.py) ===")
-    for tenant, wd, kind in CONTROLS:
-        host = f"{tenant}.{wd}.myworkdayjobs.com"
-        print(f"\n{host} ({kind})")
-        probe(host, DEFAULT_HEADERS, "default-headers")
+    print("=== Real tenant (dlapiper, wd1 -- correct pod), WRONG site path ===")
+    probe("https://dlapiper.wd1.myworkdayjobs.com/nonexistent-site-path-xyz", "real-tenant-wrong-path")
 
-    print("\n\n=== Round B: browser-like Accept header ===")
-    browser_headers = {
-        **DEFAULT_HEADERS,
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    }
-    for tenant, wd, kind in CONTROLS:
-        host = f"{tenant}.{wd}.myworkdayjobs.com"
-        print(f"\n{host} ({kind})")
-        probe(host, browser_headers, "browser-headers")
+    print("\n=== Real tenant (dlapiper), a couple plausible guesses ===")
+    probe("https://dlapiper.wd1.myworkdayjobs.com/dlapiper", "real-tenant-correct-guess")
+    probe("https://dlapiper.wd1.myworkdayjobs.com/careers", "real-tenant-generic-guess")
 
-    print("\n\n=== Round C: DNS resolution only (no HTTP) ===")
-    import socket
-    for tenant, wd, kind in CONTROLS:
-        host = f"{tenant}.{wd}.myworkdayjobs.com"
-        try:
-            ip = socket.gethostbyname(host)
-            print(f"  {host} ({kind}): resolves to {ip}")
-        except socket.gaierror as exc:
-            print(f"  {host} ({kind}): DNS FAILURE {exc}")
+    print("\n=== Known-fake tenant, same wrong site path ===")
+    probe("https://thisisnotarealfirmxyz123.wd1.myworkdayjobs.com/nonexistent-site-path-xyz", "fake-tenant-wrong-path")
+    probe("https://thisisnotarealfirmxyz123.wd1.myworkdayjobs.com/careers", "fake-tenant-generic-guess")
+
+    print("\n=== Perkins Coie on the WRONG pod (wd1, not wd115), for comparison to what we saw before ===")
+    probe("https://perkinscoie.wd1.myworkdayjobs.com/perkinscoieexternal", "real-tenant-wrong-pod-known-path")
+    probe("https://perkinscoie.wd1.myworkdayjobs.com/nonexistent-site-path-xyz", "real-tenant-wrong-pod-wrong-path")
+
+    print("\n=== Unknown firms from Wave 1, a couple plausible site-path guesses each ===")
+    for tenant in ["kirkland", "lw", "sidley", "cooley"]:
+        for guess in [tenant, "careers", f"{tenant}careers", f"{tenant}external"]:
+            probe(f"https://{tenant}.wd1.myworkdayjobs.com/{guess}", f"{tenant}/{guess}")
 
 
 if __name__ == "__main__":
