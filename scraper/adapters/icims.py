@@ -17,6 +17,10 @@ from .base import Adapter
 JOB_LINK_RE = re.compile(r"/jobs/(\d+)/")
 
 
+class ICIMSBlockedError(RuntimeError):
+    """Raised when the iCIMS tenant is behind an unsolvable AWS WAF bot challenge."""
+
+
 class ICIMSAdapter(Adapter):
     ats_name = "iCIMS"
 
@@ -27,6 +31,12 @@ class ICIMSAdapter(Adapter):
             f"https://careers-{tenant}.icims.com/jobs/search?pr=0&in_iframe=1",
         )
         resp = self.session.get(search_url, timeout=30)
+        if "Human Verification" in resp.text or "awsWafCookieDomainList" in resp.text:
+            raise ICIMSBlockedError(
+                f"{tenant}: iCIMS tenant is behind an AWS WAF bot challenge -- not scrapable "
+                "with a plain HTTP client. Needs browser automation (Playwright) or a manual "
+                "check."
+            )
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "lxml")
 

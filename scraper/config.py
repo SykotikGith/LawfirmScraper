@@ -26,14 +26,17 @@ FIRMS: dict[str, dict] = {
         "adapter": ICIMSAdapter,
         "tenant": "lewisbrisbois",
         "search_url": "https://careers-lewisbrisbois.icims.com/jobs/search?pr=0&in_iframe=1",
-        "notes": "Confirmed iCIMS tenant. Site returned 403 to sandboxed fetch (Akamai/WAF) "
-        "during research; verify with a browser-realistic UA before trusting empty results.",
+        "notes": "CONFIRMED BLOCKED via live probe (both /jobs/intro and /jobs/search returned "
+        "405 with an AWS WAF 'Human Verification' challenge page, not a URL/method problem). "
+        "This tenant cannot be scraped with a plain HTTP client -- needs real browser "
+        "automation (Playwright solving the WAF JS challenge) or manual checking.",
     },
     "Gordon Rees Scully Mansukhani": {
         "adapter": ICIMSAdapter,
         "tenant": "grsm",
         "search_url": "https://careers-grsm.icims.com/jobs/search?pr=0&in_iframe=1",
-        "notes": "Confirmed iCIMS tenant. Same bot-protection caveat as Lewis Brisbois.",
+        "notes": "CONFIRMED BLOCKED via live probe -- same AWS WAF 'Human Verification' "
+        "challenge as Lewis Brisbois. Not scrapable with a plain HTTP client.",
     },
     "Wilson Elser": {
         # NOT iCIMS despite the original grouping guess -- confirmed custom site.
@@ -136,12 +139,13 @@ FIRMS: dict[str, dict] = {
     "Ashurst Perkins Coie (fka Perkins Coie)": {
         "adapter": WorkdayAdapter,
         "tenant": "perkinscoie",
-        "wd": "wd1",
+        "wd": "wd115",
         "site": "perkinscoieexternal",
         "notes": "Ashurst and Perkins Coie completed a merger June 29, 2026, forming Ashurst "
         "Perkins Coie. Careers portal still runs under the legacy Perkins Coie Workday "
         "tenant as of this research (July 2026); no evidence of migration to a unified "
-        "Ashurst-branded ATS yet. Re-verify tenant/site periodically as integration continues.",
+        "Ashurst-branded ATS yet. Re-verify tenant/site periodically as integration continues. "
+        "CONFIRMED via live probe: pod is wd115 (wd1 and wd5 both 422); 47 jobs live.",
     },
     # --- Still need ATS ID -- resolved via research ---------------------------------------------------
     "Tucker Ellis": {
@@ -188,11 +192,10 @@ FIRMS: dict[str, dict] = {
         "adapter": ICIMSAdapter,
         "tenant": "orrick",
         "search_url": "https://careers-orrick.icims.com/jobs/search?pr=0&in_iframe=1",
-        "notes": "Confirmed iCIMS tenant 'orrick'. Public-facing vanity front-end is "
-        "talent.orrick.com, with separate tracks: talent.orrick.com/staff-us/jobs (business "
-        "professional -- the relevant one), /non-partner-attorney-us/jobs, /campus-us/jobs. "
-        "The ICIMSAdapter here hits the underlying careers-orrick.icims.com search page "
-        "directly, which lists all tracks together -- keyword filtering handles the split. "
-        "Example current posting: 'IT Service Operations Intern' (Wheeling, WV).",
+        "notes": "Confirmed iCIMS tenant 'orrick'. CONFIRMED BLOCKED via live probe -- same "
+        "AWS WAF 'Human Verification' challenge as Lewis Brisbois/GRSM. Not scrapable with a "
+        "plain HTTP client. Public-facing vanity front-end is talent.orrick.com, with separate "
+        "tracks: talent.orrick.com/staff-us/jobs (business professional -- the relevant one), "
+        "/non-partner-attorney-us/jobs, /campus-us/jobs -- worth checking manually.",
     },
 }
