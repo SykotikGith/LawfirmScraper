@@ -54,6 +54,39 @@ this order:
 Only the auto-match and review-manually tiers show up in console output
 and the HTML report.
 
+### Work-arrangement filter
+
+`scraper/work_arrangement.py` separately classifies every posting that
+survives the title filter above as **remote**, **hybrid**, **onsite**, or
+**unclear**, from its location text and (where an adapter already has it
+on hand — see below) job description text:
+
+- **Remote** — location says "Remote", "Virtual", or "Nationwide", or the
+  description explicitly says fully remote / work from home.
+- **Hybrid** — location or description says "hybrid", or names a partial
+  in-office schedule ("3 days a week in office").
+- **Onsite** — location names a single physical place and neither of the
+  above is present.
+- **Unclear** — no location text and no remote/hybrid signal found.
+
+Hybrid and onsite postings are hard-excluded from auto-match/review-manually
+the same way title-level hard excludes are — they're written to
+`debug_all_titles.txt` with the exclusion reason, but never shown in
+console output or the HTML report. Remote postings flow through tagged
+"Remote"; unclear postings flow through tagged "remote status unclear —
+verify" so they get a second look rather than being silently trusted.
+
+Full job description text (a stronger signal than location alone) is only
+available for adapters that already fetch it as part of the data they'd
+pull anyway, at no extra request cost: Greenhouse (`content=true` on the
+existing API call), Oracle Recruiting Cloud (`WorkplaceType`/
+`WorkplaceTypeCode` plus description fields), and viGlobal (trailing text
+already present in the row it scrapes). Every other adapter — Workday,
+Circa Works, ApplicantStack, and custom-HTML firms — detects from location
+text alone, since fetching a full description would mean an extra HTTP
+request per posting; those firms lean on "onsite"/"unclear" more often as
+a result.
+
 ## Firm coverage
 
 `scraper/config.py` has three top-level structures:
