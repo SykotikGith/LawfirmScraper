@@ -2,12 +2,18 @@
 
 Greenhouse job boards expose a public, unauthenticated JSON API at
 https://boards-api.greenhouse.io/v1/boards/<board_token>/jobs?content=true
--- no HTML scraping needed.
+-- no HTML scraping needed. The `?content=true` param (already in use)
+also returns each job's full HTML description in a `content` field, which
+we strip tags from and keep -- no extra request needed to get it.
 """
 from __future__ import annotations
 
+import re
+
 from ..models import Posting
 from .base import Adapter
+
+_TAG_RE = re.compile(r"<[^>]+>")
 
 
 class GreenhouseAdapter(Adapter):
@@ -30,6 +36,7 @@ class GreenhouseAdapter(Adapter):
             if not posting_id or not title:
                 continue
             location = (job.get("location") or {}).get("name", "")
+            description = _TAG_RE.sub(" ", job.get("content") or "")
             postings.append(
                 Posting(
                     firm=self.firm,
@@ -38,6 +45,7 @@ class GreenhouseAdapter(Adapter):
                     url=job.get("absolute_url", ""),
                     posting_id=posting_id,
                     ats=self.ats_name,
+                    description=description,
                 )
             )
         return postings

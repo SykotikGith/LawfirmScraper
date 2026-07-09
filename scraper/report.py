@@ -41,6 +41,9 @@ class ReportEntry:
     matched_keywords: list[str]
     is_new: bool
     review_reason: str | None = None  # only meaningful for review-manually entries
+    # "Remote" or "remote status unclear — verify" -- onsite/hybrid postings
+    # never make it into a ReportEntry at all, they're hard-excluded earlier.
+    work_arrangement: str | None = None
 
 
 def _pill(text: str, css_class: str) -> str:
@@ -49,6 +52,11 @@ def _pill(text: str, css_class: str) -> str:
 
 def _card(entry: ReportEntry, section: str) -> str:
     keyword_pills = "".join(_pill(k, "kw-pill") for k in entry.matched_keywords)
+    wa_pill = ""
+    if entry.work_arrangement == "Remote":
+        wa_pill = _pill(entry.work_arrangement, "wa-pill-remote")
+    elif entry.work_arrangement:
+        wa_pill = _pill(entry.work_arrangement, "wa-pill-unclear")
     reason_pill = _pill(entry.review_reason, "reason-pill") if entry.review_reason else ""
     new_badge = '<span class="new-badge">NEW</span>' if entry.is_new else ""
     location = html.escape(entry.location) if entry.location.strip() else "Location not specified"
@@ -60,7 +68,7 @@ def _card(entry: ReportEntry, section: str) -> str:
         <div class="job-firm">{html.escape(entry.firm)}</div>
         <div class="job-title">{html.escape(entry.title)}</div>
         <div class="job-location">{location}</div>
-        <div class="job-tags">{keyword_pills}{reason_pill}</div>
+        <div class="job-tags">{keyword_pills}{wa_pill}{reason_pill}</div>
       </a>"""
 
 
@@ -257,6 +265,16 @@ def render_report(
   }}
   .job-card.review .kw-pill {{ border-color: var(--teal-border); }}
   .reason-pill {{
+    background: var(--teal-tag-bg);
+    color: var(--teal-tag-text);
+    border: 1px solid var(--teal-border);
+  }}
+  .wa-pill-remote {{
+    background: var(--green-badge-bg);
+    color: var(--green-badge-text);
+    border: 1px solid var(--green-border);
+  }}
+  .wa-pill-unclear {{
     background: var(--teal-tag-bg);
     color: var(--teal-tag-text);
     border: 1px solid var(--teal-border);

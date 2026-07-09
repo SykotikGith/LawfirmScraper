@@ -12,3 +12,8 @@ class Posting:
     url: str
     posting_id: str
     ats: str
+    # Full job description text, when the adapter already has it on hand from
+    # data it fetched anyway (no extra per-job HTTP request). Empty string
+    # when unavailable -- detection code must tolerate that and fall back to
+    # location-only signals.
+    description: str = ""

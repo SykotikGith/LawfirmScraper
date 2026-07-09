@@ -10,6 +10,7 @@ from .filters import Classification, classify
 from .models import Posting
 from .report import ReportEntry, write_report
 from .store import SeenStore
+from .work_arrangement import WorkArrangement, detect_work_arrangement
 
 DEBUG_TITLES_PATH = Path(__file__).resolve().parent.parent / "debug_all_titles.txt"
 
@@ -27,18 +28,22 @@ def scrape_firm(firm_name: str, firm_cfg: dict) -> tuple[list[Posting], str | No
         return [], f"{type(exc).__name__}: {exc}"
 
 
-def _print_bucket(label: str, entries: list[tuple[Posting, Classification, bool]]) -> int:
+def _print_bucket(
+    label: str, entries: list[tuple[Posting, Classification, bool, WorkArrangement]]
+) -> int:
     if not entries:
         return 0
     new_count = 0
     print(f"\n   --- {label} ---")
-    for posting, cls, is_new in entries:
+    for posting, cls, is_new, wa in entries:
         flag = "NEW" if is_new else "seen"
         new_count += 1 if is_new else 0
         print(f"   [{flag}] {posting.title} — {posting.location}")
         print(f"         matched: {', '.join(cls.ai_km_hits)}")
         if cls.tier == "review":
             print(f"         ⚠ review — may be program/people-management-heavy ({', '.join(cls.mgmt_hits)})")
+        if wa.status == "unclear":
+            print("         ⚠ remote status unclear — verify")
         print(f"         {posting.url}")
     return new_count
 
@@ -68,20 +73,40 @@ def run(reset_seen: bool = False) -> int:
             print("   (no postings returned — check adapter config)")
             continue
 
-        for posting in postings:
-            debug_file.write(f"{firm_name} | {posting.title} | {posting.url}\n")
-        debug_file.flush()
-
         auto_matches = []
         review_matches = []
         for posting in postings:
             cls = classify(posting.title)
+            wa = detect_work_arrangement(posting.location, posting.description)
+
+            debug_line = (
+                f"{firm_name} | {posting.title} | {posting.location} | {posting.url} "
+                f"| title_tier={cls.tier} | work_arrangement={wa.status}"
+            )
+            if wa.signals:
+                debug_line += f" | signals: {'; '.join(wa.signals)}"
+            debug_file.write(debug_line + "\n")
+
             if cls.tier not in ("auto_match", "review"):
                 continue
+
+            if wa.status in ("onsite", "hybrid"):
+                debug_file.write(
+                    f"    -> excluded from {cls.tier}: work arrangement is {wa.status} "
+                    f"({'; '.join(wa.signals)})\n"
+                )
+                continue
+
+            work_arrangement_tag = None
+            if wa.status == "remote":
+                work_arrangement_tag = "Remote"
+            elif wa.status == "unclear":
+                work_arrangement_tag = "remote status unclear — verify"
+
             is_new = store.is_new(firm_name, posting.posting_id)
             store.mark_seen(firm_name, posting.posting_id)
             if cls.tier == "auto_match":
-                auto_matches.append((posting, cls, is_new))
+                auto_matches.append((posting, cls, is_new, wa))
                 report_auto.append(
                     ReportEntry(
                         firm=firm_name,
@@ -90,10 +115,11 @@ def run(reset_seen: bool = False) -> int:
                         url=posting.url,
                         matched_keywords=cls.ai_km_hits,
                         is_new=is_new,
+                        work_arrangement=work_arrangement_tag,
                     )
                 )
             else:
-                review_matches.append((posting, cls, is_new))
+                review_matches.append((posting, cls, is_new, wa))
                 report_review.append(
                     ReportEntry(
                         firm=firm_name,
@@ -103,8 +129,10 @@ def run(reset_seen: bool = False) -> int:
                         matched_keywords=cls.ai_km_hits,
                         is_new=is_new,
                         review_reason=_review_reason_text(cls.mgmt_hits),
+                        work_arrangement=work_arrangement_tag,
                     )
                 )
+        debug_file.flush()
 
         if not auto_matches and not review_matches:
             print(f"   {len(postings)} postings scraped, none matched filters")

@@ -63,6 +63,12 @@ class ViGlobalAdapter(Adapter):
             if not title:
                 continue
 
+            # The full job description text trails immediately after the
+            # "Application Deadline<date>" portion the regex matches --
+            # already fetched, just needs slicing off rather than a
+            # second per-job request.
+            description = text[match.end():].strip()
+
             posting_id = hashlib.sha1(f"{title}|{office}|{group}".encode()).hexdigest()[:12]
             postings.append(
                 Posting(
@@ -72,6 +78,7 @@ class ViGlobalAdapter(Adapter):
                     url=list_url,
                     posting_id=posting_id,
                     ats=self.ats_name,
+                    description=description,
                 )
             )
         return postings
