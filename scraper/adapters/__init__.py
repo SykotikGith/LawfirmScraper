@@ -7,6 +7,7 @@ from .custom_html import CustomHTMLAdapter
 from .greenhouse import GreenhouseAdapter
 from .circaworks import CircaWorksAdapter
 from .viglobal import ViGlobalAdapter
+from .ultipro import UltiProAdapter
 
 __all__ = [
     "Adapter",
@@ -18,4 +19,5 @@ __all__ = [
     "GreenhouseAdapter",
     "CircaWorksAdapter",
     "ViGlobalAdapter",
+    "UltiProAdapter",
 ]

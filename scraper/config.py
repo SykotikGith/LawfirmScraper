@@ -18,6 +18,7 @@ from .adapters import (
     CustomHTMLAdapter,
     GreenhouseAdapter,
     OracleRecruitingAdapter,
+    UltiProAdapter,
     ViGlobalAdapter,
     WorkdayAdapter,
 )
@@ -332,6 +333,32 @@ FIRMS: dict[str, dict] = {
         "specific titles ('Trademark Operations Supervisor', 'Senior Legal Support "
         "Analyst', 'Patent Client Services Administrator', 'Mid-Level Trademark "
         "Paralegal').",
+    },
+    "Haynes and Boone": {
+        "adapter": WorkdayAdapter,
+        "tenant": "haynesboone",
+        "wd": "wd503",
+        "site": "HaynesandBoone",
+        "notes": "Tenant/pod/site and the full paging contract (POST body shape, "
+        "offset/total behavior, title/locationsText/postedOn/externalPath field "
+        "mapping) supplied directly from the user's own network inspection of the "
+        "live API -- matches WorkdayAdapter's existing request/response handling "
+        "exactly, no adapter changes needed.",
+    },
+    # --- UltiPro / UKG Recruiting group ---------------------------------------------------
+    "Akerman": {
+        "adapter": UltiProAdapter,
+        "board_url": "https://recruiting.ultipro.com/AKE1000ASEPA/JobBoard/"
+        "b855fc7e-c6e0-90cc-b829-ddbebeb6f274/",
+        "notes": "ATS identified as UKG/UltiPro Recruiting from the careers URL structure "
+        "(recruiting.ultipro.com/<CompanyCode>/JobBoard/<BoardId>/) -- NOT yet live-"
+        "verified against real sample titles, since the sandbox this was built in has no "
+        "outbound network access. UltiProAdapter assumes the classic server-rendered "
+        "JobBoard template (plain <a href=\"OpportunityDetail.aspx?opportunityId=...\"> "
+        "links in static HTML). If the first real run returns 0 postings, this tenant is "
+        "likely on the newer Angular JobBoard template instead, which is pure client-side "
+        "JS and needs a browser-driven fetch rather than a plain GET -- check that before "
+        "assuming board_url/selectors are wrong.",
     },
 }
 
