@@ -8,9 +8,14 @@ from pathlib import Path
 from .config import FIRMS, MANUAL_CHECK_FIRMS
 from .filters import Classification, classify
 from .models import Posting
+from .report import ReportEntry, write_report
 from .store import SeenStore
 
 DEBUG_TITLES_PATH = Path(__file__).resolve().parent.parent / "debug_all_titles.txt"
+
+
+def _review_reason_text(mgmt_hits: list[str]) -> str:
+    return "/".join(h.lower() for h in mgmt_hits) + " title"
 
 
 def scrape_firm(firm_name: str, firm_cfg: dict) -> tuple[list[Posting], str | None]:
@@ -49,6 +54,8 @@ def run(reset_seen: bool = False) -> int:
     print("=" * 72)
 
     debug_file = DEBUG_TITLES_PATH.open("w", encoding="utf-8")
+    report_auto: list[ReportEntry] = []
+    report_review: list[ReportEntry] = []
 
     for firm_name, firm_cfg in FIRMS.items():
         postings, error = scrape_firm(firm_name, firm_cfg)
@@ -75,8 +82,29 @@ def run(reset_seen: bool = False) -> int:
             store.mark_seen(firm_name, posting.posting_id)
             if cls.tier == "auto_match":
                 auto_matches.append((posting, cls, is_new))
+                report_auto.append(
+                    ReportEntry(
+                        firm=firm_name,
+                        title=posting.title,
+                        location=posting.location,
+                        url=posting.url,
+                        matched_keywords=cls.ai_km_hits,
+                        is_new=is_new,
+                    )
+                )
             else:
                 review_matches.append((posting, cls, is_new))
+                report_review.append(
+                    ReportEntry(
+                        firm=firm_name,
+                        title=posting.title,
+                        location=posting.location,
+                        url=posting.url,
+                        matched_keywords=cls.ai_km_hits,
+                        is_new=is_new,
+                        review_reason=_review_reason_text(cls.mgmt_hits),
+                    )
+                )
 
         if not auto_matches and not review_matches:
             print(f"   {len(postings)} postings scraped, none matched filters")
@@ -98,9 +126,12 @@ def run(reset_seen: bool = False) -> int:
             print(f"   {url}")
         print(f"   {info['reason']}")
 
+    write_report(report_auto, report_review, firms_scanned=len(FIRMS))
+
     print("\n" + "=" * 72)
     print(f"Done. {total_new} new posting(s) since last run.")
     print(f"Raw pre-filter titles for every scraped posting written to {DEBUG_TITLES_PATH}")
+    print("HTML report written to report.html / index.html")
     return 0
 
 
