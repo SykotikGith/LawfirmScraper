@@ -57,10 +57,12 @@ HARD_EXCLUDE_TERMS = [
     "Accountant",
     # JD/bar-required or support-staff tracks -- not IC-eligible regardless
     # of an AI/KM keyword also being present in the title. Excludes roles
-    # like "Knowledge Management Lawyer" / "Knowledge Management Attorney"
-    # even though they'd otherwise hit an AI/KM keyword above.
+    # like "Knowledge Management Lawyer" / "Knowledge Management Attorney" /
+    # "Knowledge Management Counsel" even though they'd otherwise hit an
+    # AI/KM keyword above.
     "Attorney",
     "Lawyer",
+    "Counsel",
     "Associate",
     "Paralegal",
     "Legal Secretary",
@@ -74,7 +76,7 @@ _SHORT_TOKENS = {"KM", "IAM"}
 
 # Terms that need whole-word matching (case-insensitive) so they never match
 # as a partial substring inside an unrelated word.
-_WHOLE_WORD_TERMS = {"lawyer", "attorney"}
+_WHOLE_WORD_TERMS = {"lawyer", "attorney", "counsel"}
 
 
 def _pattern_for(keyword: str) -> re.Pattern:

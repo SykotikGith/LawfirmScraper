@@ -45,7 +45,8 @@ this order:
    Aderant, IT Asset (+ Specialist/Lead), Network Engineer, Engineering
    Manager, Development Manager, Finance/Financial/Billing/Accounting/
    Accountant, and JD/bar-required or support-staff titles (Attorney,
-   Lawyer, Associate, Paralegal, Legal Secretary, Of Counsel, Partner).
+   Lawyer, Counsel, Associate, Paralegal, Legal Secretary, Of Counsel,
+   Partner).
    Checked first — wins over an AI/KM keyword match every time, so e.g.
    "Knowledge Management Attorney" is excluded.
 2. **Auto-match** — the title contains an AI/KM keyword
