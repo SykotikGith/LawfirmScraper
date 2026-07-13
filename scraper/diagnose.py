@@ -1,8 +1,8 @@
-"""Diagnostic round 4: LoadSearchResults ignored PageSize (always returned
-20) and PageNumber=2 returned the identical 20 results as PageNumber=1 --
-pagination isn't working the way it was guessed. This tries several
-alternate parameter shapes to find the one that actually changes the
-result set / count, before writing the real adapter.
+"""Diagnostic round 5: Skip/Take is the real pagination scheme for
+Akerman's UltiPro search API. Confirm whether Take actually controls page
+size (or 20 is hard-capped regardless), and sweep Skip across all 96
+postings to confirm every one is retrieved exactly once (no gaps, no
+duplicates) before writing the real adapter.
 
 Usage: python -m scraper.diagnose
 """
@@ -16,56 +16,55 @@ TIMEOUT = 30
 BASE = "https://recruiting.ultipro.com/AKE1000ASEPA/JobBoard/b855fc7e-c6e0-90cc-b829-ddbebeb6f274"
 URL = f"{BASE}/JobBoardView/LoadSearchResults"
 
-FIRST_KNOWN_ID = "4b4e8273-7c45-4a32-b928-56dd69e6b2be"  # Legal Administrative Assistant, always page-1 item 1
 
-
-def post(body: dict) -> dict:
+def search(skip: int, take: int) -> dict:
     headers = dict(DEFAULT_HEADERS)
     headers["Content-Type"] = "application/json"
     headers["Accept"] = "application/json, text/plain, */*"
+    body = {"opportunitySearch": {"Text": "", "Skip": skip, "Take": take}}
     resp = requests.post(URL, headers=headers, json=body, timeout=TIMEOUT)
     resp.raise_for_status()
     return resp.json()
 
 
-def summarize(label: str, body: dict) -> None:
-    try:
-        data = post(body)
-    except Exception as exc:  # noqa: BLE001
-        print(f"{label}: EXCEPTION {type(exc).__name__}: {exc}")
-        return
-    opps = data.get("opportunities", [])
-    ids = [o.get("Id") for o in opps]
-    first_title = opps[0].get("Title") if opps else None
-    same_as_page1 = ids and ids[0] == FIRST_KNOWN_ID
-    print(f"{label}: count={len(opps)} totalCount={data.get('totalCount')} "
-          f"first_title={first_title!r} same_first_item_as_default_page1={same_as_page1}")
-
-
 def main() -> None:
-    print("--- baseline: no paging fields at all ---")
-    summarize("no-paging", {"opportunitySearch": {"Text": ""}})
+    print("--- does Take control page size? ---")
+    for take in (5, 10, 20, 50):
+        data = search(0, take)
+        print(f"  Take={take}: got {len(data.get('opportunities', []))} (totalCount={data.get('totalCount')})")
 
-    print("\n--- PageSize variants (is 20 a hard cap or did the field name miss?) ---")
-    summarize("PageSize=5", {"opportunitySearch": {"Text": "", "PageSize": 5}})
-    summarize("PageSize=100", {"opportunitySearch": {"Text": "", "PageSize": 100}})
-    summarize("Take=100", {"opportunitySearch": {"Text": "", "Take": 100}})
+    print("\n--- sweeping Skip across all postings with Take=20 ---")
+    all_ids: list[str] = []
+    all_titles: dict[str, str] = {}
+    skip = 0
+    take = 20
+    total_count = None
+    page = 0
+    while True:
+        data = search(skip, take)
+        if total_count is None:
+            total_count = data.get("totalCount")
+        opps = data.get("opportunities", [])
+        page += 1
+        print(f"  page {page}: skip={skip} take={take} -> {len(opps)} opportunities")
+        if not opps:
+            break
+        for o in opps:
+            all_ids.append(o["Id"])
+            all_titles[o["Id"]] = o.get("Title", "")
+        skip += take
+        if skip >= (total_count or 0):
+            break
 
-    print("\n--- PageNumber variants (0-based vs 1-based vs alternate names) ---")
-    summarize("PageNumber=0", {"opportunitySearch": {"Text": "", "PageNumber": 0, "PageSize": 20}})
-    summarize("PageNumber=1", {"opportunitySearch": {"Text": "", "PageNumber": 1, "PageSize": 20}})
-    summarize("PageNumber=2", {"opportunitySearch": {"Text": "", "PageNumber": 2, "PageSize": 20}})
-    summarize("PageIndex=1", {"opportunitySearch": {"Text": "", "PageIndex": 1, "PageSize": 20}})
-    summarize("Page=2", {"opportunitySearch": {"Text": "", "Page": 2, "PageSize": 20}})
-    summarize("Skip=20,Take=20", {"opportunitySearch": {"Text": "", "Skip": 20, "Take": 20}})
-    summarize(
-        "nested Paging object",
-        {"opportunitySearch": {"Text": "", "Paging": {"PageNumber": 2, "PageSize": 20}}},
-    )
-    summarize(
-        "PageNumber+PageSize outside opportunitySearch",
-        {"opportunitySearch": {"Text": ""}, "PageNumber": 2, "PageSize": 20},
-    )
+    print(f"\ntotalCount reported: {total_count}")
+    print(f"total opportunities collected: {len(all_ids)}")
+    print(f"unique Ids collected: {len(set(all_ids))}")
+    dupes = len(all_ids) - len(set(all_ids))
+    print(f"duplicate Ids: {dupes}")
+
+    print("\n--- sample of collected titles (first 15) ---")
+    for id_ in all_ids[:15]:
+        print(f"  {all_titles[id_]!r}")
 
 
 if __name__ == "__main__":
