@@ -464,6 +464,51 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "only attorney postings. Not worth an adapter; there's nothing for our filters to "
         "find even if scraping worked.",
     },
+    # --- AmLaw 100 expansion batch: real Workday tenants confirmed (path-specific-error
+    # signal) but evidently dormant/internal, same pattern as Milbank above -- the real
+    # external-recruiting site is a different platform or unreachable for a firm-specific
+    # reason. -----------------------------------------------------------------------------
+    "McDermott Will & Emery": {
+        "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
+        "apparently dormant/internal. mwe.com/careers redirects to mcdermottlaw.com/careers, "
+        "which is blocked by an Imperva Incapsula bot-protection challenge -- not scrapable "
+        "with a plain HTTP client, same category as iCIMS's AWS WAF block.",
+        "check_url": "https://www.mcdermottlaw.com/careers",
+    },
+    "Morrison & Foerster": {
+        "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
+        "apparently dormant/internal. mofo.com/careers redirects to careers.mofo.com, a "
+        "Next.js SPA with zero job data in static HTML -- the real ATS/API wasn't identified.",
+        "check_url": "https://careers.mofo.com/",
+    },
+    "Skadden Arps": {
+        "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
+        "apparently dormant/internal. skadden.com/careers is an AngularJS SPA "
+        "(ng-app=\"skadden\") with zero job data in static HTML.",
+        "check_url": "https://www.skadden.com/careers",
+    },
+    "Davis Polk": {
+        "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
+        "apparently dormant/internal. The real careers path wasn't found -- "
+        "davispolk.com/careers returns 403 (bot-protected) and the bare domain has no ATS "
+        "trace.",
+        "check_url": "https://www.davispolk.com",
+    },
+    "Hogan Lovells": {
+        "reason": "Real tenant confirmed on Workday wd3 (path-specific-error signal), "
+        "apparently dormant/internal. UNVERIFIED ODDITY: hoganlovells.com redirects to a "
+        "completely different domain, hlc.com -- could be a legitimate rebrand or could be "
+        "something else entirely; not confirmed as the same firm. No ATS trace found on "
+        "that destination page either way. Needs a human to eyeball hlc.com before trusting "
+        "it as Hogan Lovells' real site.",
+        "check_url": "https://www.hlc.com/",
+    },
+    "Cleary Gottlieb": {
+        "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
+        "apparently dormant/internal. clearygottlieb.com/careers redirects to the bare "
+        "homepage (Sitefinity CMS) -- the real careers subpage URL wasn't found.",
+        "check_url": "https://www.clearygottlieb.com/careers",
+    },
 }
 
 # ---------------------------------------------------------------------------
