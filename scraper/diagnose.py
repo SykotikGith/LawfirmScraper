@@ -1,17 +1,17 @@
-"""Diagnostic: figure out why UltiProAdapter returned 0 postings for Akerman.
-
-UltiProAdapter assumed the classic server-rendered UltiPro JobBoard template
-(plain <a href="OpportunityDetail.aspx?opportunityId=...">Title</a> links in
-static HTML). It returned 0 postings for Akerman, which means that
-assumption is wrong -- either it's the newer Angular JobBoard template
-(client-side JS, nothing in static HTML), or the same classic template but
-with different markup than expected. This fetches the raw page and prints
-enough structural clues to tell which, without dumping the whole HTML blob.
+"""Diagnostic round 2: Akerman's UltiPro board is a Knockout.js page
+(data-bind="text: title()"), not the classic static-link template
+UltiProAdapter originally assumed. Round 1 found real API path fragments
+referenced in the page: JobBoardView/LoadSearchResults and
+JobBoardView/GetOpportunityMatchCount. This probes those endpoints
+directly (a few request-shape guesses each, since the exact expected body
+isn't known yet) and prints surrounding JS context from the raw page so we
+can see how the client actually calls them.
 
 Usage: python -m scraper.diagnose
 """
 from __future__ import annotations
 
+import json
 import re
 
 import requests
@@ -19,44 +19,71 @@ import requests
 from .adapters.base import DEFAULT_HEADERS
 
 TIMEOUT = 30
-AKERMAN_URL = "https://recruiting.ultipro.com/AKE1000ASEPA/JobBoard/b855fc7e-c6e0-90cc-b829-ddbebeb6f274/"
+BASE = "https://recruiting.ultipro.com/AKE1000ASEPA/JobBoard/b855fc7e-c6e0-90cc-b829-ddbebeb6f274"
 
 
-def check_akerman() -> None:
-    print(f"=== Akerman (UltiPro) -- {AKERMAN_URL} ===")
-    resp = requests.get(AKERMAN_URL, headers=DEFAULT_HEADERS, timeout=TIMEOUT)
-    text = resp.text
-    print(f"status={resp.status_code}  content-length={len(text)}")
+def print_context(text: str, needle: str, radius: int = 400) -> None:
+    for m in re.finditer(re.escape(needle), text):
+        start = max(0, m.start() - radius)
+        end = min(len(text), m.end() + radius)
+        print(f"\n--- context around {needle!r} @ offset {m.start()} ---")
+        print(text[start:end])
 
-    print(f"\n'OpportunityDetail.aspx' in page: {'OpportunityDetail.aspx' in text}")
-    print(f"'opportunityId' in page (any case): {'opportunityid' in text.lower()}")
-    print(f"'ng-version' attribute present (Angular marker): {'ng-version' in text}")
-    print(f"'ng-app' attribute present (AngularJS marker): {'ng-app' in text}")
 
-    script_srcs = re.findall(r'<script[^>]+src=["\']([^"\']+)["\']', text)
-    print(f"\n<script src=...> tags found ({len(script_srcs)}):")
-    for src in script_srcs[:20]:
-        print(f"  {src}")
+def fetch_page() -> str:
+    resp = requests.get(BASE + "/", headers=DEFAULT_HEADERS, timeout=TIMEOUT)
+    return resp.text
 
-    json_scripts = re.findall(
-        r'<script[^>]*type=["\']application/json["\'][^>]*id=["\']([^"\']*)["\']', text
-    )
-    print(f"\n<script type=\"application/json\"> blocks found: {json_scripts}")
 
-    window_assigns = re.findall(r"window\.(\w+)\s*=", text)
-    print(f"window.X = ... assignments found: {sorted(set(window_assigns))}")
+def show_js_context(text: str) -> None:
+    print("\n\n=== JS context around the known endpoint names ===")
+    print_context(text, "LoadSearchResults")
+    print_context(text, "GetOpportunityMatchCount")
+    print_context(text, "JobSearchAgent")
 
-    # Common REST-ish path fragments that might hint at the real API, if any
-    # are referenced directly in the page's inline script/markup.
-    api_hints = re.findall(r'["\'](/[\w./-]*(?:api|svc|search|opportunit)[\w./-]*)["\']', text, re.IGNORECASE)
-    print(f"\nPossible API path fragments referenced in page: {sorted(set(api_hints))[:20]}")
+    print("\n\n=== searching for embedded pre-loaded data (ko.observableArray / opportunities) ===")
+    print_context(text, "ko.observableArray", radius=200)
+    for needle in ["opportunities", "Opportunities", "searchResults", "SearchResults"]:
+        idx = text.find(needle)
+        if idx != -1:
+            print(f"\nfirst occurrence of {needle!r} at offset {idx}:")
+            print(text[max(0, idx - 150):idx + 300])
 
-    print("\n--- first 3000 chars of raw HTML (for manual inspection if the above is inconclusive) ---")
-    print(text[:3000])
+
+def probe_endpoints() -> None:
+    print("\n\n=== probing candidate API calls ===")
+    headers = dict(DEFAULT_HEADERS)
+    headers["Content-Type"] = "application/json"
+    headers["Accept"] = "application/json, text/plain, */*"
+
+    attempts = [
+        ("GET", f"{BASE}/JobBoardView/LoadSearchResults", None),
+        ("POST", f"{BASE}/JobBoardView/LoadSearchResults", {}),
+        ("POST", f"{BASE}/JobBoardView/LoadSearchResults", {"opportunitySearch": {"Text": "", "PageNumber": 1, "PageSize": 50}}),
+        ("POST", f"{BASE}/JobBoardView/LoadSearchResults", {"Text": "", "PageNumber": 1, "PageSize": 50}),
+        ("GET", f"{BASE}/JobBoardView/GetOpportunityMatchCount", None),
+        ("POST", f"{BASE}/JobBoardView/GetOpportunityMatchCount", {}),
+    ]
+
+    for method, url, body in attempts:
+        try:
+            if method == "GET":
+                resp = requests.get(url, headers=headers, timeout=TIMEOUT)
+            else:
+                resp = requests.post(url, headers=headers, json=body, timeout=TIMEOUT)
+            snippet = resp.text[:500]
+            print(f"\n{method} {url}  body={json.dumps(body)}")
+            print(f"  status={resp.status_code}  len={len(resp.text)}")
+            print(f"  body[:500]={snippet!r}")
+        except Exception as exc:  # noqa: BLE001
+            print(f"\n{method} {url}  body={json.dumps(body)}")
+            print(f"  EXCEPTION: {type(exc).__name__}: {exc}")
 
 
 def main() -> None:
-    check_akerman()
+    text = fetch_page()
+    show_js_context(text)
+    probe_endpoints()
 
 
 if __name__ == "__main__":
