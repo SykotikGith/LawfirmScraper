@@ -97,6 +97,17 @@ def _metric_card(value: str, label: str, css_class: str = "") -> str:
       </div>"""
 
 
+def _metric_card_new_total(new_count: int, total_count: int) -> str:
+    return f"""
+      <div class="metric-card">
+        <div class="metric-value-stack">
+          <div class="metric-stack-line"><span class="metric-stack-tag">New:</span> <span class="accent-green">{new_count}</span></div>
+          <div class="metric-stack-line"><span class="metric-stack-tag">Total:</span> <span>{total_count}</span></div>
+        </div>
+        <div class="metric-label">Matches this run</div>
+      </div>"""
+
+
 def render_report(
     auto_matches: list[ReportEntry],
     review_matches: list[ReportEntry],
@@ -105,11 +116,12 @@ def render_report(
 ) -> str:
     generated_at = generated_at or datetime.now(timezone.utc)
     new_count = sum(1 for e in auto_matches + review_matches if e.is_new)
+    total_count = len(auto_matches) + len(review_matches)
     review_count = len(review_matches)
     timestamp_str = generated_at.strftime("%b %d, %Y %I:%M %p UTC")
 
     metrics = "".join([
-        _metric_card(str(new_count), "New matches", "accent-green"),
+        _metric_card_new_total(new_count, total_count),
         _metric_card(str(firms_scanned), "Firms scanned"),
         _metric_card(str(review_count), "Needs review", "accent-teal"),
         _metric_card(timestamp_str, "Last run", "metric-value-small"),
@@ -180,6 +192,26 @@ def render_report(
   .metric-value.accent-green {{ color: var(--green); }}
   .metric-value.accent-teal {{ color: var(--teal); }}
   .metric-value.metric-value-small {{ font-size: 1.05rem; }}
+  .metric-value-stack {{
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }}
+  .metric-stack-line {{
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.3;
+  }}
+  .metric-stack-line .accent-green {{ color: var(--green); }}
+  .metric-stack-tag {{
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-right: 4px;
+  }}
   .metric-label {{
     font-size: 0.8rem;
     color: var(--text-secondary);
