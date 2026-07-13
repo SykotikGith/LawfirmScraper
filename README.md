@@ -20,10 +20,17 @@ finally writes:
 
 - `data/seen_postings.json` — dedup store of posting IDs already reported,
   so subsequent runs only flag genuinely new postings.
-- `debug_all_titles.txt` — every scraped title (`Firm | Title | URL`,
-  matched or not), for tuning the filter keywords against real data.
+- `debug_all_titles.txt` — one line per scraped posting (`Firm | Title |
+  Location | URL | title_tier=... | work_arrangement=...`, plus a
+  `signals:` note when the work-arrangement detector found any), matched
+  or not, for tuning the title and work-arrangement filters against real
+  data. Postings hard-excluded for being onsite/hybrid get an extra
+  `-> excluded from ...` line explaining why.
 - `report.html` / `index.html` — an identical static HTML report (see
   below), regenerated every run.
+
+The live report is published via GitHub Pages at
+https://sykotikgith.github.io/LawfirmScraper/.
 
 ## Filters
 
@@ -100,22 +107,25 @@ a result.
 `scraper/config.py` has three top-level structures:
 
 - `FIRMS` — the active, automated firm list (adapter class + tenant/URL
-  config per firm). This is what `main.py` actually scrapes.
+  config per firm). This is what `main.py` actually scrapes. Currently 30
+  firms.
 - `MANUAL_CHECK_FIRMS` — confirmed real target firms that can't be
   reliably automated (blocked by bot protection, no ATS trace in static
   HTML, or a real ATS exists but has no relevant listings). Not scraped;
   printed as a reminder list at the end of every run instead, with a
-  check URL and the reason.
+  check URL and the reason. Currently 7 firms.
 - `REJECTED_LEADS` — slug guesses that turned out to be a different,
   unrelated company on a shared ATS platform (confirmed via real sample
-  titles), kept on record so they aren't accidentally retried.
+  titles), kept on record so they aren't accidentally retried. Currently 2
+  entries.
 
 Adapters live in `scraper/adapters/` — one per ATS platform: iCIMS,
-Workday, Oracle Recruiting Cloud, ApplicantStack, Greenhouse, Circa Works,
-viGlobal, UKG/UltiPro Recruiting, PageUp/eArcu, and a generic custom-HTML
-adapter for bespoke career sites. (The iCIMS adapter exists but currently
-has no active `FIRMS` entries — every iCIMS tenant found so far sits
-behind an AWS WAF challenge and lives in `MANUAL_CHECK_FIRMS` instead.)
+Workday (16 firms), Oracle Recruiting Cloud, ApplicantStack, Greenhouse (2
+firms), Circa Works, viGlobal, UKG/UltiPro Recruiting, PageUp/eArcu, and a
+generic custom-HTML adapter (6 firms) for bespoke career sites. (The iCIMS
+adapter exists but currently has no active `FIRMS` entries — every iCIMS
+tenant found so far sits behind an AWS WAF challenge and lives in
+`MANUAL_CHECK_FIRMS` instead.)
 
 Several career sites sit behind bot protection that blocks plain HTTP
 scraping, or turned out to run entirely client-side with no static HTML
@@ -142,9 +152,13 @@ extending coverage to new firms:
 `scraper/report.py` renders `report.html` (and an identical `index.html`)
 on every run: a metrics row (new matches, firms scanned, needs review,
 last run time), an auto-match section, and a review-manually section,
-each posting card linking straight to the real job listing. Empty
-sections show a plain "no matches this run" message. All scraped text is
-treated as untrusted and HTML-escaped before rendering.
+each posting card linking straight to the real job listing. Each card
+shows keyword-match pills, a work-arrangement pill ("Remote" or "remote
+status unclear — verify" — see the work-arrangement filter above) in the
+same monospace pill style, and a rotated "NEW" badge for postings not
+seen on a previous run. Empty sections show a plain "no matches this run"
+message. All scraped text is treated as untrusted and HTML-escaped before
+rendering.
 
 ## Automation
 
@@ -156,7 +170,8 @@ summary, uploads `debug_all_titles.txt` as a build artifact, and commits
 `data/seen_postings.json` + `report.html` + `index.html` back to the repo
 if anything changed.
 
-For the HTML report to be viewable at a stable URL (e.g. from a phone),
-enable GitHub Pages once in repo Settings → Pages → Source → "Deploy from
-a branch" → this branch → `/ (root)`. GitHub Pages requires that manual,
-repo-owner opt-in; there's no API bypass.
+The report is published via GitHub Pages (Settings → Pages → Source →
+"Deploy from a branch" → this branch → `/ (root)`, already enabled) at
+https://sykotikgith.github.io/LawfirmScraper/ — it auto-redeploys
+whenever `report.html`/`index.html` change on the branch, so it reflects
+whatever the most recent scheduled or manually-triggered run committed.
