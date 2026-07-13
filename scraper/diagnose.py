@@ -1,20 +1,13 @@
-"""AmLaw 100 batch, round 6: chase the 2 genuine finds from round 5.
+"""AmLaw 100 batch, round 7 (final targeted check before wrapping up):
 
-K&L Gates: found a link to https://klgates.recsolu.com/job_boards/1 --
-RecSolu, a platform not in this project's known-ATS pattern list at all
-(that's why the broad sniff missed it despite the link being right
-there). Fetches it directly to see the structure -- HTML table, JSON API,
-or JS app -- before deciding whether it's worth a new adapter.
+Sheppard Mullin: __NEXT_DATA__ had no job data directly, but
+props.pageProps.componentProps wasn't inspected -- that's where a
+component-driven CMS (Sitecore JSS) would reference a job-search widget
+and its config/API endpoint, if one exists on this page.
 
-Sheppard Mullin: the /careers page's __NEXT_DATA__ blob (Sitecore + Next.js
-JSS) is 80KB but round 5 only printed the first 1500 chars, which was
-just page metadata/badges, not job data. Searches the full JSON for
-job/opening/position/requisition-shaped keys to find where the real
-listing data lives.
-
-Crowell & Moring: the careers landing page was an unusual 4MB -- quick
-check for an embedded JSON state blob (same shape as Sheppard Mullin's
-Next.js pattern) before writing this off entirely.
+K&L Gates: klgates.recsolu.com/job_boards/1 is JS-rendered (Yello
+Enterprise platform) with no visible API path in the initial HTML. Tries
+a few common REST API shapes RecSolu/Yello job boards are known to use.
 
 Usage: python -m scraper.diagnose
 """
@@ -38,86 +31,69 @@ def fetch(url: str) -> requests.Response | None:
         return None
 
 
-def check_klgates_recsolu() -> None:
-    print("=== K&L Gates: klgates.recsolu.com/job_boards/1 ===")
-    resp = fetch("https://klgates.recsolu.com/job_boards/1")
-    if resp is None:
-        return
-    print(f"  status={resp.status_code}  final_url={resp.url}  len={len(resp.text)}")
-    text = resp.text
-    print(f"  'application/json' content-type: {resp.headers.get('Content-Type')}")
-
-    script_srcs = re.findall(r'<script[^>]+src=["\']([^"\']+)["\']', text)
-    print(f"  <script src> tags ({len(script_srcs)}): {script_srcs[:10]}")
-
-    api_hints = re.findall(r'["\'](/[\w./-]*(?:api|job|posting|search)[\w./-]*)["\']', text, re.IGNORECASE)
-    print(f"  possible API path fragments: {sorted(set(api_hints))[:20]}")
-
-    job_link_count = len(re.findall(r'/jobs?/', text, re.IGNORECASE))
-    print(f"  '/job(s)/' occurrences in raw HTML: {job_link_count}")
-    print(f"  first 1200 chars:\n  {text[:1200]!r}")
-
-
-def check_sheppard_mullin_next_data() -> None:
-    print("\n=== Sheppard Mullin: searching __NEXT_DATA__ for job data ===")
+def check_sheppard_component_props() -> None:
+    print("=== Sheppard Mullin: componentProps ===")
     resp = fetch("https://www.sheppard.com/careers")
     if resp is None:
         return
     match = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', resp.text, re.DOTALL)
     if not match:
-        print("  no __NEXT_DATA__ block found this time")
+        print("  no __NEXT_DATA__ block found")
         return
-    try:
-        data = json.loads(match.group(1))
-    except json.JSONDecodeError as exc:
-        print(f"  JSON PARSE FAILED: {exc}")
+    data = json.loads(match.group(1))
+    component_props = data.get("props", {}).get("pageProps", {}).get("componentProps")
+    if component_props is None:
+        print("  no componentProps key found")
         return
+    text = json.dumps(component_props)
+    print(f"  componentProps JSON length: {len(text)}")
+    print(f"  first 2000 chars: {text[:2000]}")
 
-    def find_job_keys(obj, path="root", depth=0, results=None):
-        if results is None:
-            results = []
-        if depth > 12:
-            return results
-        if isinstance(obj, dict):
-            for k, v in obj.items():
-                if re.search(r"job|opening|position|requisition|vacan", k, re.IGNORECASE):
-                    results.append((f"{path}.{k}", type(v).__name__, str(v)[:200]))
-                find_job_keys(v, f"{path}.{k}", depth + 1, results)
-        elif isinstance(obj, list):
-            for i, item in enumerate(obj[:5]):
-                find_job_keys(item, f"{path}[{i}]", depth + 1, results)
-        return results
-
-    hits = find_job_keys(data)
-    print(f"  job-related keys found in __NEXT_DATA__: {len(hits)}")
-    for path, typ, preview in hits[:20]:
-        print(f"    {path} ({typ}): {preview}")
-
-    # also print the overall top-level shape for orientation
-    print(f"\n  top-level keys: {list(data.keys())}")
-    if "props" in data and "pageProps" in data.get("props", {}):
-        print(f"  props.pageProps keys: {list(data['props']['pageProps'].keys())}")
+    job_mentions = re.findall(r'"[^"]{0,40}(?:job|opening|position|search|api)[^"]{0,40}"', text, re.IGNORECASE)
+    print(f"\n  keys/values mentioning job/opening/position/search/api: {sorted(set(job_mentions))[:30]}")
 
 
-def check_crowell_json() -> None:
-    print("\n=== Crowell & Moring: checking for embedded JSON state ===")
-    resp = fetch("https://www.crowell.com/en/careers")
-    if resp is None:
-        return
-    text = resp.text
-    print(f"  len={len(text)}")
-    next_data = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', text, re.DOTALL)
-    print(f"  __NEXT_DATA__ present: {bool(next_data)}")
-    large_script_blocks = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.{5000,})?</script>", text, re.DOTALL)
-    print(f"  inline <script> blocks over 5000 chars: {len(large_script_blocks)}")
-    if large_script_blocks:
-        print(f"  first 500 chars of largest: {large_script_blocks[0][:500]!r}")
+def check_klgates_api_guesses() -> None:
+    print("\n=== K&L Gates: RecSolu/Yello API endpoint guesses ===")
+    board_id_url = "https://klgates.recsolu.com/job_boards/1"
+    resp = fetch(board_id_url)
+    real_board_id = None
+    if resp is not None:
+        # the og:url meta tag in round 6's output showed a real opaque board
+        # id (o8D4HDBB0N8jcVnRfV263g) different from the "1" in the path
+        match = re.search(r'property="og:url"\s+content="[^"]*/job_boards/([\w-]+)"', resp.text)
+        if match:
+            real_board_id = match.group(1)
+            print(f"  real board id found via og:url: {real_board_id}")
+
+    candidates = [
+        "https://klgates.recsolu.com/api/v1/job_boards/1/jobs",
+        "https://klgates.recsolu.com/api/job_boards/1/jobs",
+        "https://klgates.recsolu.com/job_boards/1.json",
+        "https://klgates.recsolu.com/job_boards/1/jobs.json",
+    ]
+    if real_board_id:
+        candidates += [
+            f"https://klgates.recsolu.com/api/v1/job_boards/{real_board_id}/jobs",
+            f"https://klgates.recsolu.com/job_boards/{real_board_id}.json",
+        ]
+
+    for url in candidates:
+        headers = dict(DEFAULT_HEADERS)
+        headers["Accept"] = "application/json"
+        try:
+            r = requests.get(url, headers=headers, timeout=TIMEOUT)
+        except requests.exceptions.RequestException as exc:
+            print(f"  {url}: EXCEPTION {type(exc).__name__}")
+            continue
+        print(f"  {url}: status={r.status_code} content-type={r.headers.get('Content-Type')} len={len(r.text)}")
+        if r.status_code == 200 and "json" in (r.headers.get("Content-Type") or ""):
+            print(f"    first 500 chars: {r.text[:500]}")
 
 
 def main() -> None:
-    check_klgates_recsolu()
-    check_sheppard_mullin_next_data()
-    check_crowell_json()
+    check_sheppard_component_props()
+    check_klgates_api_guesses()
 
 
 if __name__ == "__main__":
