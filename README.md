@@ -1,10 +1,14 @@
-# LawfirmScraper
+# Law Firm Career Radar
 
 Scrapes career sites at law firms for open business-professional roles in
 IT, Knowledge Management, Legal AI, and related areas, classifies each
 posting into auto-match / needs-review / excluded, tracks what's already
 been seen, and publishes a static HTML report. Runs on a schedule via
 GitHub Actions.
+
+(Repo formerly named `LawFirmScraper` — renamed to `law-firm-career-radar`
+to better reflect what the project actually does. See `squirrel_notes.md`
+for the rename history.)
 
 ## Usage
 
@@ -30,7 +34,7 @@ finally writes:
   below), regenerated every run.
 
 The live report is published via GitHub Pages at
-https://sykotikgith.github.io/LawfirmScraper/.
+https://sykotikgith.github.io/law-firm-career-radar/.
 
 ## Filters
 
@@ -172,6 +176,6 @@ if anything changed.
 
 The report is published via GitHub Pages (Settings → Pages → Source →
 "Deploy from a branch" → this branch → `/ (root)`, already enabled) at
-https://sykotikgith.github.io/LawfirmScraper/ — it auto-redeploys
+https://sykotikgith.github.io/law-firm-career-radar/ — it auto-redeploys
 whenever `report.html`/`index.html` change on the branch, so it reflects
 whatever the most recent scheduled or manually-triggered run committed.

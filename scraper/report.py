@@ -123,7 +123,7 @@ def render_report(
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Law Firm ATS Scrape Report</title>
+<title>Law Firm Career Radar</title>
 <style>
   :root {{
     --bg: #0B121C;
@@ -303,7 +303,7 @@ def render_report(
 </head>
 <body>
   <div class="page">
-    <h1>Law Firm ATS Scrape Report</h1>
+    <h1>Law Firm Career Radar</h1>
     <p class="subtitle">IT / Knowledge Management / Legal-AI role filter — updated {html.escape(timestamp_str)}</p>
 
     <div class="metrics-grid">{metrics}

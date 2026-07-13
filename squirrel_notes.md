@@ -4,9 +4,17 @@ Not things to build next. Things Future Maegan shouldn't have to remember.
 
 ## Parked ideas
 
-**Repo/project rename**
-"LawFirmScraper" undersells it. Consider "Legal Tech Role Radar" or similar once the
-pipeline's stable. Requires updating the GitHub Pages URL and Actions workflow refs.
+**Repo/project rename** — DONE (2026-07-13)
+Renamed from "LawFirmScraper" to "Law Firm Career Radar" (repo slug:
+`law-firm-career-radar`). New live dashboard URL:
+https://sykotikgith.github.io/law-firm-career-radar/. Dashboard page
+title/header, README title/intro, and this note all updated to match.
+The Actions workflow (`scrape.yml`) needed no changes — it never
+referenced the old repo name anywhere. One manual step still outstanding
+on GitHub's side: the actual repo rename (Settings → General →
+Repository name) has to be done by a human in the GitHub UI — no tool
+in this environment can do it, same category as the GitHub Pages
+enable step. Until that's done, the dashboard URL above 404s.
 
 **Multi-user profiles**
 YAML per person (e.g. `profiles/maegan.yaml`, `profiles/aly.yaml`), one scraping
