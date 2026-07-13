@@ -1,10 +1,19 @@
-"""Diagnostic round 4 for Reed Smith: the AJAX grid endpoint returns real
-HTML with "Page 1 of 5" and pagination links shaped like
-?movejump=1&movejump_page=N&pagestamp=<token>. Round 3's printout cut off
-right where the actual job rows start. This parses the grid HTML with
-BeautifulSoup to find the real per-job link markup, and sweeps all 5 pages
-using the same session/pagestamp to see the full job list before writing
-the real adapter.
+"""Diagnostic: 6 firms confirmed to have a real Workday tenant (via
+ats_probe.py's path-specific-error signal) show NO Workday link in any
+format on their careers pages, even after find_workday_sites.py's regex
+was fixed to also catch the myworkdaysite.com front-end shape. Same
+pattern as Debevoise & Plimpton / O'Melveny & Myers / Milbank earlier in
+this project: a real-but-dormant/internal Workday tenant, with the actual
+external-recruiting ATS being a different platform entirely.
+
+This scans each firm's careers page for ANY known ATS platform domain
+(not just Workday) -- iCIMS, Greenhouse, Oracle Recruiting Cloud,
+ApplicantStack, HRMdirect, viGlobal, Circa Works, PageUp/eArcu, UltiPro,
+plus a few not yet seen in this project (Phenom, SmartRecruiters, Taleo,
+SuccessFactors, Avature, Jobvite, Lever, BambooHR) -- and prints the final
+URL after redirects (in case a client-side/meta redirect points somewhere
+the raw body text doesn't mention), so the real platform can be
+identified in one pass instead of guessing again.
 
 Usage: python -m scraper.diagnose
 """
@@ -13,71 +22,77 @@ from __future__ import annotations
 import re
 
 import requests
-from bs4 import BeautifulSoup
 
 from .adapters.base import DEFAULT_HEADERS
 
-TIMEOUT = 30
-LIST_URL = "https://careers.reedsmith.com/jobs/vacancy/find/results"
-PAGESTAMP_RE = re.compile(r"ajaxaction/posbrowser_gridhandler/\?pagestamp=([\w-]+)")
+TIMEOUT = 20
+
+# (firm, url to check -- the best-content path found by find_workday_sites.py)
+FIRMS = [
+    ("McDermott Will & Emery", "https://www.mwe.com/careers"),
+    ("Morrison & Foerster", "https://www.mofo.com/careers"),
+    ("Skadden Arps", "https://www.skadden.com/careers"),
+    ("Davis Polk", "https://www.davispolk.com"),  # /careers 403'd, try bare domain
+    ("Hogan Lovells", "https://www.hoganlovells.com"),  # /careers 404'd, try bare domain
+    ("Cleary Gottlieb", "https://www.clearygottlieb.com/careers"),
+]
+
+ATS_DOMAIN_PATTERNS = {
+    "iCIMS": r"icims\.com",
+    "Greenhouse": r"greenhouse\.io",
+    "Oracle Recruiting Cloud": r"oraclecloud\.com",
+    "ApplicantStack": r"applicantstack\.com",
+    "HRMdirect": r"hrmdirect\.com",
+    "viGlobal": r"viglobalcloud\.com",
+    "Circa Works": r"circaworks\.com",
+    "PageUp/eArcu": r"\bearcu\b",
+    "UltiPro": r"ultipro\.com",
+    "Phenom": r"phenompeople\.com",
+    "SmartRecruiters": r"smartrecruiters\.com",
+    "Taleo": r"taleo\.net",
+    "SuccessFactors": r"successfactors\.com",
+    "Avature": r"avature\.net",
+    "Jobvite": r"jobvite\.com",
+    "Lever": r"jobs\.lever\.co",
+    "BambooHR": r"bamboohr\.com",
+    "Workday (any format)": r"myworkday(?:jobs|site)\.com",
+}
 
 
-def fetch_grid(session: requests.Session, pagestamp: str, page: int) -> str:
-    if page == 1:
-        url = f"{LIST_URL}/ajaxaction/posbrowser_gridhandler/?pagestamp={pagestamp}"
-    else:
-        url = f"{LIST_URL}/ajaxaction/posbrowser_gridhandler/?movejump=1&movejump_page={page}&pagestamp={pagestamp}"
-    headers = dict(DEFAULT_HEADERS)
-    headers["X-Requested-With"] = "XMLHttpRequest"
-    headers["Referer"] = LIST_URL
-    resp = session.get(url, headers=headers, timeout=TIMEOUT)
-    return resp.text
+def scan(firm: str, url: str) -> None:
+    print(f"\n=== {firm} -- {url} ===")
+    try:
+        resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=TIMEOUT, allow_redirects=True)
+    except requests.exceptions.RequestException as exc:
+        print(f"  EXCEPTION: {type(exc).__name__}: {exc}")
+        return
+
+    print(f"  status={resp.status_code}  final_url={resp.url}  len={len(resp.text)}")
+
+    text = resp.text
+    found_any = False
+    for label, pattern in ATS_DOMAIN_PATTERNS.items():
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            found_any = True
+            count = len(re.findall(pattern, text, re.IGNORECASE))
+            idx = match.start()
+            print(f"  FOUND {label}: {count}x, context: ...{text[max(0, idx - 80):idx + 120]}...")
+
+    meta_refresh = re.search(
+        r'<meta[^>]+http-equiv=["\']refresh["\'][^>]*content=["\']([^"\']+)["\']', text, re.IGNORECASE
+    )
+    if meta_refresh:
+        print(f"  META REFRESH found: {meta_refresh.group(1)}")
+
+    if not found_any:
+        print("  No known ATS domain found. First 500 chars of body:")
+        print(f"  {text[:500]!r}")
 
 
 def main() -> None:
-    session = requests.Session()
-    session.headers.update(DEFAULT_HEADERS)
-    list_resp = session.get(LIST_URL, timeout=TIMEOUT)
-    match = PAGESTAMP_RE.search(list_resp.text)
-    if not match:
-        print("no pagestamp found")
-        return
-    pagestamp = match.group(1)
-    print(f"pagestamp: {pagestamp}\n")
-
-    page1_html = fetch_grid(session, pagestamp, 1)
-    soup = BeautifulSoup(page1_html, "lxml")
-
-    print("=== all <a> tags inside ListGridContainer/rowContainerHolder-ish areas ===")
-    grid_container = soup.select_one(".ListGridContainer") or soup
-    links = grid_container.find_all("a")
-    print(f"total <a> tags found in grid area: {len(links)}")
-    for link in links[:30]:
-        href = link.get("href", "")
-        text = link.get_text(strip=True)
-        cls = link.get("class")
-        print(f"  href={href!r}  class={cls}  text={text!r}")
-
-    print("\n=== elements with class containing 'row' (likely one per job) ===")
-    row_els = soup.select("[class*=row]")
-    print(f"count: {len(row_els)}")
-    for el in row_els[:5]:
-        print(f"\n--- row element (tag={el.name}, class={el.get('class')}) ---")
-        print(str(el)[:1500])
-
-    print("\n\n=== sweeping all 5 pages, counting distinct job links ===")
-    all_hrefs: set[str] = set()
-    for page in range(1, 6):
-        html = fetch_grid(session, pagestamp, page)
-        page_soup = BeautifulSoup(html, "lxml")
-        page_links = [a.get("href", "") for a in page_soup.select(".ListGridContainer a, .rowContainerHolder a")]
-        job_like = [h for h in page_links if h and "ajaxaction" not in h and "/map/" not in h]
-        print(f"  page {page}: {len(job_like)} candidate job links (of {len(page_links)} total <a> in grid)")
-        all_hrefs.update(job_like)
-
-    print(f"\ntotal distinct candidate job links across all pages: {len(all_hrefs)}")
-    for h in sorted(all_hrefs)[:15]:
-        print(f"  {h}")
+    for firm, url in FIRMS:
+        scan(firm, url)
 
 
 if __name__ == "__main__":
