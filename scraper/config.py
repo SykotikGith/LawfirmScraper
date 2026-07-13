@@ -399,6 +399,20 @@ FIRMS: dict[str, dict] = {
         "matters; the existing keyword + work-arrangement filters don't currently do "
         "location-based country filtering.",
     },
+    "Faegre Drinker": {
+        "adapter": WorkdayAdapter,
+        "tenant": "esswd",
+        "wd": "wd501",
+        "site": "External",
+        "notes": "CONFIRMED via live probe -- 11 real postings, plausible/strong "
+        "business-professional titles ('Director of AI & Automation', 'Senior Legal "
+        "Solutions Designer', 'Director of Enterprise Data Management & Engineering', "
+        "'Legal Administrative Assistant'). Tenant slug 'esswd' and pod 'wd501' are BOTH "
+        "different from what ats_probe.py guessed ('faegredrinker' slug, wd1-wd10/103/115 "
+        "pod range) -- found instead via the firm's own careers page embedding a Workday "
+        "link directly. 'esswd' likely traces back to a predecessor entity name (Faegre "
+        "Drinker formed from a 2020 Faegre Baker Daniels + Drinker Biddle & Reath merger).",
+    },
 }
 
 
