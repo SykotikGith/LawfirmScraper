@@ -65,9 +65,17 @@ on hand — see below) job description text:
   description explicitly says fully remote / work from home.
 - **Hybrid** — location or description says "hybrid", or names a partial
   in-office schedule ("3 days a week in office").
-- **Onsite** — location names a single physical place and neither of the
-  above is present.
-- **Unclear** — no location text and no remote/hybrid signal found.
+- **Onsite** — only when there's *explicit* contradicting language: location
+  says "onsite"/"on-site" directly, or description says something like
+  "on-site required," "must work from the office," or "not eligible for
+  remote." A plain city/office location by itself is deliberately **not**
+  treated as an onsite signal — silence about work arrangement means
+  "verify," not "confirmed onsite" (most postings don't state it either
+  way, and defaulting a bare "Chicago, IL" to onsite was excluding
+  postings that were actually hybrid or remote-eligible but just didn't
+  say so in the location field).
+- **Unclear** — none of the above signals found. This is the default for a
+  plain city/office location with no explicit language either way.
 
 Hybrid and onsite postings are hard-excluded from auto-match/review-manually
 the same way title-level hard excludes are — they're written to

@@ -5,9 +5,16 @@ Signals, checked in this order (first match wins):
              in-office language in location or description
   remote  -- "Remote"/"Virtual"/"Nationwide" in location, or explicit
              fully-remote/work-from-home language in description
-  onsite  -- location names a single physical place and neither of the
-             above signals is present
-  unclear -- no location text and no remote/hybrid signal found
+  onsite  -- explicit contradicting language only: location says
+             "onsite"/"on-site" directly, or description explicitly rules
+             out remote ("on-site required", "must work from office", "no
+             remote option", etc.)
+  unclear -- none of the above. This is the default for a plain city/office
+             location with no explicit language either way -- silence
+             about work arrangement means "verify," not "confirmed
+             onsite." A bare "Chicago, IL" location is common for postings
+             that are actually hybrid or remote-eligible but just don't
+             say so in the location field.
 
 Hybrid is checked ahead of remote because it's the more specific claim --
 a posting that says "hybrid, 3 days a week in office" shouldn't read as
@@ -17,7 +24,8 @@ considered".
 Most adapters only have `location` to go on (no per-job description text
 without an extra HTTP request per posting) -- `description` is "" for
 those, and detection still works, it just leans on location alone and
-falls to "onsite" or "unclear" more often. That's a known, deliberate
+falls to "unclear" more often for lack of any description text to search
+for explicit onsite/remote/hybrid language. That's a known, deliberate
 coverage gap, not a bug.
 """
 from __future__ import annotations
@@ -50,6 +58,31 @@ HYBRID_DAYS_RE = re.compile(
     r"|\b(?:in.?office|on.?site)\b[^.\n]{0,40}\b\d+\s*(?:-\d+\s*)?days?\b",
     re.IGNORECASE,
 )
+
+ONSITE_LOCATION_RE = re.compile(r"\bon[-\s]?site\b", re.IGNORECASE)
+
+# Explicit language that rules out remote/hybrid entirely -- a plain city
+# name is NOT enough on its own (see module docstring).
+ONSITE_DESC_PATTERNS = [
+    re.compile(rf"\b{p}\b", re.IGNORECASE)
+    for p in [
+        "on-?site required",
+        "must work from (?:the )?office",
+        "must work in(?:-| )?office",
+        "no remote option",
+        "no remote work",
+        "not a remote position",
+        "not eligible for remote",
+        "in-?office position",
+        "fully on-?site",
+        "100% on-?site",
+        "on-?site only",
+        "in-person only",
+        "required to work on-?site",
+        "required to be on-?site",
+        "must be on-?site",
+    ]
+]
 
 
 @dataclass
@@ -91,13 +124,17 @@ def detect_work_arrangement(location: str, description: str = "") -> WorkArrange
     if remote_signals:
         return WorkArrangement(status="remote", signals=remote_signals)
 
-    if location.strip():
-        return WorkArrangement(
-            status="onsite",
-            signals=[f'single location "{location.strip()}", no remote/hybrid language'],
-        )
+    onsite_signals = []
+    if ONSITE_LOCATION_RE.search(location):
+        onsite_signals.append('location contains "onsite"/"on-site"')
+    for pattern in ONSITE_DESC_PATTERNS:
+        match = pattern.search(description)
+        if match:
+            onsite_signals.append(f'description contains "{match.group(0)}"')
+    if onsite_signals:
+        return WorkArrangement(status="onsite", signals=onsite_signals)
 
-    return WorkArrangement(
-        status="unclear",
-        signals=["no location text and no remote/hybrid signal found"],
-    )
+    fallback_signal = "no explicit remote/hybrid/onsite language found"
+    if location.strip():
+        fallback_signal += f' (location: "{location.strip()}", not treated as a signal on its own)'
+    return WorkArrangement(status="unclear", signals=[fallback_signal])
