@@ -509,6 +509,22 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "homepage (Sitefinity CMS) -- the real careers subpage URL wasn't found.",
         "check_url": "https://www.clearygottlieb.com/careers",
     },
+    "Nelson Mullins": {
+        "reason": "Confirmed iCIMS tenant 'nelsonmullins' (found embedded in "
+        "nelsonmullins.com/careers), blocked by the same AWS WAF 'Human Verification' "
+        "challenge as Orrick/Milbank -- not scrapable with a plain HTTP client.",
+        "tenant": "nelsonmullins",
+        "search_url": "https://careers-nelsonmullins.icims.com/jobs/search",
+        "check_url": "https://www.nelsonmullins.com/careers",
+    },
+    "Foley & Lardner": {
+        "reason": "Confirmed iCIMS tenant 'foley' (found embedded in foley.com/careers), "
+        "blocked by the same AWS WAF 'Human Verification' challenge as Orrick/Milbank -- "
+        "not scrapable with a plain HTTP client.",
+        "tenant": "foley",
+        "search_url": "https://careers-foley.icims.com/jobs/intro?hashed=-626009846",
+        "check_url": "https://www.foley.com/careers/",
+    },
 }
 
 # ---------------------------------------------------------------------------
