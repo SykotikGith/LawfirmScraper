@@ -1,11 +1,11 @@
-"""Diagnostic: figure out why CustomHTMLAdapter returned 0 postings for
-Reed Smith. config.py already flagged this as a risk -- careers.reedsmith.com
-is a front-end search/results layer over an Oracle PeopleSoft HCM Recruiting
-(Fluid Candidate Gateway) backend at recruit.reedsmith.com, and it was
-unclear whether the front-end is server-rendered or JS-driven. This fetches
-both the configured list_url and the PeopleSoft host directly, and prints
-enough structural clues (script tags, framework markers, embedded JSON, any
-API-looking path fragments) to tell what's actually there.
+"""Diagnostic round 2 for Reed Smith: the original config.py assumption
+(Oracle PeopleSoft at recruit.reedsmith.com) was wrong -- that host doesn't
+even resolve. Round 1 found this is actually PageUp/eArcu (meta
+name="author" content="PageUp Europe", earcu-details meta tag, Astro+Vue
+components under /jobs/custom/ReedSmith_02/), a platform not seen anywhere
+else in this project. Round 1 only printed the <head> -- this looks at the
+<body> content (where job listings would actually render) and searches for
+any embedded JSON/API hints specific to PageUp/eArcu's search results.
 
 Usage: python -m scraper.diagnose
 """
@@ -19,44 +19,40 @@ from .adapters.base import DEFAULT_HEADERS
 
 TIMEOUT = 30
 LIST_URL = "https://careers.reedsmith.com/jobs/vacancy/find/results"
-PEOPLESOFT_HOST = "https://recruit.reedsmith.com/"
-
-
-def inspect(label: str, url: str) -> str:
-    print(f"\n=== {label} -- {url} ===")
-    try:
-        resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=TIMEOUT, allow_redirects=True)
-    except Exception as exc:  # noqa: BLE001
-        print(f"  EXCEPTION: {type(exc).__name__}: {exc}")
-        return ""
-    text = resp.text
-    print(f"  final url after redirects: {resp.url}")
-    print(f"  status={resp.status_code}  content-length={len(text)}")
-    print(f"  'JobOpeningId' in page: {'JobOpeningId' in text}")
-    print(f"  'HRS_CE' in page (PeopleSoft component marker): {'HRS_CE' in text}")
-    print(f"  'ng-version' present (Angular): {'ng-version' in text}")
-    print(f"  'data-reactroot' or React bundle hint present: {'data-reactroot' in text or 'react' in text.lower()}")
-    print(f"  'ko.' knockout marker present: {'ko.applyBindings' in text or 'data-bind=' in text}")
-
-    script_srcs = re.findall(r'<script[^>]+src=["\']([^"\']+)["\']', text)
-    print(f"  <script src=...> tags found ({len(script_srcs)}):")
-    for src in script_srcs[:15]:
-        print(f"    {src}")
-
-    api_hints = re.findall(
-        r'["\'](/[\w./-]*(?:api|svc|search|vacancy|opening|posting)[\w./-]*)["\']', text, re.IGNORECASE
-    )
-    print(f"  possible API path fragments referenced in page: {sorted(set(api_hints))[:20]}")
-    return text
 
 
 def main() -> None:
-    text = inspect("Reed Smith configured list_url", LIST_URL)
-    inspect("Reed Smith PeopleSoft host root", PEOPLESOFT_HOST)
+    resp = requests.get(LIST_URL, headers=DEFAULT_HEADERS, timeout=TIMEOUT)
+    text = resp.text
+    print(f"status={resp.status_code}  content-length={len(text)}")
 
-    if text:
-        print("\n--- first 2500 chars of list_url HTML (for manual inspection) ---")
-        print(text[:2500])
+    body_start = text.find("<body")
+    print(f"\n<body> starts at offset {body_start}")
+
+    print("\n=== searching for vacancy/job listing markup ===")
+    for needle in ["vacancy", "Vacancy", "job-item", "job-card", "js-vacancy", "data-vacancy", "results-list", "no results", "No results", "No jobs"]:
+        count = text.count(needle)
+        if count:
+            idx = text.find(needle)
+            print(f"\n'{needle}' occurs {count}x, first at offset {idx}:")
+            print(text[max(0, idx - 200):idx + 400])
+
+    print("\n\n=== <div>/<section> ids and classes containing 'result' or 'list' ===")
+    containers = re.findall(r'<(?:div|section|ul)[^>]+(?:id|class)=["\']([^"\']*(?:result|list|search)[^"\']*)["\'][^>]*>', text, re.IGNORECASE)
+    for c in sorted(set(containers))[:30]:
+        print(f"  {c!r}")
+
+    print("\n\n=== any inline <script> (not src=) containing 'vacanc' or 'job' data ===")
+    inline_scripts = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", text, re.DOTALL | re.IGNORECASE)
+    print(f"inline <script> blocks found: {len(inline_scripts)}")
+    for script in inline_scripts:
+        if re.search(r"vacanc|job", script, re.IGNORECASE):
+            print("\n--- inline script snippet (first 800 chars) ---")
+            print(script[:800])
+
+    print("\n\n=== raw body content, offset body_start to body_start+4000 ===")
+    if body_start != -1:
+        print(text[body_start:body_start + 4000])
 
 
 if __name__ == "__main__":

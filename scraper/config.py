@@ -111,15 +111,21 @@ FIRMS: dict[str, dict] = {
         "verified, not a single page.",
     },
     "Reed Smith": {
-        # NOT a bespoke custom site -- confirmed Oracle PeopleSoft HCM (Candidate Gateway).
+        # CORRECTION (July 2026, live diagnostics): the original "Oracle PeopleSoft at
+        # recruit.reedsmith.com" note was wrong -- that host doesn't even resolve (DNS
+        # failure). Confirmed via live probe to actually be PageUp/eArcu (meta
+        # name="author" content="PageUp Europe", earcu-details meta tag, Astro+Vue
+        # components under /jobs/custom/ReedSmith_02/) -- a platform not seen anywhere
+        # else in this project. list_url/link_selector below are UNVERIFIED against
+        # this platform's real markup; CustomHTMLAdapter returned 0 postings, currently
+        # under live investigation to find the real listing markup or API.
         "adapter": CustomHTMLAdapter,
         "list_url": "https://careers.reedsmith.com/jobs/vacancy/find/results",
         "link_selector": "a[href*='JobOpeningId']",
-        "notes": "Confirmed backend is Oracle PeopleSoft HCM Recruiting (Fluid Candidate "
-        "Gateway) at recruit.reedsmith.com, with numeric JobOpeningId identifiers. "
-        "careers.reedsmith.com/jobs/... is a front-end search/results layer over that backend; "
-        "unclear if it's server-rendered or JS-driven -- verify before trusting CustomHTMLAdapter "
-        "here, may need a PeopleSoft-specific adapter instead.",
+        "notes": "ATS is PageUp/eArcu, NOT Oracle PeopleSoft as originally guessed. "
+        "link_selector 'JobOpeningId' was a PeopleSoft assumption and doesn't match anything "
+        "on this platform -- that's why it returns 0 postings. Under live investigation to "
+        "find the real listing markup/API for this platform.",
     },
     # --- Recently merged, verify structure ---------------------------------------------------
     "Ashurst Perkins Coie (fka Perkins Coie)": {
