@@ -16,6 +16,7 @@ from .adapters import (
     ApplicantStackAdapter,
     CircaWorksAdapter,
     CustomHTMLAdapter,
+    EArcuAdapter,
     GreenhouseAdapter,
     OracleRecruitingAdapter,
     UltiProAdapter,
@@ -114,18 +115,20 @@ FIRMS: dict[str, dict] = {
         # CORRECTION (July 2026, live diagnostics): the original "Oracle PeopleSoft at
         # recruit.reedsmith.com" note was wrong -- that host doesn't even resolve (DNS
         # failure). Confirmed via live probe to actually be PageUp/eArcu (meta
-        # name="author" content="PageUp Europe", earcu-details meta tag, Astro+Vue
-        # components under /jobs/custom/ReedSmith_02/) -- a platform not seen anywhere
-        # else in this project. list_url/link_selector below are UNVERIFIED against
-        # this platform's real markup; CustomHTMLAdapter returned 0 postings, currently
-        # under live investigation to find the real listing markup or API.
-        "adapter": CustomHTMLAdapter,
+        # name="author" content="PageUp Europe", earcu-details meta tag) -- a platform not
+        # seen anywhere else in this project, needing its own EArcuAdapter (the list page is
+        # a JS shell; real data loads via an AJAX grid endpoint after page load).
+        "adapter": EArcuAdapter,
         "list_url": "https://careers.reedsmith.com/jobs/vacancy/find/results",
-        "link_selector": "a[href*='JobOpeningId']",
-        "notes": "ATS is PageUp/eArcu, NOT Oracle PeopleSoft as originally guessed. "
-        "link_selector 'JobOpeningId' was a PeopleSoft assumption and doesn't match anything "
-        "on this platform -- that's why it returns 0 postings. Under live investigation to "
-        "find the real listing markup/API for this platform.",
+        "notes": "CONFIRMED via live probing (4 diagnostic rounds) -- 54 real postings across "
+        "5 pages, sample titles unmistakably genuine ('Business Development Coordinator', "
+        "'Conflicts & Risk Management Attorney', 'Corporate Securities Paralegal', all with "
+        "plausible real office locations). EArcuAdapter primes a session against list_url to "
+        "get a live pagestamp token + session cookies, then sweeps the AJAX grid endpoint "
+        "(ajaxaction/posbrowser_gridhandler) page by page until an empty page -- verified "
+        "end-to-end against all 54 postings with zero duplicates. No full description text "
+        "available in the grid response, so work-arrangement detection here relies on "
+        "location text alone.",
     },
     # --- Recently merged, verify structure ---------------------------------------------------
     "Ashurst Perkins Coie (fka Perkins Coie)": {

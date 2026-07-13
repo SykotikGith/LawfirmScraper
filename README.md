@@ -104,10 +104,10 @@ a result.
 
 Adapters live in `scraper/adapters/` — one per ATS platform: iCIMS,
 Workday, Oracle Recruiting Cloud, ApplicantStack, Greenhouse, Circa Works,
-viGlobal, UKG/UltiPro Recruiting, and a generic custom-HTML adapter for
-bespoke career sites. (The iCIMS adapter exists but currently has no
-active `FIRMS` entries — every iCIMS tenant found so far sits behind an
-AWS WAF challenge and lives in `MANUAL_CHECK_FIRMS` instead.)
+viGlobal, UKG/UltiPro Recruiting, PageUp/eArcu, and a generic custom-HTML
+adapter for bespoke career sites. (The iCIMS adapter exists but currently
+has no active `FIRMS` entries — every iCIMS tenant found so far sits
+behind an AWS WAF challenge and lives in `MANUAL_CHECK_FIRMS` instead.)
 
 Several career sites sit behind bot protection that blocks plain HTTP
 scraping, or turned out to run entirely client-side with no static HTML

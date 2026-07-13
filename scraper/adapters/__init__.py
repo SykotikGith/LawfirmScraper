@@ -8,6 +8,7 @@ from .greenhouse import GreenhouseAdapter
 from .circaworks import CircaWorksAdapter
 from .viglobal import ViGlobalAdapter
 from .ultipro import UltiProAdapter
+from .earcu import EArcuAdapter
 
 __all__ = [
     "Adapter",
@@ -20,4 +21,5 @@ __all__ = [
     "CircaWorksAdapter",
     "ViGlobalAdapter",
     "UltiProAdapter",
+    "EArcuAdapter",
 ]
