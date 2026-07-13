@@ -1,5 +1,5 @@
-"""Live verification pass for the 21 firms ats_probe.py resolved, before
-adding them to config.py for real.
+"""Live verification pass for the AmLaw 100 expansion batch's ats_probe.py
+hits, before adding them to config.py for real.
 
 For Workday hits, ats_probe.py only confirmed the tenant *exists* on a
 given pod -- it doesn't know the "site" slug the real WorkdayAdapter
@@ -35,39 +35,31 @@ from .adapters.workday import WorkdayAdapter
 
 TIMEOUT = 20
 
-# (firm, tenant slug, pod) -- from the ats_probe.py Workday hits
+# (firm, tenant slug, pod) -- from the AmLaw 100 expansion batch's
+# ats_probe.py Workday hits (July 2026 run).
 WORKDAY_CANDIDATES = [
-    ("White & Case", "whitecase", "wd1"),
-    ("Paul Hastings", "paulhastings", "wd1"),
-    ("Weil Gotshal", "weil", "wd1"),
-    ("Simpson Thacher", "stblaw", "wd1"),
-    ("Debevoise & Plimpton", "debevoise", "wd1"),
-    ("Milbank", "milbank", "wd1"),
-    ("Cooley", "cooley", "wd1"),
-    ("Greenberg Traurig", "gtlaw", "wd1"),
-    ("Alston & Bird", "alston", "wd1"),
-    ("Holland & Knight", "hklaw", "wd1"),
-    ("Jackson Lewis", "jacksonlewis", "wd1"),
-    ("Blank Rome", "blankrome", "wd1"),
-    ("Covington & Burling", "cov", "wd1"),
-    ("O'Melveny & Myers", "omm", "wd1"),
-    ("Fenwick & West", "fenwick", "wd1"),
-    ("King & Spalding", "kslaw", "wd1"),
-    ("Locke Lord", "lockelord", "wd1"),
+    ("McDermott Will & Emery", "mwe", "wd5"),
+    ("Morrison & Foerster", "mofo", "wd5"),
+    ("Skadden Arps", "skadden", "wd5"),
+    ("Morgan Lewis", "morganlewis", "wd5"),
+    ("Davis Polk", "davispolk", "wd5"),
+    ("Hogan Lovells", "hoganlovells", "wd3"),
+    ("Cleary Gottlieb", "cgsh", "wd5"),
+    ("Norton Rose Fulbright", "nrf", "wd3"),
 ]
 
-GREENHOUSE_CANDIDATES = [
-    ("Gibson Dunn", "gibsondunn"),
-    ("Goodwin Procter", "goodwin"),
-]
+GREENHOUSE_CANDIDATES: list[tuple[str, str]] = []
 
-APPLICANTSTACK_CANDIDATES = [
-    ("Ropes & Gray", "ropesgray"),
-]
+APPLICANTSTACK_CANDIDATES: list[tuple[str, str]] = []
 
-HRMDIRECT_CANDIDATES = [
-    ("Winston & Strawn", "winston"),
-]
+# Winston & Strawn's "winston" HRMdirect hit is NOT included here --
+# already a CONFIRMED REJECTED collision (see REJECTED_LEADS in
+# config.py: real titles there are food/manufacturing roles belonging to
+# an unrelated company, "Winston Taylor"). Re-probing it would just
+# reproduce the same known-wrong result. Winston & Strawn's real ATS
+# still needs to be found via direct research, same as Blank Rome/
+# Covington & Burling's Workday-tenant-but-no-findable-site situation.
+HRMDIRECT_CANDIDATES: list[tuple[str, str]] = []
 
 SITE_SLUG_GUESSES_TEMPLATE = [
     "{slug}",
