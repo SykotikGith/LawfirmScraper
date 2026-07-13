@@ -1,70 +1,62 @@
-"""Diagnostic round 5: Skip/Take is the real pagination scheme for
-Akerman's UltiPro search API. Confirm whether Take actually controls page
-size (or 20 is hard-capped regardless), and sweep Skip across all 96
-postings to confirm every one is retrieved exactly once (no gaps, no
-duplicates) before writing the real adapter.
+"""Diagnostic: figure out why CustomHTMLAdapter returned 0 postings for
+Reed Smith. config.py already flagged this as a risk -- careers.reedsmith.com
+is a front-end search/results layer over an Oracle PeopleSoft HCM Recruiting
+(Fluid Candidate Gateway) backend at recruit.reedsmith.com, and it was
+unclear whether the front-end is server-rendered or JS-driven. This fetches
+both the configured list_url and the PeopleSoft host directly, and prints
+enough structural clues (script tags, framework markers, embedded JSON, any
+API-looking path fragments) to tell what's actually there.
 
 Usage: python -m scraper.diagnose
 """
 from __future__ import annotations
+
+import re
 
 import requests
 
 from .adapters.base import DEFAULT_HEADERS
 
 TIMEOUT = 30
-BASE = "https://recruiting.ultipro.com/AKE1000ASEPA/JobBoard/b855fc7e-c6e0-90cc-b829-ddbebeb6f274"
-URL = f"{BASE}/JobBoardView/LoadSearchResults"
+LIST_URL = "https://careers.reedsmith.com/jobs/vacancy/find/results"
+PEOPLESOFT_HOST = "https://recruit.reedsmith.com/"
 
 
-def search(skip: int, take: int) -> dict:
-    headers = dict(DEFAULT_HEADERS)
-    headers["Content-Type"] = "application/json"
-    headers["Accept"] = "application/json, text/plain, */*"
-    body = {"opportunitySearch": {"Text": "", "Skip": skip, "Take": take}}
-    resp = requests.post(URL, headers=headers, json=body, timeout=TIMEOUT)
-    resp.raise_for_status()
-    return resp.json()
+def inspect(label: str, url: str) -> str:
+    print(f"\n=== {label} -- {url} ===")
+    try:
+        resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=TIMEOUT, allow_redirects=True)
+    except Exception as exc:  # noqa: BLE001
+        print(f"  EXCEPTION: {type(exc).__name__}: {exc}")
+        return ""
+    text = resp.text
+    print(f"  final url after redirects: {resp.url}")
+    print(f"  status={resp.status_code}  content-length={len(text)}")
+    print(f"  'JobOpeningId' in page: {'JobOpeningId' in text}")
+    print(f"  'HRS_CE' in page (PeopleSoft component marker): {'HRS_CE' in text}")
+    print(f"  'ng-version' present (Angular): {'ng-version' in text}")
+    print(f"  'data-reactroot' or React bundle hint present: {'data-reactroot' in text or 'react' in text.lower()}")
+    print(f"  'ko.' knockout marker present: {'ko.applyBindings' in text or 'data-bind=' in text}")
+
+    script_srcs = re.findall(r'<script[^>]+src=["\']([^"\']+)["\']', text)
+    print(f"  <script src=...> tags found ({len(script_srcs)}):")
+    for src in script_srcs[:15]:
+        print(f"    {src}")
+
+    api_hints = re.findall(
+        r'["\'](/[\w./-]*(?:api|svc|search|vacancy|opening|posting)[\w./-]*)["\']', text, re.IGNORECASE
+    )
+    print(f"  possible API path fragments referenced in page: {sorted(set(api_hints))[:20]}")
+    return text
 
 
 def main() -> None:
-    print("--- does Take control page size? ---")
-    for take in (5, 10, 20, 50):
-        data = search(0, take)
-        print(f"  Take={take}: got {len(data.get('opportunities', []))} (totalCount={data.get('totalCount')})")
+    text = inspect("Reed Smith configured list_url", LIST_URL)
+    inspect("Reed Smith PeopleSoft host root", PEOPLESOFT_HOST)
 
-    print("\n--- sweeping Skip across all postings with Take=20 ---")
-    all_ids: list[str] = []
-    all_titles: dict[str, str] = {}
-    skip = 0
-    take = 20
-    total_count = None
-    page = 0
-    while True:
-        data = search(skip, take)
-        if total_count is None:
-            total_count = data.get("totalCount")
-        opps = data.get("opportunities", [])
-        page += 1
-        print(f"  page {page}: skip={skip} take={take} -> {len(opps)} opportunities")
-        if not opps:
-            break
-        for o in opps:
-            all_ids.append(o["Id"])
-            all_titles[o["Id"]] = o.get("Title", "")
-        skip += take
-        if skip >= (total_count or 0):
-            break
-
-    print(f"\ntotalCount reported: {total_count}")
-    print(f"total opportunities collected: {len(all_ids)}")
-    print(f"unique Ids collected: {len(set(all_ids))}")
-    dupes = len(all_ids) - len(set(all_ids))
-    print(f"duplicate Ids: {dupes}")
-
-    print("\n--- sample of collected titles (first 15) ---")
-    for id_ in all_ids[:15]:
-        print(f"  {all_titles[id_]!r}")
+    if text:
+        print("\n--- first 2500 chars of list_url HTML (for manual inspection) ---")
+        print(text[:2500])
 
 
 if __name__ == "__main__":
