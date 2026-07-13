@@ -18,6 +18,7 @@ from .adapters import (
     CustomHTMLAdapter,
     EArcuAdapter,
     GreenhouseAdapter,
+    JobviteAdapter,
     OracleRecruitingAdapter,
     UltiProAdapter,
     ViGlobalAdapter,
@@ -412,6 +413,35 @@ FIRMS: dict[str, dict] = {
         "pod range) -- found instead via the firm's own careers page embedding a Workday "
         "link directly. 'esswd' likely traces back to a predecessor entity name (Faegre "
         "Drinker formed from a 2020 Faegre Baker Daniels + Drinker Biddle & Reath merger).",
+    },
+    "Bryan Cave Leighton Paisner": {
+        # Second viGlobal tenant found in this project (after O'Melveny & Myers), with a
+        # DIFFERENT row template -- see viglobal.py's module docstring. ViGlobalAdapter
+        # tries the structured <h4>/<h5> shape first, falls back to O'Melveny's
+        # concatenated-text-blob shape, so one adapter covers both.
+        "adapter": ViGlobalAdapter,
+        "list_url": "https://bclplaw-careers.viglobalcloud.com/viRecruitSelfApply/RecDefault.aspx",
+        "notes": "CONFIRMED via live probe -- the bare list_url (no query params) renders the "
+        "real unfiltered listing directly, no Tag= GUID needed unlike O'Melveny's tenant. 5 "
+        "rows total: 1 generic 'General Online Application' placeholder (harmless -- won't "
+        "match any AI/KM keyword, silently dropped by the title filter) plus 4 real postings "
+        "at time of verification, all attorney/associate roles ('Mergers and Acquisitions "
+        "Associate, Atlanta', 'Mid to Senior Business & Commercial Disputes Associate - "
+        "Dallas'). No description text available -- this template's description div is "
+        "empty in server-rendered HTML (populated client-side after load).",
+    },
+    "Davis Wright Tremaine": {
+        # New platform for this project: Jobvite. Looks like a client-side JS app from the
+        # page shell but the job table itself is fully server-rendered -- see jobvite.py.
+        "adapter": JobviteAdapter,
+        "board_url": "https://jobs.jobvite.com/dwt/",
+        "notes": "CONFIRMED via live probe -- 19 real postings, direct hits on target roles "
+        "('AI Developer', 'eDiscovery Project Manager', 'Cybersecurity Analyst', 'Data "
+        "Analyst - Class Action Defense'), plus plausible business-professional titles "
+        "('Business Development Manager', 'Client Experience Legal Project Coordinator'). "
+        "Real per-job URLs and locations both available directly in static HTML, no JS "
+        "execution or extra requests needed despite the page initially looking like a "
+        "client-side app.",
     },
 }
 

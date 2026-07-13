@@ -9,6 +9,7 @@ from .circaworks import CircaWorksAdapter
 from .viglobal import ViGlobalAdapter
 from .ultipro import UltiProAdapter
 from .earcu import EArcuAdapter
+from .jobvite import JobviteAdapter
 
 __all__ = [
     "Adapter",
@@ -22,4 +23,5 @@ __all__ = [
     "ViGlobalAdapter",
     "UltiProAdapter",
     "EArcuAdapter",
+    "JobviteAdapter",
 ]

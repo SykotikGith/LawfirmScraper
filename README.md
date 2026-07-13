@@ -112,25 +112,25 @@ a result.
 `scraper/config.py` has three top-level structures:
 
 - `FIRMS` — the active, automated firm list (adapter class + tenant/URL
-  config per firm). This is what `main.py` actually scrapes. Currently 30
+  config per firm). This is what `main.py` actually scrapes. Currently 35
   firms.
 - `MANUAL_CHECK_FIRMS` — confirmed real target firms that can't be
   reliably automated (blocked by bot protection, no ATS trace in static
   HTML, or a real ATS exists but has no relevant listings). Not scraped;
   printed as a reminder list at the end of every run instead, with a
-  check URL and the reason. Currently 7 firms.
+  check URL and the reason. Currently 15 firms.
 - `REJECTED_LEADS` — slug guesses that turned out to be a different,
   unrelated company on a shared ATS platform (confirmed via real sample
   titles), kept on record so they aren't accidentally retried. Currently 2
   entries.
 
 Adapters live in `scraper/adapters/` — one per ATS platform: iCIMS,
-Workday (16 firms), Oracle Recruiting Cloud, ApplicantStack, Greenhouse (2
-firms), Circa Works, viGlobal, UKG/UltiPro Recruiting, PageUp/eArcu, and a
-generic custom-HTML adapter (6 firms) for bespoke career sites. (The iCIMS
-adapter exists but currently has no active `FIRMS` entries — every iCIMS
-tenant found so far sits behind an AWS WAF challenge and lives in
-`MANUAL_CHECK_FIRMS` instead.)
+Workday (19 firms), Oracle Recruiting Cloud, ApplicantStack, Greenhouse (2
+firms), Circa Works, viGlobal (2 firms), UKG/UltiPro Recruiting,
+PageUp/eArcu, Jobvite, and a generic custom-HTML adapter (6 firms) for
+bespoke career sites. (The iCIMS adapter exists but currently has no
+active `FIRMS` entries — every iCIMS tenant found so far sits behind an
+AWS WAF challenge and lives in `MANUAL_CHECK_FIRMS` instead.)
 
 Several career sites sit behind bot protection that blocks plain HTTP
 scraping, or turned out to run entirely client-side with no static HTML
