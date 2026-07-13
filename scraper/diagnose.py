@@ -1,11 +1,10 @@
-"""Diagnostic round 3 for Reed Smith: found the real mechanism -- this
-PageUp/eArcu page loads its results grid via an AJAX call after page load:
-/jobs/vacancy/find/results/ajaxaction/posbrowser_gridhandler/?pagestamp=<token>
-extracted directly from an inline <script> on the list page. This fetches
-the list page first (to get a live pagestamp token and matching session
-cookies, same priming pattern as WorkdayAdapter), then hits that ajaxaction
-URL and prints what comes back -- HTML fragment or JSON, and whether it
-actually contains job listings.
+"""Diagnostic round 4 for Reed Smith: the AJAX grid endpoint returns real
+HTML with "Page 1 of 5" and pagination links shaped like
+?movejump=1&movejump_page=N&pagestamp=<token>. Round 3's printout cut off
+right where the actual job rows start. This parses the grid HTML with
+BeautifulSoup to find the real per-job link markup, and sweeps all 5 pages
+using the same session/pagestamp to see the full job list before writing
+the real adapter.
 
 Usage: python -m scraper.diagnose
 """
@@ -14,50 +13,71 @@ from __future__ import annotations
 import re
 
 import requests
+from bs4 import BeautifulSoup
 
 from .adapters.base import DEFAULT_HEADERS
 
 TIMEOUT = 30
 LIST_URL = "https://careers.reedsmith.com/jobs/vacancy/find/results"
-
 PAGESTAMP_RE = re.compile(r"ajaxaction/posbrowser_gridhandler/\?pagestamp=([\w-]+)")
+
+
+def fetch_grid(session: requests.Session, pagestamp: str, page: int) -> str:
+    if page == 1:
+        url = f"{LIST_URL}/ajaxaction/posbrowser_gridhandler/?pagestamp={pagestamp}"
+    else:
+        url = f"{LIST_URL}/ajaxaction/posbrowser_gridhandler/?movejump=1&movejump_page={page}&pagestamp={pagestamp}"
+    headers = dict(DEFAULT_HEADERS)
+    headers["X-Requested-With"] = "XMLHttpRequest"
+    headers["Referer"] = LIST_URL
+    resp = session.get(url, headers=headers, timeout=TIMEOUT)
+    return resp.text
 
 
 def main() -> None:
     session = requests.Session()
     session.headers.update(DEFAULT_HEADERS)
-
-    resp = session.get(LIST_URL, timeout=TIMEOUT)
-    text = resp.text
-    print(f"list page: status={resp.status_code} len={len(text)}")
-    print(f"cookies set: {list(session.cookies.keys())}")
-
-    match = PAGESTAMP_RE.search(text)
+    list_resp = session.get(LIST_URL, timeout=TIMEOUT)
+    match = PAGESTAMP_RE.search(list_resp.text)
     if not match:
-        print("Could not find a pagestamp token in the page -- printing all ajaxaction occurrences:")
-        for m in re.finditer(r"ajaxaction[^\s'\"]*", text):
-            print(f"  {m.group(0)}")
+        print("no pagestamp found")
         return
-
     pagestamp = match.group(1)
-    print(f"\nfound pagestamp: {pagestamp}")
+    print(f"pagestamp: {pagestamp}\n")
 
-    ajax_url = f"{LIST_URL}/ajaxaction/posbrowser_gridhandler/?pagestamp={pagestamp}"
-    ajax_headers = dict(DEFAULT_HEADERS)
-    ajax_headers["X-Requested-With"] = "XMLHttpRequest"
-    ajax_headers["Referer"] = LIST_URL
+    page1_html = fetch_grid(session, pagestamp, 1)
+    soup = BeautifulSoup(page1_html, "lxml")
 
-    ajax_resp = session.get(ajax_url, headers=ajax_headers, timeout=TIMEOUT)
-    print(f"\najax GET {ajax_url}")
-    print(f"status={ajax_resp.status_code}  content-type={ajax_resp.headers.get('Content-Type')}  len={len(ajax_resp.text)}")
+    print("=== all <a> tags inside ListGridContainer/rowContainerHolder-ish areas ===")
+    grid_container = soup.select_one(".ListGridContainer") or soup
+    links = grid_container.find_all("a")
+    print(f"total <a> tags found in grid area: {len(links)}")
+    for link in links[:30]:
+        href = link.get("href", "")
+        text = link.get_text(strip=True)
+        cls = link.get("class")
+        print(f"  href={href!r}  class={cls}  text={text!r}")
 
-    body = ajax_resp.text
-    print(f"\nlooks like JSON: {body.strip().startswith('{') or body.strip().startswith('[')}")
-    print(f"'href' count in response: {body.count('href')}")
-    print(f"'vacancy' count in response: {body.lower().count('vacancy')}")
+    print("\n=== elements with class containing 'row' (likely one per job) ===")
+    row_els = soup.select("[class*=row]")
+    print(f"count: {len(row_els)}")
+    for el in row_els[:5]:
+        print(f"\n--- row element (tag={el.name}, class={el.get('class')}) ---")
+        print(str(el)[:1500])
 
-    print("\n--- first 3000 chars of ajax response ---")
-    print(body[:3000])
+    print("\n\n=== sweeping all 5 pages, counting distinct job links ===")
+    all_hrefs: set[str] = set()
+    for page in range(1, 6):
+        html = fetch_grid(session, pagestamp, page)
+        page_soup = BeautifulSoup(html, "lxml")
+        page_links = [a.get("href", "") for a in page_soup.select(".ListGridContainer a, .rowContainerHolder a")]
+        job_like = [h for h in page_links if h and "ajaxaction" not in h and "/map/" not in h]
+        print(f"  page {page}: {len(job_like)} candidate job links (of {len(page_links)} total <a> in grid)")
+        all_hrefs.update(job_like)
+
+    print(f"\ntotal distinct candidate job links across all pages: {len(all_hrefs)}")
+    for h in sorted(all_hrefs)[:15]:
+        print(f"  {h}")
 
 
 if __name__ == "__main__":
