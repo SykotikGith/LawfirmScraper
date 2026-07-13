@@ -350,15 +350,19 @@ FIRMS: dict[str, dict] = {
         "adapter": UltiProAdapter,
         "board_url": "https://recruiting.ultipro.com/AKE1000ASEPA/JobBoard/"
         "b855fc7e-c6e0-90cc-b829-ddbebeb6f274/",
-        "notes": "ATS identified as UKG/UltiPro Recruiting from the careers URL structure "
-        "(recruiting.ultipro.com/<CompanyCode>/JobBoard/<BoardId>/) -- NOT yet live-"
-        "verified against real sample titles, since the sandbox this was built in has no "
-        "outbound network access. UltiProAdapter assumes the classic server-rendered "
-        "JobBoard template (plain <a href=\"OpportunityDetail.aspx?opportunityId=...\"> "
-        "links in static HTML). If the first real run returns 0 postings, this tenant is "
-        "likely on the newer Angular JobBoard template instead, which is pure client-side "
-        "JS and needs a browser-driven fetch rather than a plain GET -- check that before "
-        "assuming board_url/selectors are wrong.",
+        "notes": "CONFIRMED via live probing (5 diagnostic rounds, since this sandbox has no "
+        "outbound network access) -- 96 real postings across 5 pages, sample titles plausibly "
+        "genuine ('Legal Administrative Assistant', 'Conflicts Analyst', 'Senior Competitive "
+        "Intelligence Specialist' in Wilmington/West Palm Beach/Tampa/Miami/etc.). The board is "
+        "a Knockout.js page, NOT the classic static-link template originally guessed -- real "
+        "job data comes from POSTing {\"opportunitySearch\": {\"Text\": \"\", \"Skip\": N, "
+        "\"Take\": 20}} to <board_url>JobBoardView/LoadSearchResults. Two quirks caught via "
+        "live testing before trusting this: the server hard-caps page size to 20 regardless of "
+        "the requested Take value, and the initially-guessed PageNumber/PageSize params were "
+        "silently ignored (always returned the identical first 20) -- pagination is purely "
+        "Skip-driven, verified end-to-end against all 96 postings with zero duplicates/gaps. "
+        "No full description text available in the search response, so work-arrangement "
+        "detection here relies on location text alone.",
     },
 }
 

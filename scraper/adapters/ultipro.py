@@ -1,67 +1,91 @@
 """UKG/UltiPro Recruiting (UltiPro JobBoard) adapter.
 
-Classic-template UltiPro career sites
-(recruiting.ultipro.com/<CompanyCode>/JobBoard/<BoardId>/) list postings as
-plain <a href="OpportunityDetail.aspx?opportunityId=...">Title</a> links,
-server-rendered directly into the page -- no separate API call needed. The
-newer Angular-based JobBoard template is pure client-side JS instead and
-won't have any of this in static HTML; if this adapter returns nothing for
-a given tenant, that's the first thing to check before assuming the board
-URL is wrong.
+UltiPro career sites (recruiting.ultipro.com/<CompanyCode>/JobBoard/<BoardId>/)
+are Knockout.js-rendered pages with no job data in static HTML -- there is
+no classic server-rendered link list here (that was an earlier, wrong
+assumption). The real job data comes from a JSON search endpoint at
+<board_url>/JobBoardView/LoadSearchResults, POSTed with
+{"opportunitySearch": {"Text": "", "Skip": N, "Take": 20}}.
+
+CONFIRMED via live probing (Akerman, July 2026): the server hard-caps page
+size to 20 regardless of the requested Take value, and PageNumber/PageSize
+params (the initial guess) are silently ignored -- pagination is purely
+Skip-driven. Sweeping Skip in steps of 20 up to totalCount retrieves every
+posting exactly once (verified end-to-end: 96/96 unique Ids, zero
+duplicates or gaps). The per-job detail URL is
+<board_url>/OpportunityDetail?opportunityId=<Id>, confirmed from the page's
+own opportunityLinkUrl template.
+
+No full job description text is available in the search response
+(BriefDescription is just a copy of the title, not real body text) -- work-
+arrangement detection for this adapter relies on location text alone, same
+as Workday/Circa Works/ApplicantStack. Each opportunity does carry
+JobLocationType/OpportunityType integer fields that might encode a
+remote/hybrid/onsite signal directly, but their enum mapping wasn't
+confirmed (only one plainly-onsite sample was seen) -- worth revisiting if
+this firm's detection accuracy needs improvement later.
 """
 from __future__ import annotations
-
-import re
-from urllib.parse import urljoin
-
-from bs4 import BeautifulSoup
 
 from ..models import Posting
 from .base import Adapter
 
-OPPORTUNITY_ID_RE = re.compile(r"opportunityId=([^&]+)", re.IGNORECASE)
+TAKE = 20  # server hard-caps page size to this regardless of the requested value
 
 
 class UltiProAdapter(Adapter):
     ats_name = "UltiPro"
 
     def fetch(self) -> list[Posting]:
-        board_url = self.config["board_url"]
-        resp = self.session.get(board_url, timeout=30)
-        resp.raise_for_status()
-        soup = BeautifulSoup(resp.text, "lxml")
+        board_url = self.config["board_url"].rstrip("/")
+        search_url = f"{board_url}/JobBoardView/LoadSearchResults"
 
         postings: list[Posting] = []
-        seen_ids: set[str] = set()
-        for link in soup.select("a[href*='OpportunityDetail.aspx']"):
-            href = link.get("href", "")
-            title = link.get_text(strip=True)
-            if not href or not title:
-                continue
+        skip = 0
+        total = None
+        while True:
+            body = {"opportunitySearch": {"Text": "", "Skip": skip, "Take": TAKE}}
+            resp = self.session.post(search_url, json=body, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+            opportunities = data.get("opportunities", [])
+            if not opportunities:
+                break
 
-            id_match = OPPORTUNITY_ID_RE.search(href)
-            posting_id = id_match.group(1) if id_match else href
-            if posting_id in seen_ids:
-                continue
-            seen_ids.add(posting_id)
-
-            url = urljoin(board_url, href)
-
-            location = ""
-            row = link.find_parent(["tr", "li", "div"])
-            if row is not None:
-                loc_el = row.select_one(".location, .job-location, .opportunity-location")
-                if loc_el:
-                    location = loc_el.get_text(strip=True)
-
-            postings.append(
-                Posting(
-                    firm=self.firm,
-                    title=title,
-                    location=location,
-                    url=url,
-                    posting_id=posting_id,
-                    ats=self.ats_name,
+            for opp in opportunities:
+                posting_id = opp.get("Id", "")
+                title = opp.get("Title", "")
+                if not posting_id or not title:
+                    continue
+                location = self._location_text(opp.get("Locations") or [])
+                postings.append(
+                    Posting(
+                        firm=self.firm,
+                        title=title,
+                        location=location,
+                        url=f"{board_url}/OpportunityDetail?opportunityId={posting_id}",
+                        posting_id=posting_id,
+                        ats=self.ats_name,
+                    )
                 )
-            )
+
+            if total is None:
+                total = data.get("totalCount") or 0
+            skip += TAKE
+            if skip >= total:
+                break
+
         return postings
+
+    @staticmethod
+    def _location_text(locations: list[dict]) -> str:
+        parts = []
+        for loc in locations:
+            address = loc.get("Address") or {}
+            city = address.get("City")
+            state = (address.get("State") or {}).get("Code")
+            if city and state:
+                parts.append(f"{city}, {state}")
+            elif loc.get("LocalizedDescription"):
+                parts.append(loc["LocalizedDescription"])
+        return "; ".join(parts)
