@@ -22,14 +22,26 @@ from .adapters.workday import WorkdayAdapter
 
 TIMEOUT = 20
 
+# Old-style: https://{tenant}.{pod}.myworkdayjobs.com/{site}
 WORKDAY_URL_RE = re.compile(
     r"https?://([a-zA-Z0-9\-]+)\.(wd\d+)\.myworkdayjobs\.com/([a-zA-Z0-9_\-]+)"
 )
 
+# Newer front-end: https://{pod}.myworkdaysite.com/recruiting/{tenant}/{site}
+# -- confirmed present on White & Case's site (still routes to the same
+# old-style CXS API underneath, WorkdayAdapter needs no changes either way).
+# Group order is (pod, tenant, site) here, reversed from the old-style regex
+# above -- callers must not assume a fixed group order across both.
+WORKDAY_MYWORKDAYSITE_RE = re.compile(
+    r"https?://(wd\d+)\.myworkdaysite\.com/recruiting/([a-zA-Z0-9\-]+)/([a-zA-Z0-9_\-]+)"
+)
+
 # (firm, domain, [candidate paths])
-# Current batch: the 7 confirmed-Workday-tenant firms from the AmLaw 100
-# expansion round whose site slug verify_batch.py's brute-force template
-# guesses didn't find (July 2026).
+# Norton Rose Fulbright already resolved (tenant=nrf, pod=wd3, site=External,
+# found via the myworkdaysite.com pattern before this regex fix even landed
+# -- it happened to also be linked in the old-style format). Remaining 6
+# turned up no Workday link in any format on their first pass -- retrying
+# now that WORKDAY_MYWORKDAYSITE_RE covers the newer front-end domain too.
 FIRMS: list[tuple[str, str, list[str]]] = [
     ("McDermott Will & Emery", "www.mwe.com", ["/careers", "/en/careers", "/en-us/careers", ""]),
     ("Morrison & Foerster", "www.mofo.com", ["/careers", "/en/careers", "/en-us/careers", ""]),
@@ -37,7 +49,6 @@ FIRMS: list[tuple[str, str, list[str]]] = [
     ("Davis Polk", "www.davispolk.com", ["/careers", "/en/careers", "/en-us/careers", ""]),
     ("Hogan Lovells", "www.hoganlovells.com", ["/careers", "/en/careers", "/en-us/careers", ""]),
     ("Cleary Gottlieb", "www.clearygottlieb.com", ["/careers", "/en/careers", "/en-us/careers", ""]),
-    ("Norton Rose Fulbright", "www.nortonrosefulbright.com", ["/careers", "/en/careers", "/en-us/careers", ""]),
 ]
 
 
@@ -50,10 +61,17 @@ def find_link(firm: str, domain: str, paths: list[str]) -> tuple[str, str, str] 
             print(f"  {url}: EXCEPTION {type(exc).__name__}: {exc}")
             continue
         print(f"  {url}: status={resp.status_code} len={len(resp.text)}")
+
         match = WORKDAY_URL_RE.search(resp.text)
         if match:
             tenant, pod, site = match.groups()
-            print(f"    found Workday link: tenant={tenant} pod={pod} site={site}")
+            print(f"    found Workday link (old-style): tenant={tenant} pod={pod} site={site}")
+            return tenant, pod, site
+
+        match = WORKDAY_MYWORKDAYSITE_RE.search(resp.text)
+        if match:
+            pod, tenant, site = match.groups()
+            print(f"    found Workday link (myworkdaysite.com): tenant={tenant} pod={pod} site={site}")
             return tenant, pod, site
     return None
 

@@ -373,6 +373,32 @@ FIRMS: dict[str, dict] = {
         "No full description text available in the search response, so work-arrangement "
         "detection here relies on location text alone.",
     },
+    # --- AmLaw 100 expansion batch, resolved via ats_probe.py + verify_batch.py -----------
+    "Morgan Lewis": {
+        "adapter": WorkdayAdapter,
+        "tenant": "morganlewis",
+        "wd": "wd5",
+        "site": "morganlewis",
+        "notes": "CONFIRMED via live probe -- 37 real postings, plausible law-firm "
+        "business-professional titles ('Practice Group Support Assistant - Litigation', "
+        "'Legal Practice Assistant - Investment Management', 'Litigation Docket Specialist', "
+        "'Senior Client Employee Benefits Advisor').",
+    },
+    "Norton Rose Fulbright": {
+        "adapter": WorkdayAdapter,
+        "tenant": "nrf",
+        "wd": "wd3",
+        "site": "External",
+        "notes": "CONFIRMED via live probe -- 126 real postings, found embedded directly in "
+        "nortonrosefulbright.com/en-us/careers via the newer myworkdaysite.com front-end "
+        "domain (same pattern as White & Case -- still routes to the standard old-style CXS "
+        "API, no adapter changes needed). Sample titles include 'Executive, Billing "
+        "Operations - EMEA (12-month FTC)' and 'Assistenz' (German for 'Assistant') -- this "
+        "looks like ONE GLOBAL Workday tenant covering non-US offices too, same situation as "
+        "Clyde & Co. Filter/verify by location text for US postings specifically if that "
+        "matters; the existing keyword + work-arrangement filters don't currently do "
+        "location-based country filtering.",
+    },
 }
 
 
