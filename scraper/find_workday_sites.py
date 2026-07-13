@@ -27,21 +27,17 @@ WORKDAY_URL_RE = re.compile(
 )
 
 # (firm, domain, [candidate paths])
+# Current batch: the 7 confirmed-Workday-tenant firms from the AmLaw 100
+# expansion round whose site slug verify_batch.py's brute-force template
+# guesses didn't find (July 2026).
 FIRMS: list[tuple[str, str, list[str]]] = [
-    ("White & Case", "www.whitecase.com", ["/careers", "/en/careers", ""]),
-    ("Paul Hastings", "www.paulhastings.com", ["/careers", "/en/careers", ""]),
-    ("Weil Gotshal", "www.weil.com", ["/careers", ""]),
-    ("Debevoise & Plimpton", "www.debevoise.com", ["/careers", ""]),
-    ("Milbank", "www.milbank.com", ["/careers", ""]),
-    ("Cooley", "www.cooley.com", ["/careers", "/en/careers", ""]),
-    ("Alston & Bird", "www.alston.com", ["/careers", ""]),
-    ("Holland & Knight", "www.hklaw.com", ["/careers", ""]),
-    ("Jackson Lewis", "www.jacksonlewis.com", ["/careers", ""]),
-    ("Blank Rome", "www.blankrome.com", ["/careers", ""]),
-    ("Covington & Burling", "www.cov.com", ["/careers", ""]),
-    ("O'Melveny & Myers", "www.omm.com", ["/careers", "/en/careers", ""]),
-    ("Fenwick & West", "www.fenwick.com", ["/careers", ""]),
-    ("Locke Lord", "www.lockelord.com", ["/careers", ""]),
+    ("McDermott Will & Emery", "www.mwe.com", ["/careers", "/en/careers", "/en-us/careers", ""]),
+    ("Morrison & Foerster", "www.mofo.com", ["/careers", "/en/careers", "/en-us/careers", ""]),
+    ("Skadden Arps", "www.skadden.com", ["/careers", "/en/careers", "/en-us/careers", ""]),
+    ("Davis Polk", "www.davispolk.com", ["/careers", "/en/careers", "/en-us/careers", ""]),
+    ("Hogan Lovells", "www.hoganlovells.com", ["/careers", "/en/careers", "/en-us/careers", ""]),
+    ("Cleary Gottlieb", "www.clearygottlieb.com", ["/careers", "/en/careers", "/en-us/careers", ""]),
+    ("Norton Rose Fulbright", "www.nortonrosefulbright.com", ["/careers", "/en/careers", "/en-us/careers", ""]),
 ]
 
 
