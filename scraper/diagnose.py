@@ -1,40 +1,81 @@
-"""Diagnostic: 6 firms confirmed to have a real Workday tenant (via
-ats_probe.py's path-specific-error signal) show NO Workday link in any
-format on their careers pages, even after find_workday_sites.py's regex
-was fixed to also catch the myworkdaysite.com front-end shape. Same
-pattern as Debevoise & Plimpton / O'Melveny & Myers / Milbank earlier in
-this project: a real-but-dormant/internal Workday tenant, with the actual
-external-recruiting ATS being a different platform entirely.
+"""AmLaw 100 batch, round 2: broad ATS-platform sniff for the 42 firms
+that returned zero signal in ats_probe.py's slug-guessing pass (every
+platform tried, Workday checked across wd1-wd10 + wd103 + wd115).
 
-This scans each firm's careers page for ANY known ATS platform domain
-(not just Workday) -- iCIMS, Greenhouse, Oracle Recruiting Cloud,
-ApplicantStack, HRMdirect, viGlobal, Circa Works, PageUp/eArcu, UltiPro,
-plus a few not yet seen in this project (Phenom, SmartRecruiters, Taleo,
-SuccessFactors, Avature, Jobvite, Lever, BambooHR) -- and prints the final
-URL after redirects (in case a client-side/meta redirect points somewhere
-the raw body text doesn't mention), so the real platform can be
-identified in one pass instead of guessing again.
+Same technique that found Norton Rose Fulbright's real Workday link and
+that identified the 6 dormant-Workday firms' real platforms (or lack
+thereof): fetch each firm's own marketing site and scan the raw HTML for
+ANY known ATS platform domain, rather than keep guessing ATS-specific
+subdomain patterns blind. Checks the bare domain plus a few common
+careers-page paths, concurrently across all 42 firms.
+
+Domain guesses below are UNVERIFIED -- a 404/connection failure on all
+paths for a firm usually just means the domain guess itself is wrong,
+not that the firm has no findable ATS; those need a corrected domain on
+a follow-up round, not necessarily a "needs manual check" verdict.
 
 Usage: python -m scraper.diagnose
+Writes diagnose_results.md alongside printing progress to stderr and the
+final table to stdout.
 """
 from __future__ import annotations
 
+import concurrent.futures
 import re
+import sys
 
 import requests
 
 from .adapters.base import DEFAULT_HEADERS
 
-TIMEOUT = 20
+TIMEOUT = 15
+MAX_WORKERS = 12
+CAREER_PATHS = ["", "/careers", "/en/careers", "/en-us/careers"]
 
-# (firm, url to check -- the best-content path found by find_workday_sites.py)
-FIRMS = [
-    ("McDermott Will & Emery", "https://www.mwe.com/careers"),
-    ("Morrison & Foerster", "https://www.mofo.com/careers"),
-    ("Skadden Arps", "https://www.skadden.com/careers"),
-    ("Davis Polk", "https://www.davispolk.com"),  # /careers 403'd, try bare domain
-    ("Hogan Lovells", "https://www.hoganlovells.com"),  # /careers 404'd, try bare domain
-    ("Cleary Gottlieb", "https://www.clearygottlieb.com/careers"),
+# (firm, domain guess)
+FIRMS: list[tuple[str, str]] = [
+    ("Kirkland & Ellis", "www.kirkland.com"),
+    ("Latham & Watkins", "www.lw.com"),
+    ("Sidley Austin", "www.sidley.com"),
+    ("Wachtell Lipton", "www.wlrk.com"),
+    ("Quinn Emanuel", "www.quinnemanuel.com"),
+    ("Paul Weiss", "www.paulweiss.com"),
+    ("Dentons", "www.dentons.com"),
+    ("Jones Day", "www.jonesday.com"),
+    ("Sullivan & Cromwell", "www.sullcrom.com"),
+    ("Wilson Sonsini", "www.wsgr.com"),
+    ("WilmerHale", "www.wilmerhale.com"),
+    ("K&L Gates", "www.klgates.com"),
+    ("Vinson & Elkins", "www.velaw.com"),
+    ("Squire Patton Boggs", "www.squirepattonboggs.com"),
+    ("Mayer Brown", "www.mayerbrown.com"),
+    ("Nelson Mullins", "www.nelsonmullins.com"),
+    ("Bryan Cave Leighton Paisner", "www.bclplaw.com"),
+    ("Baker Donelson", "www.bakerdonelson.com"),
+    ("Ogletree Deakins", "www.ogletree.com"),
+    ("Fox Rothschild", "www.foxrothschild.com"),
+    ("Duane Morris", "www.duanemorris.com"),
+    ("Proskauer Rose", "www.proskauer.com"),
+    ("Kramer Levin", "www.kramerlevin.com"),
+    ("Arnold & Porter", "www.arnoldporter.com"),
+    ("Crowell & Moring", "www.crowell.com"),
+    ("Hunton Andrews Kurth", "www.huntonak.com"),
+    ("Venable", "www.venable.com"),
+    ("Munger Tolles", "www.mto.com"),
+    ("Sheppard Mullin", "www.sheppardmullin.com"),
+    ("Davis Wright Tremaine", "www.dwt.com"),
+    ("Bracewell", "www.bracewell.com"),
+    ("Willkie Farr & Gallagher", "www.willkie.com"),
+    ("Eversheds Sutherland", "www.eversheds-sutherland.com"),
+    ("Dechert", "www.dechert.com"),
+    ("Akin Gump", "www.akingump.com"),
+    ("Foley & Lardner", "www.foley.com"),
+    ("Faegre Drinker", "www.faegredrinker.com"),
+    ("Baker Hostetler", "www.bakerlaw.com"),
+    ("Katten Muchin Rosenman", "www.katten.com"),
+    ("Baker Botts", "www.bakerbotts.com"),
+    ("Mintz Levin", "www.mintz.com"),
+    ("Winston & Strawn", "www.winston.com"),
 ]
 
 ATS_DOMAIN_PATTERNS = {
@@ -59,40 +100,68 @@ ATS_DOMAIN_PATTERNS = {
 }
 
 
-def scan(firm: str, url: str) -> None:
-    print(f"\n=== {firm} -- {url} ===")
-    try:
-        resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=TIMEOUT, allow_redirects=True)
-    except requests.exceptions.RequestException as exc:
-        print(f"  EXCEPTION: {type(exc).__name__}: {exc}")
-        return
+def scan_firm(firm: str, domain: str) -> dict:
+    tried = []
+    for path in CAREER_PATHS:
+        url = f"https://{domain}{path}"
+        try:
+            resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=TIMEOUT, allow_redirects=True)
+        except requests.exceptions.RequestException as exc:
+            tried.append(f"{url} -> EXCEPTION {type(exc).__name__}")
+            continue
+        tried.append(f"{url} -> {resp.status_code} (final: {resp.url}, len={len(resp.text)})")
+        if resp.status_code >= 400:
+            continue
 
-    print(f"  status={resp.status_code}  final_url={resp.url}  len={len(resp.text)}")
-
-    text = resp.text
-    found_any = False
-    for label, pattern in ATS_DOMAIN_PATTERNS.items():
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            found_any = True
-            count = len(re.findall(pattern, text, re.IGNORECASE))
-            idx = match.start()
-            print(f"  FOUND {label}: {count}x, context: ...{text[max(0, idx - 80):idx + 120]}...")
-
-    meta_refresh = re.search(
-        r'<meta[^>]+http-equiv=["\']refresh["\'][^>]*content=["\']([^"\']+)["\']', text, re.IGNORECASE
-    )
-    if meta_refresh:
-        print(f"  META REFRESH found: {meta_refresh.group(1)}")
-
-    if not found_any:
-        print("  No known ATS domain found. First 500 chars of body:")
-        print(f"  {text[:500]!r}")
+        text = resp.text
+        for label, pattern in ATS_DOMAIN_PATTERNS.items():
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                idx = match.start()
+                context = text[max(0, idx - 100):idx + 150]
+                return {
+                    "firm": firm, "domain": domain, "platform": label, "url": url,
+                    "final_url": resp.url, "context": context, "tried": tried,
+                }
+    return {"firm": firm, "domain": domain, "platform": "no signal", "url": None,
+            "final_url": None, "context": None, "tried": tried}
 
 
 def main() -> None:
-    for firm, url in FIRMS:
-        scan(firm, url)
+    results = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+        futures = {pool.submit(scan_firm, firm, domain): firm for firm, domain in FIRMS}
+        done = 0
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            results.append(result)
+            done += 1
+            print(f"[{done}/{len(FIRMS)}] {result['firm']}: {result['platform']}"
+                  f"{' -- ' + result['final_url'] if result['final_url'] else ''}", file=sys.stderr)
+
+    order = {firm: i for i, (firm, _) in enumerate(FIRMS)}
+    results.sort(key=lambda r: order[r["firm"]])
+
+    lines = ["| Firm | Domain guess | Platform found | Final URL |", "|---|---|---|---|"]
+    for r in results:
+        lines.append(f"| {r['firm']} | {r['domain']} | {r['platform']} | {r['final_url'] or '-'} |")
+    table = "\n".join(lines)
+    print("\n" + table)
+
+    with open("diagnose_results.md", "w", encoding="utf-8") as f:
+        f.write(table + "\n\n")
+        for r in results:
+            f.write(f"## {r['firm']} ({r['domain']})\n")
+            f.write(f"Platform: {r['platform']}\n")
+            if r["final_url"]:
+                f.write(f"Final URL: {r['final_url']}\n")
+            if r["context"]:
+                f.write(f"Context: ...{r['context']}...\n")
+            f.write("Paths tried:\n")
+            for t in r["tried"]:
+                f.write(f"- {t}\n")
+            f.write("\n")
+    print("\nWritten to diagnose_results.md", file=sys.stderr)
 
 
 if __name__ == "__main__":
