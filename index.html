@@ -60,6 +60,26 @@
   .metric-value.accent-green { color: var(--green); }
   .metric-value.accent-teal { color: var(--teal); }
   .metric-value.metric-value-small { font-size: 1.05rem; }
+  .metric-value-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .metric-stack-line {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.3;
+  }
+  .metric-stack-line .accent-green { color: var(--green); }
+  .metric-stack-tag {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-right: 4px;
+  }
   .metric-label {
     font-size: 0.8rem;
     color: var(--text-secondary);
@@ -184,12 +204,15 @@
 <body>
   <div class="page">
     <h1>Law Firm Career Radar</h1>
-    <p class="subtitle">IT / Knowledge Management / Legal-AI role filter — updated Jul 13, 2026 08:26 PM UTC</p>
+    <p class="subtitle">IT / Knowledge Management / Legal-AI role filter — updated Jul 13, 2026 08:30 PM UTC</p>
 
     <div class="metrics-grid">
       <div class="metric-card">
-        <div class="metric-value accent-green">0</div>
-        <div class="metric-label">New matches</div>
+        <div class="metric-value-stack">
+          <div class="metric-stack-line"><span class="metric-stack-tag">New:</span> <span class="accent-green">0</span></div>
+          <div class="metric-stack-line"><span class="metric-stack-tag">Total:</span> <span>10</span></div>
+        </div>
+        <div class="metric-label">Matches this run</div>
       </div>
       <div class="metric-card">
         <div class="metric-value ">30</div>
@@ -200,7 +223,7 @@
         <div class="metric-label">Needs review</div>
       </div>
       <div class="metric-card">
-        <div class="metric-value metric-value-small">Jul 13, 2026 08:26 PM UTC</div>
+        <div class="metric-value metric-value-small">Jul 13, 2026 08:30 PM UTC</div>
         <div class="metric-label">Last run</div>
       </div>
     </div>
