@@ -1,28 +1,21 @@
-"""Verification round for the 3 remaining real hits from the broad
-42-firm ATS sniff: Faegre Drinker (Workday), Bryan Cave Leighton Paisner
-(viGlobal), Davis Wright Tremaine (Jobvite).
+"""Round 2 for the last 2 unresolved hits: Bryan Cave Leighton Paisner
+(viGlobal, different template than O'Melveny's) and Davis Wright Tremaine
+(Jobvite JS shell, but job links present somewhere in a small 17KB page).
 
-Faegre Drinker: the embedded link found was
-https://esswd.wd501.myworkdayjobs.com/External -- tenant="esswd",
-pod="wd501", site="External". Neither matches the "faegredrinker" slug
-guess or the wd1-wd10/103/115 pods ats_probe.py checked, which is exactly
-why the earlier sweep missed it. Fetches real postings via the existing
-WorkdayAdapter to confirm identity before trusting it.
+BCLP: neither URL tried last round was the real "all current postings"
+listing -- one showed a generic placeholder, one showed a single filtered
+job. This re-fetches the careers page looking for EVERY viglobalcloud.com
+link (not just the first), to find a general/unfiltered listing link
+distinct from the specific-job one already found. Also parses the bare
+RecDefault.aspx response with BeautifulSoup to count real <tr> rows in
+the gridview table and print each one's raw text, since the row markup
+here (h4/h5 tags) is structured differently than O'Melveny's
+concatenated-text-blob rows -- ViGlobalAdapter's regex won't parse this
+tenant's HTML shape without changes.
 
-Bryan Cave Leighton Paisner: the embedded link found
-(bclplaw-careers.viglobalcloud.com/viRecruitSelfApply/RecDefault.aspx
-?FilterREID=55&FilterJobCategoryID=3&FilterJobID=430) is a single
-filtered job, not the general listing page ViGlobalAdapter needs. Tries
-the bare RecDefault.aspx URL (no query params) to see if it renders the
-full unfiltered listing, the same shape O'Melveny & Myers' real list_url
-has.
-
-Davis Wright Tremaine: the embedded link found
-(https://jobs.jobvite.com/dwt/) is a new platform for this project.
-Fetches it to see whether it's server-rendered (scrapable like the
-existing adapters) or a client-side SPA, and looks for any embedded
-JSON/API references before deciding whether a new adapter is worth
-building.
+DWT: searches for embedded JSON (JSON-LD script blocks, inline `jobs =`
+assignments) that might carry full job data server-side for SEO, even
+though the visible page is a Jobvite JS app.
 
 Usage: python -m scraper.diagnose
 """
@@ -31,76 +24,69 @@ from __future__ import annotations
 import re
 
 import requests
+from bs4 import BeautifulSoup
 
 from .adapters.base import DEFAULT_HEADERS
-from .adapters.workday import WorkdayAdapter
 
 TIMEOUT = 20
 
 
-def check_faegre_drinker() -> None:
-    print("=== Faegre Drinker (Workday: esswd / wd501 / External) ===")
-    adapter = WorkdayAdapter("Faegre Drinker", {"tenant": "esswd", "wd": "wd501", "site": "External"})
-    try:
-        postings = adapter.fetch()
-    except Exception as exc:  # noqa: BLE001
-        print(f"  FETCH FAILED: {type(exc).__name__}: {exc}")
-        return
-    print(f"  {len(postings)} postings")
-    for p in postings[:8]:
-        print(f"    - {p.title} — {p.location}")
-
-
 def check_bclp() -> None:
-    print("\n=== Bryan Cave Leighton Paisner (viGlobal) ===")
-    candidates = [
-        "https://bclplaw-careers.viglobalcloud.com/viRecruitSelfApply/RecDefault.aspx",
-        "https://bclplaw-careers.viglobalcloud.com/viRecruitSelfApply/RecDefault.aspx?FilterREID=55",
-    ]
-    for url in candidates:
-        try:
-            resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=TIMEOUT)
-        except requests.exceptions.RequestException as exc:
-            print(f"  {url}: EXCEPTION {type(exc).__name__}: {exc}")
-            continue
-        has_grid = "contentPlaceHolder_gridviewList" in resp.text
-        row_count = resp.text.count("rowContainerHolder") if has_grid else 0
-        print(f"  {url}\n    status={resp.status_code} len={len(resp.text)} "
-              f"has_gridview_table={has_grid} rowContainerHolder_count={row_count}")
-        if has_grid:
-            # pull a small sample of visible row text to sanity check content
-            idx = resp.text.find("contentPlaceHolder_gridviewList")
-            print(f"    snippet near table: ...{resp.text[idx:idx+600]}...")
+    print("=== Bryan Cave Leighton Paisner: finding the real listing URL ===")
+    careers_url = "https://www.bclplaw.com/en-US/careers.html"
+    resp = requests.get(careers_url, headers=DEFAULT_HEADERS, timeout=TIMEOUT)
+    links = sorted(set(re.findall(r'href="(https://bclplaw-careers\.viglobalcloud\.com[^"]*)"', resp.text)))
+    print(f"  all viglobalcloud.com links found on {careers_url} ({len(links)}):")
+    for link in links:
+        print(f"    {link}")
+
+    print("\n  parsing bare RecDefault.aspx gridview table with BeautifulSoup:")
+    bare_url = "https://bclplaw-careers.viglobalcloud.com/viRecruitSelfApply/RecDefault.aspx"
+    resp2 = requests.get(bare_url, headers=DEFAULT_HEADERS, timeout=TIMEOUT)
+    soup = BeautifulSoup(resp2.text, "lxml")
+    table = soup.find("table", id="contentPlaceHolder_gridviewList")
+    if table is None:
+        print("    no table with that id found")
+        return
+    rows = table.find_all("tr")
+    print(f"    {len(rows)} <tr> rows found")
+    for row in rows[:6]:
+        h4 = row.find("h4")
+        h5s = row.find_all("h5")
+        title = h4.get_text(strip=True) if h4 else None
+        fields = {h5.get_text(strip=True).split(" ")[0]: h5.get_text(strip=True) for h5 in h5s}
+        print(f"    title={title!r}  fields={fields}")
 
 
 def check_dwt() -> None:
-    print("\n=== Davis Wright Tremaine (Jobvite) ===")
-    url = "https://jobs.jobvite.com/dwt/"
-    try:
-        resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=TIMEOUT)
-    except requests.exceptions.RequestException as exc:
-        print(f"  EXCEPTION: {type(exc).__name__}: {exc}")
-        return
+    print("\n=== Davis Wright Tremaine: looking for embedded job JSON ===")
+    resp = requests.get("https://jobs.jobvite.com/dwt/", headers=DEFAULT_HEADERS, timeout=TIMEOUT)
     text = resp.text
-    print(f"  status={resp.status_code}  final_url={resp.url}  len={len(text)}")
 
-    script_srcs = re.findall(r'<script[^>]+src=["\']([^"\']+)["\']', text)
-    print(f"  <script src> tags ({len(script_srcs)}):")
-    for src in script_srcs[:15]:
-        print(f"    {src}")
+    ld_json_blocks = re.findall(r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>', text, re.DOTALL)
+    print(f"  JSON-LD script blocks found: {len(ld_json_blocks)}")
+    for block in ld_json_blocks[:3]:
+        print(f"    {block[:500]}")
 
-    api_hints = re.findall(r'["\'](/[\w./-]*(?:api|search|job)[\w./-]*)["\']', text, re.IGNORECASE)
-    print(f"  possible API path fragments: {sorted(set(api_hints))[:20]}")
+    inline_assigns = re.findall(r'(var|window\.)\s*(\w*[jJ]obs?\w*)\s*=\s*(\[.{0,300})', text)
+    print(f"  inline job-like variable assignments found: {len(inline_assigns)}")
+    for prefix, name, snippet in inline_assigns[:5]:
+        print(f"    {prefix}{name} = {snippet}...")
 
-    job_link_count = len(re.findall(r'/job/', text, re.IGNORECASE))
-    print(f"  '/job/' occurrences in raw HTML: {job_link_count}")
+    soup = BeautifulSoup(text, "lxml")
+    job_links = soup.select("a[href*='/dwt/job/']")
+    print(f"  <a href*='/dwt/job/'> anchor tags found: {len(job_links)}")
+    for a in job_links[:10]:
+        print(f"    href={a.get('href')!r}  text={a.get_text(strip=True)!r}")
 
-    print("  first 1500 chars of body:")
-    print(f"  {text[:1500]!r}")
+    # look at raw context around one job id from the earlier run, in case
+    # it's inside a data-* attribute or JSON string rather than a plain <a>
+    idx = text.find("/dwt/job/")
+    if idx != -1:
+        print(f"\n  raw context around first '/dwt/job/' occurrence:\n  ...{text[max(0,idx-300):idx+300]}...")
 
 
 def main() -> None:
-    check_faegre_drinker()
     check_bclp()
     check_dwt()
 
