@@ -116,7 +116,8 @@ def verify_workday(firm: str, tenant: str, pod: str) -> dict:
         f'    "site": "{site}",\n'
         f'}},'
     )
-    return {"firm": firm, "platform": f"Workday ({pod})", "status": f"OK -- {len(postings)} postings",
+    return {"firm": firm, "platform": f"Workday ({pod})",
+            "status": f"OK -- {len(postings)} postings (site=\"{site}\")",
             "sample_titles": sample, "config_snippet": snippet}
 
 
