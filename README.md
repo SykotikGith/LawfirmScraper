@@ -116,9 +116,10 @@ a result.
   firms.
 - `MANUAL_CHECK_FIRMS` — confirmed real target firms that can't be
   reliably automated (blocked by bot protection, no ATS trace in static
-  HTML, or a real ATS exists but has no relevant listings). Not scraped;
-  printed as a reminder list at the end of every run instead, with a
-  check URL and the reason. Currently 15 firms.
+  HTML anywhere discoverable via sitemap search, a real ATS exists but
+  requires authentication, or a real ATS exists but has no relevant
+  listings). Not scraped; printed as a reminder list at the end of every
+  run instead, with a check URL and the reason. Currently 52 firms.
 - `REJECTED_LEADS` — slug guesses that turned out to be a different,
   unrelated company on a shared ATS platform (confirmed via real sample
   titles), kept on record so they aren't accidentally retried. Currently 2

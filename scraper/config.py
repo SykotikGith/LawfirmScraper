@@ -569,6 +569,196 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "search_url": "https://careers-foley.icims.com/jobs/intro?hashed=-626009846",
         "check_url": "https://www.foley.com/careers/",
     },
+    # --- AmLaw 100 expansion batch: the remaining 37 firms after 7 rounds of live
+    # investigation (domain guessing, sitemap discovery incl. robots.txt fallback and
+    # sub-sitemap drilling, SPA framework/embedded-JSON inspection, direct API endpoint
+    # guessing) turned up no automatable path. Each entry below reflects the specific
+    # dead end found for that firm, not a generic "nothing found" -- see notes.
+    # -----------------------------------------------------------------------------
+    "Kirkland & Ellis": {
+        "reason": "Real careers page found (kirkland.com/sitemap/careers) but no known ATS "
+        "platform domain present in it.",
+        "check_url": "https://www.kirkland.com/sitemap/careers",
+    },
+    "Latham & Watkins": {
+        "reason": "No real careers/job page found via sitemap.xml, sitemap index, or "
+        "robots.txt-declared sitemap locations.",
+        "check_url": "https://www.lw.com",
+    },
+    "Sidley Austin": {
+        "reason": "No real careers/job page found via sitemap discovery.",
+        "check_url": "https://www.sidley.com",
+    },
+    "Wachtell Lipton": {
+        "reason": "No real careers/job page found via sitemap discovery.",
+        "check_url": "https://www.wlrk.com",
+    },
+    "Quinn Emanuel": {
+        "reason": "No real careers/job page found via sitemap discovery.",
+        "check_url": "https://www.quinnemanuel.com",
+    },
+    "Paul Weiss": {
+        "reason": "Real careers page found (paulweiss.com/careers) but no known ATS "
+        "platform domain present in it.",
+        "check_url": "https://www.paulweiss.com/careers",
+    },
+    "Dentons": {
+        "reason": "The firm's own sitemap directly indexes individual job posting URLs "
+        "(e.g. .../careers/careers-in-the-united-states/business-services-in-the-united-"
+        "states/2026/july/legal-administrative-assistant-newyork) -- a real, bespoke career "
+        "site, not a 3rd-party ATS. But the category LISTING page itself is Angular-rendered "
+        "with zero job links in static HTML, so there's no automatable way to discover "
+        "current postings short of relying on the sitemap.xml itself as the listing source "
+        "(untested, would be a fragile/unusual adapter design for this project).",
+        "check_url": "https://www.dentons.com/en/careers/careers-in-the-united-states/business-services-in-the-united-states/",
+    },
+    "Jones Day": {
+        "reason": "No real careers/job page found via sitemap discovery.",
+        "check_url": "https://www.jonesday.com",
+    },
+    "Sullivan & Cromwell": {
+        "reason": "Real careers-adjacent page found (sullcrom.com/Careers/Alumni-Network) "
+        "but no known ATS platform domain present, and it's not the actual listing page.",
+        "check_url": "https://www.sullcrom.com/Careers/Alumni-Network",
+    },
+    "Wilson Sonsini": {
+        "reason": "Only an events-page mention of careers found (wsgr.com), not a real "
+        "listing page or known ATS platform.",
+        "check_url": "https://www.wsgr.com",
+    },
+    "WilmerHale": {
+        "reason": "No real careers/job page found via sitemap discovery.",
+        "check_url": "https://www.wilmerhale.com",
+    },
+    "K&L Gates": {
+        "reason": "Real 'All Current Openings' link found, leading to klgates.recsolu.com -- "
+        "RecSolu (Yello Enterprise), a platform not otherwise seen in this project. The board "
+        "is JS-rendered with no job data in static HTML; several guessed REST API endpoints "
+        "(/api/v1/job_boards/.../jobs) returned 401 Unauthorized -- a real API exists but "
+        "requires credentials this project doesn't have and shouldn't try to bypass.",
+        "check_url": "https://klgates.recsolu.com/job_boards/1",
+    },
+    "Vinson & Elkins": {
+        "reason": "Real careers page found (velaw.com/careers/business-professionals/) but "
+        "no known ATS platform domain present in it.",
+        "check_url": "https://www.velaw.com/careers/business-professionals/",
+    },
+    "Squire Patton Boggs": {
+        "reason": "No real careers/job page found via sitemap discovery.",
+        "check_url": "https://www.squirepattonboggs.com",
+    },
+    "Mayer Brown": {
+        "reason": "No real careers/job page found via sitemap discovery.",
+        "check_url": "https://www.mayerbrown.com",
+    },
+    "Baker Donelson": {
+        "reason": "Real careers page found (bakerdonelson.com/careers) but no known ATS "
+        "platform domain present in it.",
+        "check_url": "https://www.bakerdonelson.com/careers",
+    },
+    "Ogletree Deakins": {
+        "reason": "Real careers page found (ogletree.com/about-us/careers/) but no known ATS "
+        "platform domain present in it.",
+        "check_url": "https://ogletree.com/about-us/careers/",
+    },
+    "Fox Rothschild": {
+        "reason": "Real careers page found (foxrothschild.com/careers-for-attorneys/"
+        "open-positions) but no known ATS platform domain present in it.",
+        "check_url": "https://www.foxrothschild.com/careers-for-attorneys/open-positions",
+    },
+    "Duane Morris": {
+        "reason": "No real careers/job page found via sitemap discovery.",
+        "check_url": "https://www.duanemorris.com",
+    },
+    "Proskauer Rose": {
+        "reason": "No real careers/job page found via sitemap discovery.",
+        "check_url": "https://www.proskauer.com",
+    },
+    "Kramer Levin": {
+        "reason": "No real careers/job page found via sitemap discovery.",
+        "check_url": "https://www.kramerlevin.com",
+    },
+    "Arnold & Porter": {
+        "reason": "No real careers/job page found via sitemap discovery.",
+        "check_url": "https://www.arnoldporter.com",
+    },
+    "Crowell & Moring": {
+        "reason": "Real careers landing and apply-now pages found, but the careers page is "
+        "an unusually large 4MB with no embedded JSON state and no known ATS platform domain "
+        "present anywhere in it.",
+        "check_url": "https://www.crowell.com/en/careers",
+    },
+    "Hunton Andrews Kurth": {
+        "reason": "Only an events-page mention of careers found (hunton.com), not a real "
+        "listing page or known ATS platform.",
+        "check_url": "https://www.hunton.com",
+    },
+    "Venable": {
+        "reason": "Real careers page found (venable.com/sitemap/careers) but no known ATS "
+        "platform domain present in it.",
+        "check_url": "https://www.venable.com/sitemap/careers",
+    },
+    "Munger Tolles": {
+        "reason": "No real careers/job page found via sitemap discovery.",
+        "check_url": "https://www.mto.com",
+    },
+    "Sheppard Mullin": {
+        "reason": "Real domain is sheppard.com, not sheppardmullin.com as guessed. Site runs "
+        "on Sitecore JSS + Next.js; the /careers page's server-rendered __NEXT_DATA__ and "
+        "componentProps blobs were both fully inspected and contain zero job listing data "
+        "(CMS/marketing content only -- badges, related articles, dictionary strings). The "
+        "real job listing is evidently fetched via a separate client-side API call not "
+        "discoverable from this page's static/SSR content.",
+        "check_url": "https://www.sheppard.com/careers",
+    },
+    "Bracewell": {
+        "reason": "Sitemap has a dedicated career sub-sitemap (poa_career-sitemap.xml) but "
+        "drilling into it found no real career/job page URLs.",
+        "check_url": "https://www.bracewell.com",
+    },
+    "Willkie Farr & Gallagher": {
+        "reason": "Real careers page found (willkie.com/careers) but no known ATS platform "
+        "domain present in it.",
+        "check_url": "https://www.willkie.com/careers",
+    },
+    "Eversheds Sutherland": {
+        "reason": "No real careers/job page found via sitemap discovery.",
+        "check_url": "https://www.eversheds-sutherland.com",
+    },
+    "Dechert": {
+        "reason": "Real careers page found (dechert.com/careers/law-students.html) but no "
+        "known ATS platform domain present in it.",
+        "check_url": "https://www.dechert.com/careers/law-students.html",
+    },
+    "Akin Gump": {
+        "reason": "No real careers/job page found via sitemap discovery.",
+        "check_url": "https://www.akingump.com",
+    },
+    "Baker Hostetler": {
+        "reason": "Sitemap has a dedicated career sub-sitemap (poa_career-sitemap.xml) but "
+        "drilling into it found no real career/job page URLs.",
+        "check_url": "https://www.bakerlaw.com",
+    },
+    "Katten Muchin Rosenman": {
+        "reason": "Only an old publications-page mention of careers found (katten.com), not "
+        "a real listing page or known ATS platform.",
+        "check_url": "https://katten.com",
+    },
+    "Baker Botts": {
+        "reason": "Real careers page found (bakerbotts.com/careers/careers-at-baker-botts) "
+        "but no known ATS platform domain present in it.",
+        "check_url": "https://www.bakerbotts.com/careers/careers-at-baker-botts",
+    },
+    "Mintz Levin": {
+        "reason": "No real careers/job page found via sitemap discovery.",
+        "check_url": "https://www.mintz.com",
+    },
+    "Winston & Strawn": {
+        "reason": "No real careers/job page found via sitemap discovery. Its only signal "
+        "anywhere in this project remains the CONFIRMED REJECTED HRMdirect 'winston' "
+        "collision (see REJECTED_LEADS) -- an unrelated company, not this firm.",
+        "check_url": "https://www.winston.com",
+    },
 }
 
 # ---------------------------------------------------------------------------
