@@ -69,87 +69,106 @@ from .adapters.base import DEFAULT_HEADERS
 
 TIMEOUT = 8
 MAX_WORKERS = 12
-WORKDAY_PODS = ["wd1", "wd103", "wd115"]
+# wd1-wd10 covers the standard pod range; wd103/wd115 kept in because two
+# confirmed-real tenants in this project (Clyde & Co, Perkins Coie) sit on
+# non-standard pods outside wd1-wd10 -- dropping them would've missed both.
+WORKDAY_PODS = [f"wd{n}" for n in range(1, 11)] + ["wd103", "wd115"]
 _WORKDAY_PROBE_PATH = "ats-probe-nonexistent-path-check"
 _WORKDAY_TENANT_EXISTS_MARKER = "Requested page not found"
 
+# AmLaw 100 expansion batch (July 2026). Firms already resolved in
+# config.py are deliberately NOT here (re-probing them wastes requests and
+# risks confusing already-documented results): Troutman Pepper Locke,
+# White & Case, Fenwick & West (FIRMS -- confirmed Workday); Ropes & Gray,
+# Blank Rome, Covington & Burling, Weil Gotshal (MANUAL_CHECK_FIRMS --
+# already investigated and documented); Locke Lord (superseded by the
+# Troutman Pepper Locke merger, see that FIRMS entry's note).
+#
+# "McDermott Will & Schulte" from the request doesn't match any real AmLaw
+# firm name -- assumed to mean McDermott Will & Emery (already listed
+# below); "Schulte" is likely cross-contamination from Schulte Roth &
+# Zabel, a separate firm also in this list. Flagged for the user to
+# confirm/correct.
+#
 # (firm name, [slug candidates])
 FIRMS: list[tuple[str, list[str]]] = [
+    # --- Priority (Maegan's personally supported firms) ---
+    ("McDermott Will & Emery", ["mwe"]),
+    ("Willkie Farr & Gallagher", ["willkie"]),
+    ("Eversheds Sutherland", ["evershedssutherland", "eversheds"]),
+    ("Dechert", ["dechert"]),
+    ("Morrison & Foerster", ["mofo"]),
+    ("Akin Gump", ["akingump"]),
+    ("Foley & Lardner", ["foley", "foleylardner"]),
+    ("Faegre Drinker", ["faegredrinker"]),
+    ("Baker Hostetler", ["bakerhostetler", "bakerlaw"]),
+    ("Katten Muchin Rosenman", ["katten"]),
+    ("Baker Botts", ["bakerbotts"]),
+    ("Mintz Levin", ["mintz", "mintzlevin"]),
+    # --- Remaining ---
     ("Kirkland & Ellis", ["kirkland"]),
     ("Latham & Watkins", ["lw"]),
     ("Skadden Arps", ["skadden"]),
-    ("Gibson Dunn", ["gibsondunn"]),
     ("Sidley Austin", ["sidley"]),
-    ("Ropes & Gray", ["ropesgray"]),
-    ("White & Case", ["whitecase"]),
     ("Morgan Lewis", ["morganlewis"]),
-    ("Simpson Thacher", ["simpsonthacher", "stblaw"]),
     ("Wachtell Lipton", ["wlrk"]),
     ("Davis Polk", ["davispolk"]),
     ("Quinn Emanuel", ["quinnemanuel"]),
     ("Paul Weiss", ["paulweiss"]),
-    ("Paul Hastings", ["paulhastings"]),
     ("Dentons", ["dentons"]),
     ("Jones Day", ["jonesday"]),
     ("Hogan Lovells", ["hoganlovells"]),
     ("Sullivan & Cromwell", ["sullcrom"]),
-    ("Weil Gotshal", ["weil"]),
     ("Cleary Gottlieb", ["cgsh", "cleary"]),
-    ("Debevoise & Plimpton", ["debevoise"]),
-    ("Milbank", ["milbank"]),
-    ("Willkie Farr", ["willkie"]),
-    ("Cooley", ["cooley"]),
     ("Wilson Sonsini", ["wsgr"]),
-    ("Goodwin Procter", ["goodwinlaw", "goodwin"]),
     ("WilmerHale", ["wilmerhale"]),
-    ("McDermott Will & Emery", ["mwe"]),
     ("K&L Gates", ["klgates"]),
-    ("Greenberg Traurig", ["gtlaw"]),
-    ("Akin Gump", ["akingump"]),
     ("Vinson & Elkins", ["velaw"]),
     ("Norton Rose Fulbright", ["nortonrosefulbright", "nrf"]),
     ("Squire Patton Boggs", ["squirepattonboggs"]),
     ("Mayer Brown", ["mayerbrown"]),
-    ("Winston & Strawn", ["winston"]),
-    ("Katten Muchin", ["katten"]),
-    ("Alston & Bird", ["alston"]),
+    # "winston" alone is a KNOWN REJECTED collision on HRMdirect (see
+    # REJECTED_LEADS in config.py -- an unrelated food/manufacturing
+    # company, "Winston Taylor"). winstonstrawn tried first; if that
+    # doesn't hit and this falls through to "winston" again, that's the
+    # same false positive resurfacing, not new signal -- don't re-add it.
+    ("Winston & Strawn", ["winstonstrawn", "winston"]),
     ("Nelson Mullins", ["nelsonmullins"]),
-    ("Troutman Pepper Locke", ["troutmanpepperlocke", "troutman"]),
-    ("Faegre Drinker", ["faegredrinker"]),
     ("Bryan Cave Leighton Paisner", ["bclplaw", "bcl"]),
-    ("Holland & Knight", ["hklaw"]),
     ("Baker Donelson", ["bakerdonelson"]),
     ("Ogletree Deakins", ["ogletree"]),
-    ("Jackson Lewis", ["jacksonlewis"]),
     ("Fox Rothschild", ["foxrothschild"]),
     ("Duane Morris", ["duanemorris"]),
-    ("Blank Rome", ["blankrome"]),
     ("Proskauer Rose", ["proskauer"]),
     ("Kramer Levin", ["kramerlevin"]),
     ("Arnold & Porter", ["arnoldporter"]),
     ("Crowell & Moring", ["crowell"]),
-    ("Covington & Burling", ["cov", "covington"]),
     ("Hunton Andrews Kurth", ["huntonak"]),
     ("Venable", ["venable"]),
-    ("Dechert", ["dechert"]),
-    ("Schulte Roth & Zabel", ["srz"]),
-    ("O'Melveny & Myers", ["omm"]),
     ("Munger Tolles", ["mto"]),
-    ("Fenwick & West", ["fenwick"]),
-    ("Morrison & Foerster", ["mofo"]),
     ("Sheppard Mullin", ["sheppardmullin"]),
     ("Davis Wright Tremaine", ["dwt"]),
-    ("King & Spalding", ["kslaw"]),
-    ("Eversheds Sutherland", ["evershedssutherland", "eversheds"]),
     ("Bracewell", ["bracewell"]),
-    ("Locke Lord", ["lockelord"]),
-    ("Haynes and Boone", ["haynesboone"]),
 ]
 
 PATTERNS: list[tuple[str, str]] = [
     # iCIMS deliberately excluded -- see module docstring. It sits behind
     # an AWS WAF challenge that responds identically for real and fake
     # tenants, so a "hit" here is not real signal.
+    #
+    # Oracle Recruiting Cloud and UKG/UltiPro are ALSO deliberately
+    # excluded from bulk slug-guessing, unlike Workday/Greenhouse/
+    # ApplicantStack/HRMdirect: neither has a predictable {slug}.platform
+    # domain pattern to guess against. Oracle tenants live at a
+    # firm-specific host (e.g. hctq.fa.us2.oraclecloud.com for Cozen
+    # O'Connor) with a region code and site number that vary per tenant
+    # and aren't derivable from the firm name. UltiPro job boards live at
+    # recruiting.ultipro.com/<CompanyCode>/JobBoard/<opaque-GUID>/ -- the
+    # GUID can't be guessed at all. Both platforms only became findable
+    # for Cozen O'Connor and Akerman via direct research (an already-known
+    # URL), not slug-guessing -- any firm actually on one of these
+    # platforms will fall through to "needs manual check" here and need
+    # the same direct-research treatment.
     ("ApplicantStack", "https://{slug}.applicantstack.com/"),
     ("HRMdirect", "https://{slug}.hrmdirect.com/"),
     ("Greenhouse", "https://job-boards.greenhouse.io/{slug}"),
