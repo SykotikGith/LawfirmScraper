@@ -899,6 +899,18 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "signal was visible).",
         "check_url": "https://staffjobsus.kirkland.com/jobs/search/",
     },
+    "Kramer Levin (now Herbert Smith Freehills Kramer)": {
+        "reason": "Confirmed real Phenom People career site (careers.hsfkramer.com) -- "
+        "found the actual REST endpoint shape used by the platform "
+        "(/api/apply/v2/jobs?domain=<tenant>&start=N&num=N, same convention Ogletree "
+        "Deakins' Jibe platform coincidentally uses) via the page's embedded phApp.ddo JS "
+        "config, but every domain value tried (careers.hsfkramer.com, hsfkramer.com, "
+        "hsfkramer, the full URL path) returned {\"errorMsg\": \"Tenant not identified\"} -- "
+        "the real tenant identifier Phenom expects isn't present anywhere in the static "
+        "page config found so far (4 diagnostic rounds). Would need real browser network "
+        "inspection to capture the actual outgoing request.",
+        "check_url": "https://careers.hsfkramer.com/global/en/us/search-results",
+    },
     "Blank Rome": {
         # Explicit decision, not a technical dead end -- user confirmed live that the
         # business-professionals page has real per-position hyperlinks, but every one leads
@@ -932,10 +944,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "protection-style block (no 403, no WAF/challenge page) -- just couldn't locate the "
         "real data source via static probing.",
         "check_url": "https://www.duanemorris.com/site/careers.html#tab_SupportStaffOpportunities",
-    },
-    "Kramer Levin": {
-        "reason": "No real careers/job page found via sitemap discovery.",
-        "check_url": "https://www.kramerlevin.com",
     },
     "Arnold & Porter": {
         "reason": "No real careers/job page found via sitemap discovery.",
