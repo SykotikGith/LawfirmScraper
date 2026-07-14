@@ -444,6 +444,18 @@ FIRMS: dict[str, dict] = {
         "'Senior Product Analyst'), unmistakably a real active law-firm ATS. Standard "
         "old-style Workday subdomain, no adapter changes needed.",
     },
+    "Hogan Lovells": {
+        "adapter": WorkdayAdapter,
+        "tenant": "hoganlovells",
+        "wd": "wd3",
+        "site": "Search",
+        "notes": "CONFIRMED via live probe -- 208 real postings, but this is clearly one "
+        "global Workday tenant, not US-only (London/Amsterdam/Frankfurt/Hamburg/Hong Kong "
+        "dominate the sample) -- same pattern as Clyde & Co US. Rely on keyword/location "
+        "filtering downstream rather than URL splitting; most non-US postings simply won't "
+        "match the AI/KM keyword list. Standard old-style Workday subdomain, no adapter "
+        "changes needed.",
+    },
     # --- UltiPro / UKG Recruiting group ---------------------------------------------------
     "Akerman": {
         "adapter": UltiProAdapter,
@@ -462,6 +474,37 @@ FIRMS: dict[str, dict] = {
         "Skip-driven, verified end-to-end against all 96 postings with zero duplicates/gaps. "
         "No full description text available in the search response, so work-arrangement "
         "detection here relies on location text alone.",
+    },
+    "Baker Hostetler": {
+        "adapter": UltiProAdapter,
+        "board_url": "https://recruiting.ultipro.com/BAK1005BKH/JobBoard/"
+        "da65e963-280e-4c79-9743-c8622538c0ea/",
+        "notes": "CONFIRMED via live probe -- 24 real postings ('Marketing Manager', "
+        "'Patent Scientist', 'Paralegal - Corporate / M&A', 'Legal Secretary', 'Practice "
+        "Manager', 'Innovation Analyst'), unmistakably a real active law-firm ATS. "
+        "Supersedes an earlier MANUAL_CHECK_FIRMS note that only found an empty career "
+        "sub-sitemap -- real tenant confirmed directly by the user.",
+    },
+    "Fox Rothschild": {
+        "adapter": UltiProAdapter,
+        "board_url": "https://recruiting.ultipro.com/fox1001frllp/JobBoard/"
+        "88a19d60-0e84-49c7-b754-509a756678e7/",
+        "notes": "CONFIRMED via live probe -- 23 real postings including a direct target-role "
+        "hit ('KM Research Analyst'), plus plausible business-professional titles "
+        "('Proposal Manager', 'Office Services Coordinator', 'Senior Business Development "
+        "Manager', 'Payment Applications Assistant').",
+    },
+    "Baker Donelson": {
+        "adapter": UltiProAdapter,
+        "board_url": "https://recruiting2.ultipro.com/BAK1000/JobBoard/"
+        "2f6b40a8-4e29-e740-a3db-cb1a1e4563b8/",
+        "notes": "CONFIRMED via live probe -- 18 real postings, plausible business-"
+        "professional titles ('IT Project Manager', 'SharePoint Administrator - Memphis, TN "
+        "(Remote)', 'Client Experience & Value Coordinator', 'Practice Coordinator'). Note "
+        "the host is recruiting2.ultipro.com (not the more common recruiting.ultipro.com "
+        "seen for Akerman/Baker Hostetler/Fox Rothschild) -- UltiProAdapter takes the full "
+        "board_url as config so this needed no adapter changes, just preserving the exact "
+        "host given.",
     },
     # --- AmLaw 100 expansion batch, resolved via ats_probe.py + verify_batch.py -----------
     "Morgan Lewis": {
@@ -571,6 +614,29 @@ FIRMS: dict[str, dict] = {
         "javascript:__doPostBack(...) postback -- ViGlobalAdapter now picks up real "
         "per-job URLs and posting IDs when that's available (see viglobal.py), so this "
         "firm gets accurate deep links unlike O'Melveny/Bryan Cave.",
+    },
+    "Bracewell": {
+        "adapter": ViGlobalAdapter,
+        "list_url": "https://bracewellselfapply.viglobalcloud.com/viRecruitSelfApply/"
+        "RecDefault.aspx?Tag=a9725fb0-5ae5-4b9f-accd-4441e0d4ec4e",
+        "notes": "CONFIRMED via live probe -- real postings include 'Billing Rates Analyst', "
+        "'Business Applications Administrator', 'Marketing Applications Manager', 'PRG "
+        "Executive Coordinator', 'Strategic Communications Specialist'. Bryan Cave-style "
+        "structured <h4>/<h5> row shape confirmed directly (default table_id, no override "
+        "needed). Supersedes an earlier MANUAL_CHECK_FIRMS note that only found an empty "
+        "career sub-sitemap -- real tenant confirmed directly by the user.",
+    },
+    "Jones Day": {
+        "adapter": ViGlobalAdapter,
+        "list_url": "https://jonesdaystaffrecruitselfapply.viglobalcloud.com/"
+        "viRecruitSelfApply/RecDefault.aspx?Tag=ab6501e1-c8b5-402c-8909-e3e6af6d4e73",
+        "notes": "CONFIRMED via live probe -- default gridviewList table present with a real "
+        "549KB response, but no <h4> tags found (unlike Bracewell/Bryan Cave/Vinson & "
+        "Elkins), so this is presumably O'Melveny's concatenated-text-blob row shape rather "
+        "than the structured one -- ViGlobalAdapter tries both automatically, but the "
+        "text-blob regex match itself hasn't been verified against this tenant's exact "
+        "output yet. Recommend checking debug_all_titles.txt after a real run before fully "
+        "trusting this entry.",
     },
 }
 
@@ -758,6 +824,32 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "(untested, would be a fragile/unusual adapter design for this project).",
         "check_url": "https://www.dentons.com/en/careers/careers-in-the-united-states/business-services-in-the-united-states/",
     },
+    "Latham & Watkins": {
+        "reason": "Confirmed iCIMS tenant 'lw' (careers-lw.icims.com), blocked by the same "
+        "AWS WAF 'Human Verification' challenge as Orrick/Milbank -- not scrapable with a "
+        "plain HTTP client.",
+        "tenant": "lw",
+        "search_url": "https://careers-lw.icims.com/jobs/search?hashed=-625915638",
+        "check_url": "https://www.lw.com",
+    },
+    "Mayer Brown": {
+        "reason": "Confirmed iCIMS tenant 'mayerbrown' (note: globalcareers- subdomain "
+        "prefix, a third variant after careers-/jobs- seen for other firms), blocked by "
+        "the same AWS WAF 'Human Verification' challenge -- not scrapable with a plain "
+        "HTTP client.",
+        "tenant": "mayerbrown",
+        "search_url": "https://globalcareers-mayerbrown.icims.com/jobs/search?hashed=124489139",
+        "check_url": "https://www.mayerbrown.com",
+    },
+    "Kirkland & Ellis": {
+        "reason": "Real careers site confirmed (staffjobsus.kirkland.com/jobs/search/), but "
+        "blocked by a Cloudflare bot-management challenge ('Just a moment...' interstitial, "
+        "confirmed via response body/CSP headers) -- a different bot-protection vendor than "
+        "the AWS WAF/Imperva blocks seen elsewhere in this project, but the same category of "
+        "obstacle. Underlying ATS platform not identified (blocked before any platform "
+        "signal was visible).",
+        "check_url": "https://staffjobsus.kirkland.com/jobs/search/",
+    },
     "Blank Rome": {
         # Explicit decision, not a technical dead end -- user confirmed live that the
         # business-professionals page has real per-position hyperlinks, but every one leads
@@ -775,10 +867,7 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
     # postings, just "couldn't find an ATS via sitemap search." Not proven blocked,
     # not proven empty -- needs an actual fresh look (visit the site, check for
     # listings) before it can be classified into the tier above or dropped
-    # entirely. Baker Hostetler and Bracewell both have a dedicated career
-    # sub-sitemap that was drilled into and came up empty of individual job URLs --
-    # ambiguous (could mean no current openings, could mean the sitemap just
-    # doesn't index them) rather than a confirmed technical wall.
+    # entirely.
     # =========================================================================
     "Marshall Dennehey": {
         "reason": "No scrapable job board found at all. /careers/current-openings 404s; the "
@@ -787,29 +876,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "'Submit your resume today...'. May not run an online job board for staff/"
         "business-professional roles at all.",
         "check_url": "https://www.marshalldennehey.com/careers/administrative-professionals",
-    },
-    "Hogan Lovells": {
-        "reason": "Real tenant confirmed on Workday wd3 (path-specific-error signal), "
-        "apparently dormant/internal. UNVERIFIED ODDITY: hoganlovells.com redirects to a "
-        "completely different domain, hlc.com -- could be a legitimate rebrand or could be "
-        "something else entirely; not confirmed as the same firm. No ATS trace found on "
-        "that destination page either way. Needs a human to eyeball hlc.com before trusting "
-        "it as Hogan Lovells' real site.",
-        "check_url": "https://www.hlc.com/",
-    },
-    "Kirkland & Ellis": {
-        "reason": "Real careers page found (kirkland.com/sitemap/careers) but no known ATS "
-        "platform domain present in it.",
-        "check_url": "https://www.kirkland.com/sitemap/careers",
-    },
-    "Latham & Watkins": {
-        "reason": "No real careers/job page found via sitemap.xml, sitemap index, or "
-        "robots.txt-declared sitemap locations.",
-        "check_url": "https://www.lw.com",
-    },
-    "Jones Day": {
-        "reason": "No real careers/job page found via sitemap discovery.",
-        "check_url": "https://www.jonesday.com",
     },
     "Wilson Sonsini": {
         "reason": "Only an events-page mention of careers found (wsgr.com), not a real "
@@ -820,24 +886,10 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "reason": "No real careers/job page found via sitemap discovery.",
         "check_url": "https://www.wilmerhale.com",
     },
-    "Mayer Brown": {
-        "reason": "No real careers/job page found via sitemap discovery.",
-        "check_url": "https://www.mayerbrown.com",
-    },
-    "Baker Donelson": {
-        "reason": "Real careers page found (bakerdonelson.com/careers) but no known ATS "
-        "platform domain present in it.",
-        "check_url": "https://www.bakerdonelson.com/careers",
-    },
     "Ogletree Deakins": {
         "reason": "Real careers page found (ogletree.com/about-us/careers/) but no known ATS "
         "platform domain present in it.",
         "check_url": "https://ogletree.com/about-us/careers/",
-    },
-    "Fox Rothschild": {
-        "reason": "Real careers page found (foxrothschild.com/careers-for-attorneys/"
-        "open-positions) but no known ATS platform domain present in it.",
-        "check_url": "https://www.foxrothschild.com/careers-for-attorneys/open-positions",
     },
     "Duane Morris": {
         "reason": "No real careers/job page found via sitemap discovery.",
@@ -860,11 +912,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "reason": "No real careers/job page found via sitemap discovery.",
         "check_url": "https://www.mto.com",
     },
-    "Bracewell": {
-        "reason": "Sitemap has a dedicated career sub-sitemap (poa_career-sitemap.xml) but "
-        "drilling into it found no real career/job page URLs.",
-        "check_url": "https://www.bracewell.com",
-    },
     "Eversheds Sutherland": {
         "reason": "No real careers/job page found via sitemap discovery.",
         "check_url": "https://www.eversheds-sutherland.com",
@@ -877,11 +924,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
     "Akin Gump": {
         "reason": "No real careers/job page found via sitemap discovery.",
         "check_url": "https://www.akingump.com",
-    },
-    "Baker Hostetler": {
-        "reason": "Sitemap has a dedicated career sub-sitemap (poa_career-sitemap.xml) but "
-        "drilling into it found no real career/job page URLs.",
-        "check_url": "https://www.bakerlaw.com",
     },
     "Katten Muchin Rosenman": {
         "reason": "Only an old publications-page mention of careers found (katten.com), not "
