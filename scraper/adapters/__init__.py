@@ -12,6 +12,7 @@ from .earcu import EArcuAdapter
 from .jobvite import JobviteAdapter
 from .breezy import BreezyAdapter
 from .radancy import RadancyAdapter
+from .aem_career_search import AEMCareerSearchAdapter
 
 __all__ = [
     "Adapter",
@@ -28,4 +29,5 @@ __all__ = [
     "JobviteAdapter",
     "BreezyAdapter",
     "RadancyAdapter",
+    "AEMCareerSearchAdapter",
 ]

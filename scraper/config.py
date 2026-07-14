@@ -13,6 +13,7 @@ than plain `requests`, before assuming the tenant/site IDs are wrong.
 from __future__ import annotations
 
 from .adapters import (
+    AEMCareerSearchAdapter,
     ApplicantStackAdapter,
     BreezyAdapter,
     CircaWorksAdapter,
@@ -762,6 +763,23 @@ FIRMS: dict[str, dict] = {
         "Recruiting Cloud's adapter does. meta_data.canonical_url preferred over apply_url "
         "for the stored link (apply_url redirects straight into an iCIMS login flow).",
     },
+    # --- AEM Career Search group ---------------------------------------------------
+    "Dechert": {
+        # Bespoke AEM (Adobe Experience Manager) career-search feature, not a third-party
+        # ATS -- found by digging into the page's embedded Sling servlet config
+        # (careerSearchPath/type/positionsOpt) after 3 rounds of static-HTML dead ends.
+        "adapter": AEMCareerSearchAdapter,
+        "api_url": "https://www.dechert.com/bin/careersSearch",
+        "notes": "CONFIRMED via live probe (4 diagnostic rounds) -- 84 real postings in one "
+        "response, no pagination (Total=84 matches the returned array length exactly). "
+        "Sample titles include 'Manager, Client Events' (Marketing) and a real Type field "
+        "per posting ('Business Professional' vs 'Experienced Lawyer' etc.) -- not used for "
+        "pre-filtering since title/keyword filtering downstream already does the real work, "
+        "but confirms real non-attorney postings exist. Each posting's Url actually points "
+        "at dechertselfapply.viglobalcloud.com (the underlying data is proxied from a real "
+        "viGlobal backend), but this AEM wrapper endpoint has no bot protection unlike "
+        "hitting that backend directly.",
+    },
 }
 
 
@@ -1038,11 +1056,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "protection-style block (no 403, no WAF/challenge page) -- just couldn't locate the "
         "real data source via static probing.",
         "check_url": "https://www.duanemorris.com/site/careers.html#tab_SupportStaffOpportunities",
-    },
-    "Dechert": {
-        "reason": "Real careers page found (dechert.com/careers/law-students.html) but no "
-        "known ATS platform domain present in it.",
-        "check_url": "https://www.dechert.com/careers/law-students.html",
     },
 }
 
