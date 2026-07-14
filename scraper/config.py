@@ -758,6 +758,18 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "(untested, would be a fragile/unusual adapter design for this project).",
         "check_url": "https://www.dentons.com/en/careers/careers-in-the-united-states/business-services-in-the-united-states/",
     },
+    "Blank Rome": {
+        # Explicit decision, not a technical dead end -- user confirmed live that the
+        # business-professionals page has real per-position hyperlinks, but every one leads
+        # to an email-based apply form rather than any scrapable ATS/listing API. Nothing
+        # left for an adapter to hook into; staying manual permanently per explicit request.
+        "reason": "CONFIRMED (user's own live check): the business-professionals careers "
+        "page has real per-position hyperlinks, but each leads to an email-based apply "
+        "form, not a third-party ATS or any scrapable listing API. No fetchable job data "
+        "exists to build an adapter against -- staying manual by explicit decision, not "
+        "because of a technical block.",
+        "check_url": "https://www.blankrome.com/careers/overview/business-professionals/",
+    },
     # =========================================================================
     # UNRESEARCHED -- no confirmed technical block AND no confirmed real/absent
     # postings, just "couldn't find an ATS via sitemap search." Not proven blocked,
@@ -775,16 +787,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "'Submit your resume today...'. May not run an online job board for staff/"
         "business-professional roles at all.",
         "check_url": "https://www.marshalldennehey.com/careers/administrative-professionals",
-    },
-    "Blank Rome": {
-        "reason": "CORRECTED (user's own live check -- the prior 'pure client-side JS, no "
-        "ATS trace' claim was wrong): the business-professionals careers page does have "
-        "real static hyperlinks per open position, but each one leads to an email-based "
-        "apply form rather than a third-party ATS. No confirmed technical block at all -- "
-        "this may just need a CustomHTMLAdapter built against those direct hyperlinks. "
-        "Worth a proper diagnostic round (live fetch of the actual link/title markup) "
-        "before writing one.",
-        "check_url": "https://www.blankrome.com/careers/overview/business-professionals/",
     },
     "Hogan Lovells": {
         "reason": "Real tenant confirmed on Workday wd3 (path-specific-error signal), "
