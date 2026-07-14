@@ -914,6 +914,20 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "requires credentials this project doesn't have and shouldn't try to bypass.",
         "check_url": "https://klgates.recsolu.com/job_boards/1",
     },
+    "Akin Gump": {
+        "reason": "Confirmed real SilkRoad OpenHire search page (jobs.silkroad.com/AkinGump/"
+        "AkinGump) -- same platform already working for WilmerHale, but a different URL "
+        "shape (jobs.silkroad.com/<company>/<company> instead of <company>-openhire."
+        "silkroad.com/epostings/...). Unlike WilmerHale, the fuseaction=app.jobsearch trick "
+        "that returns real results directly doesn't apply here -- tried multiple fuseaction "
+        "guesses and a real POST submission of the actual search form (with its genuine "
+        "hidden fields: SearchString/SelectedLocations/SelectedCategory/"
+        "SelectedPositionType) over 3 diagnostic rounds, always getting the same empty "
+        "search-form shell back rather than results. This tenant's results likely load via "
+        "a separate AJAX call after submission (session/token-based) -- would need real "
+        "browser network inspection to find it.",
+        "check_url": "https://jobs.silkroad.com/AkinGump/AkinGump",
+    },
     "Venable": {
         "reason": "Confirmed ADP myjobs client-side Angular app (myjobs.adp.com/"
         "venablebusinessprofessionalcareers/cx) -- static HTML is just an empty app "
@@ -1029,10 +1043,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "reason": "Real careers page found (dechert.com/careers/law-students.html) but no "
         "known ATS platform domain present in it.",
         "check_url": "https://www.dechert.com/careers/law-students.html",
-    },
-    "Akin Gump": {
-        "reason": "No real careers/job page found via sitemap discovery.",
-        "check_url": "https://www.akingump.com",
     },
 }
 
