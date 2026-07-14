@@ -119,7 +119,12 @@ a result.
   HTML anywhere discoverable via sitemap search, a real ATS exists but
   requires authentication, or a real ATS exists but has no relevant
   listings). Not scraped; printed as a reminder list at the end of every
-  run instead, with a check URL and the reason. Currently 45 firms.
+  run instead, with a check URL and the reason. Currently 44 firms,
+  split into two tiers: 19 with a confirmed genuine technical obstacle
+  (WAF/bot-protection, credential-gated API, or a JS-rendered page with a
+  confirmed real ATS/tenant underneath), and 25 unresearched leads (no
+  confirmed block, no confirmed absence of postings either) still
+  awaiting a fresh look.
 - `REJECTED_LEADS` — slug guesses that turned out to be a different,
   unrelated company on a shared ATS platform (confirmed via real sample
   titles), kept on record so they aren't accidentally retried. Currently 2

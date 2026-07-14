@@ -584,6 +584,15 @@ FIRMS: dict[str, dict] = {
 # entries that fail every run.
 # ---------------------------------------------------------------------------
 MANUAL_CHECK_FIRMS: dict[str, dict] = {
+    # =========================================================================
+    # CONFIRMED genuine technical obstacle (WAF/bot-protection, credential-gated
+    # API, or JS-rendered page with a confirmed real ATS/tenant underneath) --
+    # real postings likely exist behind each of these, worth a human checking
+    # manually. This tier intentionally runs well past the "5-10 firms" target
+    # discussed when this list was last restructured -- every entry here has an
+    # actual confirmed block, not just "we couldn't find it," so none were cut
+    # just to hit a smaller number.
+    # =========================================================================
     "Orrick": {
         "reason": "Confirmed iCIMS tenant 'orrick', but blocked by an AWS WAF 'Human "
         "Verification' challenge -- not scrapable with a plain HTTP client.",
@@ -622,82 +631,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "tenant": "milbank",
         "search_url": "https://careers-milbank.icims.com/jobs/intro?hashed=-435594439",
     },
-    "Marshall Dennehey": {
-        "reason": "No scrapable job board found at all. /careers/current-openings 404s; the "
-        "sitemap (884KB, 4498 URLs) has zero individual job-posting URLs, only marketing "
-        "landing pages; and /careers/administrative-professionals has no listings, just "
-        "'Submit your resume today...'. May not run an online job board for staff/"
-        "business-professional roles at all.",
-        "check_url": "https://www.marshalldennehey.com/careers/administrative-professionals",
-    },
-    "Ropes & Gray": {
-        "reason": "ropesgray.com 403s on every path (bot protection), blocking the "
-        "embedded-link-discovery technique used for every other firm here. A real "
-        "ApplicantStack tenant may exist (ropesgray.applicantstack.com/x/openings returned "
-        "0 postings), but that's not enough to confirm identity.",
-        "check_url": "https://ropesgray.applicantstack.com/x/openings",
-    },
-    "Blank Rome": {
-        "reason": "Real tenant confirmed on Workday wd1 (path-specific-error signal) but the "
-        "site slug was never found -- the business-professionals careers page has zero ATS "
-        "trace of any kind in its static HTML (no Workday link old or new format, no other "
-        "known ATS domain, no search/openings-labeled links). Whatever renders the job list "
-        "is pure client-side JS with no static fallback.",
-        "check_url": "https://www.blankrome.com/careers/overview/business-professionals/",
-    },
-    "Covington & Burling": {
-        "reason": "Real tenant confirmed on Workday wd1 (path-specific-error signal) but the "
-        "site slug was never found -- the business-professionals page uses Coveo "
-        "(static.cloud.coveo.com), an enterprise search layer on their Sitecore CMS, not a "
-        "job board ATS directly. Job data is fetched via a JS search API call after page "
-        "load, invisible to static HTML scraping.",
-        "check_url": "https://www.cov.com/en/careers/business-professionals/employment-opportunities",
-    },
-    "Weil Gotshal": {
-        "reason": "Checked manually -- no listings for business-professional/staff roles, "
-        "only attorney postings. Not worth an adapter; there's nothing for our filters to "
-        "find even if scraping worked.",
-        "check_url": "https://www.weil.com/careers",
-    },
-    # --- AmLaw 100 expansion batch: real Workday tenants confirmed (path-specific-error
-    # signal) but evidently dormant/internal, same pattern as Milbank above -- the real
-    # external-recruiting site is a different platform or unreachable for a firm-specific
-    # reason. -----------------------------------------------------------------------------
-    "McDermott Will & Emery": {
-        "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
-        "apparently dormant/internal. mwe.com/careers redirects to mcdermottlaw.com/careers, "
-        "which is blocked by an Imperva Incapsula bot-protection challenge -- not scrapable "
-        "with a plain HTTP client, same category as iCIMS's AWS WAF block.",
-        "check_url": "https://www.mcdermottlaw.com/careers",
-    },
-    "Morrison & Foerster": {
-        "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
-        "apparently dormant/internal. mofo.com/careers redirects to careers.mofo.com, a "
-        "Next.js SPA with zero job data in static HTML -- the real ATS/API wasn't identified.",
-        "check_url": "https://careers.mofo.com/",
-    },
-    "Davis Polk": {
-        "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
-        "apparently dormant/internal. The real careers path wasn't found -- "
-        "davispolk.com/careers returns 403 (bot-protected) and the bare domain has no ATS "
-        "trace.",
-        "check_url": "https://www.davispolk.com",
-    },
-    "Hogan Lovells": {
-        "reason": "Real tenant confirmed on Workday wd3 (path-specific-error signal), "
-        "apparently dormant/internal. UNVERIFIED ODDITY: hoganlovells.com redirects to a "
-        "completely different domain, hlc.com -- could be a legitimate rebrand or could be "
-        "something else entirely; not confirmed as the same firm. No ATS trace found on "
-        "that destination page either way. Needs a human to eyeball hlc.com before trusting "
-        "it as Hogan Lovells' real site.",
-        "check_url": "https://www.hlc.com/",
-    },
-    "Cleary Gottlieb": {
-        "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
-        "apparently dormant/internal. clearygottlieb.com/careers redirects to the bare "
-        "homepage (Sitefinity CMS) -- the real careers subpage URL wasn't found.",
-        "check_url": "https://www.clearygottlieb.com/careers",
-    },
     "Nelson Mullins": {
         "reason": "Confirmed iCIMS tenant 'nelsonmullins' (found embedded in "
         "nelsonmullins.com/careers), blocked by the same AWS WAF 'Human Verification' "
@@ -714,21 +647,83 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "search_url": "https://careers-foley.icims.com/jobs/intro?hashed=-626009846",
         "check_url": "https://www.foley.com/careers/",
     },
-    # --- AmLaw 100 expansion batch: the remaining 37 firms after 7 rounds of live
-    # investigation (domain guessing, sitemap discovery incl. robots.txt fallback and
-    # sub-sitemap drilling, SPA framework/embedded-JSON inspection, direct API endpoint
-    # guessing) turned up no automatable path. Each entry below reflects the specific
-    # dead end found for that firm, not a generic "nothing found" -- see notes.
-    # -----------------------------------------------------------------------------
-    "Kirkland & Ellis": {
-        "reason": "Real careers page found (kirkland.com/sitemap/careers) but no known ATS "
-        "platform domain present in it.",
-        "check_url": "https://www.kirkland.com/sitemap/careers",
+    "Willkie Farr & Gallagher": {
+        # Upgraded from "no ATS platform domain present" -- that scan only checked
+        # willkie.com/careers's static HTML, which apparently doesn't embed this link
+        # server-side. Real tenant confirmed directly by the user.
+        "reason": "Confirmed iCIMS tenant 'jobs-willkie' (note: jobs- subdomain prefix, not "
+        "the more common careers- prefix seen for Orrick/Milbank/Nelson Mullins/Foley & "
+        "Lardner), blocked by the same AWS WAF 'Human Verification' challenge -- not "
+        "scrapable with a plain HTTP client.",
+        "tenant": "jobs-willkie",
+        "search_url": "https://jobs-willkie.icims.com/jobs/search?hashed=-625885970",
+        "check_url": "https://www.willkie.com/careers",
     },
-    "Latham & Watkins": {
-        "reason": "No real careers/job page found via sitemap.xml, sitemap index, or "
-        "robots.txt-declared sitemap locations.",
-        "check_url": "https://www.lw.com",
+    "McDermott Will & Emery": {
+        "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
+        "apparently dormant/internal. mwe.com/careers redirects to mcdermottlaw.com/careers, "
+        "which is blocked by an Imperva Incapsula bot-protection challenge -- not scrapable "
+        "with a plain HTTP client, same category as iCIMS's AWS WAF block.",
+        "check_url": "https://www.mcdermottlaw.com/careers",
+    },
+    "Covington & Burling": {
+        "reason": "Real tenant confirmed on Workday wd1 (path-specific-error signal) but the "
+        "site slug was never found -- the business-professionals page uses Coveo "
+        "(static.cloud.coveo.com), an enterprise search layer on their Sitecore CMS, not a "
+        "job board ATS directly. Job data is fetched via a JS search API call after page "
+        "load, invisible to static HTML scraping.",
+        "check_url": "https://www.cov.com/en/careers/business-professionals/employment-opportunities",
+    },
+    "Davis Polk": {
+        "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
+        "apparently dormant/internal. The real careers path wasn't found -- "
+        "davispolk.com/careers returns 403 (bot-protected) and the bare domain has no ATS "
+        "trace.",
+        "check_url": "https://www.davispolk.com",
+    },
+    "Ropes & Gray": {
+        "reason": "ropesgray.com 403s on every path (bot protection), blocking the "
+        "embedded-link-discovery technique used for every other firm here. A real "
+        "ApplicantStack tenant may exist (ropesgray.applicantstack.com/x/openings returned "
+        "0 postings), but that's not enough to confirm identity.",
+        "check_url": "https://ropesgray.applicantstack.com/x/openings",
+    },
+    "Cleary Gottlieb": {
+        "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
+        "apparently dormant/internal. clearygottlieb.com/careers redirects to the bare "
+        "homepage (Sitefinity CMS) -- the real careers subpage URL wasn't found.",
+        "check_url": "https://www.clearygottlieb.com/careers",
+    },
+    "Morrison & Foerster": {
+        "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
+        "apparently dormant/internal. mofo.com/careers redirects to careers.mofo.com, a "
+        "Next.js SPA with zero job data in static HTML -- the real ATS/API wasn't identified.",
+        "check_url": "https://careers.mofo.com/",
+    },
+    "Crowell & Moring": {
+        "reason": "Real careers landing and apply-now pages found, but the careers page is "
+        "an unusually large 4MB with no embedded JSON state and no known ATS platform domain "
+        "present anywhere in it.",
+        "check_url": "https://www.crowell.com/en/careers",
+    },
+    "K&L Gates": {
+        "reason": "Real 'All Current Openings' link found, leading to klgates.recsolu.com -- "
+        "RecSolu (Yello Enterprise), a platform not otherwise seen in this project. The board "
+        "is JS-rendered with no job data in static HTML; several guessed REST API endpoints "
+        "(/api/v1/job_boards/.../jobs) returned 401 Unauthorized -- a real API exists but "
+        "requires credentials this project doesn't have and shouldn't try to bypass.",
+        "check_url": "https://klgates.recsolu.com/job_boards/1",
+    },
+    "Venable": {
+        "reason": "Confirmed ADP myjobs client-side Angular app (myjobs.adp.com/"
+        "venablebusinessprofessionalcareers/cx) -- static HTML is just an empty app "
+        "shell. The main JS bundle references /cx/rm/v1/core/identity and /cx/staffing/"
+        "v2/job-applicant(s) paths, but those are account/application-management "
+        "endpoints, not a job-listing search API; several sibling-path guesses "
+        "(/cx/rm/v1/jobs, /cx/rm/v2/jobs, etc.) all just returned the same SPA shell "
+        "(client-side routing, no server-side 404). The real job-search endpoint wasn't "
+        "discoverable via static probing -- would need real browser network inspection.",
+        "check_url": "https://myjobs.adp.com/venablebusinessprofessionalcareers/cx",
     },
     "Paul Weiss": {
         "reason": "Confirmed Taleo Enterprise career section (paulweiss.taleo.net/"
@@ -741,6 +736,18 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "shape.",
         "check_url": "https://paulweiss.taleo.net/careersection/ex/jobsearch.ftl",
     },
+    "Sheppard Mullin": {
+        "reason": "The marketing careers page (sheppard.com/careers, Sitecore JSS + "
+        "Next.js) has zero job data in static/SSR content -- but the real ATS was found: "
+        "FloRecruit (florecruit.com/v2/app/sheppardbusinessservices/jobs), a Next.js "
+        "static-export shell (__NEXT_DATA__ present but its pageProps are empty -- data "
+        "loads client-side after export). Its JS bundle references a real /api/v2/graphql "
+        "endpoint, so postings genuinely exist and are technically reachable, but "
+        "automating it would mean reverse-engineering the actual GraphQL query shape "
+        "(introspection likely disabled in production) -- needs real browser network "
+        "inspection of the query/response, not static probing.",
+        "check_url": "https://florecruit.com/v2/app/sheppardbusinessservices/jobs",
+    },
     "Dentons": {
         "reason": "The firm's own sitemap directly indexes individual job posting URLs "
         "(e.g. .../careers/careers-in-the-united-states/business-services-in-the-united-"
@@ -750,6 +757,53 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "current postings short of relying on the sitemap.xml itself as the listing source "
         "(untested, would be a fragile/unusual adapter design for this project).",
         "check_url": "https://www.dentons.com/en/careers/careers-in-the-united-states/business-services-in-the-united-states/",
+    },
+    # =========================================================================
+    # UNRESEARCHED -- no confirmed technical block AND no confirmed real/absent
+    # postings, just "couldn't find an ATS via sitemap search." Not proven blocked,
+    # not proven empty -- needs an actual fresh look (visit the site, check for
+    # listings) before it can be classified into the tier above or dropped
+    # entirely. Baker Hostetler and Bracewell both have a dedicated career
+    # sub-sitemap that was drilled into and came up empty of individual job URLs --
+    # ambiguous (could mean no current openings, could mean the sitemap just
+    # doesn't index them) rather than a confirmed technical wall.
+    # =========================================================================
+    "Marshall Dennehey": {
+        "reason": "No scrapable job board found at all. /careers/current-openings 404s; the "
+        "sitemap (884KB, 4498 URLs) has zero individual job-posting URLs, only marketing "
+        "landing pages; and /careers/administrative-professionals has no listings, just "
+        "'Submit your resume today...'. May not run an online job board for staff/"
+        "business-professional roles at all.",
+        "check_url": "https://www.marshalldennehey.com/careers/administrative-professionals",
+    },
+    "Blank Rome": {
+        "reason": "CORRECTED (user's own live check -- the prior 'pure client-side JS, no "
+        "ATS trace' claim was wrong): the business-professionals careers page does have "
+        "real static hyperlinks per open position, but each one leads to an email-based "
+        "apply form rather than a third-party ATS. No confirmed technical block at all -- "
+        "this may just need a CustomHTMLAdapter built against those direct hyperlinks. "
+        "Worth a proper diagnostic round (live fetch of the actual link/title markup) "
+        "before writing one.",
+        "check_url": "https://www.blankrome.com/careers/overview/business-professionals/",
+    },
+    "Hogan Lovells": {
+        "reason": "Real tenant confirmed on Workday wd3 (path-specific-error signal), "
+        "apparently dormant/internal. UNVERIFIED ODDITY: hoganlovells.com redirects to a "
+        "completely different domain, hlc.com -- could be a legitimate rebrand or could be "
+        "something else entirely; not confirmed as the same firm. No ATS trace found on "
+        "that destination page either way. Needs a human to eyeball hlc.com before trusting "
+        "it as Hogan Lovells' real site.",
+        "check_url": "https://www.hlc.com/",
+    },
+    "Kirkland & Ellis": {
+        "reason": "Real careers page found (kirkland.com/sitemap/careers) but no known ATS "
+        "platform domain present in it.",
+        "check_url": "https://www.kirkland.com/sitemap/careers",
+    },
+    "Latham & Watkins": {
+        "reason": "No real careers/job page found via sitemap.xml, sitemap index, or "
+        "robots.txt-declared sitemap locations.",
+        "check_url": "https://www.lw.com",
     },
     "Jones Day": {
         "reason": "No real careers/job page found via sitemap discovery.",
@@ -763,14 +817,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
     "WilmerHale": {
         "reason": "No real careers/job page found via sitemap discovery.",
         "check_url": "https://www.wilmerhale.com",
-    },
-    "K&L Gates": {
-        "reason": "Real 'All Current Openings' link found, leading to klgates.recsolu.com -- "
-        "RecSolu (Yello Enterprise), a platform not otherwise seen in this project. The board "
-        "is JS-rendered with no job data in static HTML; several guessed REST API endpoints "
-        "(/api/v1/job_boards/.../jobs) returned 401 Unauthorized -- a real API exists but "
-        "requires credentials this project doesn't have and shouldn't try to bypass.",
-        "check_url": "https://klgates.recsolu.com/job_boards/1",
     },
     "Mayer Brown": {
         "reason": "No real careers/job page found via sitemap discovery.",
@@ -803,60 +849,19 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "reason": "No real careers/job page found via sitemap discovery.",
         "check_url": "https://www.arnoldporter.com",
     },
-    "Crowell & Moring": {
-        "reason": "Real careers landing and apply-now pages found, but the careers page is "
-        "an unusually large 4MB with no embedded JSON state and no known ATS platform domain "
-        "present anywhere in it.",
-        "check_url": "https://www.crowell.com/en/careers",
-    },
     "Hunton Andrews Kurth": {
         "reason": "Only an events-page mention of careers found (hunton.com), not a real "
         "listing page or known ATS platform.",
         "check_url": "https://www.hunton.com",
     },
-    "Venable": {
-        "reason": "Confirmed ADP myjobs client-side Angular app (myjobs.adp.com/"
-        "venablebusinessprofessionalcareers/cx) -- static HTML is just an empty app "
-        "shell. The main JS bundle references /cx/rm/v1/core/identity and /cx/staffing/"
-        "v2/job-applicant(s) paths, but those are account/application-management "
-        "endpoints, not a job-listing search API; several sibling-path guesses "
-        "(/cx/rm/v1/jobs, /cx/rm/v2/jobs, etc.) all just returned the same SPA shell "
-        "(client-side routing, no server-side 404). The real job-search endpoint wasn't "
-        "discoverable via static probing -- would need real browser network inspection.",
-        "check_url": "https://myjobs.adp.com/venablebusinessprofessionalcareers/cx",
-    },
     "Munger Tolles": {
         "reason": "No real careers/job page found via sitemap discovery.",
         "check_url": "https://www.mto.com",
-    },
-    "Sheppard Mullin": {
-        "reason": "The marketing careers page (sheppard.com/careers, Sitecore JSS + "
-        "Next.js) has zero job data in static/SSR content -- but the real ATS was found: "
-        "FloRecruit (florecruit.com/v2/app/sheppardbusinessservices/jobs), a Next.js "
-        "static-export shell (__NEXT_DATA__ present but its pageProps are empty -- data "
-        "loads client-side after export). Its JS bundle references a real /api/v2/graphql "
-        "endpoint, so postings genuinely exist and are technically reachable, but "
-        "automating it would mean reverse-engineering the actual GraphQL query shape "
-        "(introspection likely disabled in production) -- needs real browser network "
-        "inspection of the query/response, not static probing.",
-        "check_url": "https://florecruit.com/v2/app/sheppardbusinessservices/jobs",
     },
     "Bracewell": {
         "reason": "Sitemap has a dedicated career sub-sitemap (poa_career-sitemap.xml) but "
         "drilling into it found no real career/job page URLs.",
         "check_url": "https://www.bracewell.com",
-    },
-    "Willkie Farr & Gallagher": {
-        # Upgraded from "no ATS platform domain present" -- that scan only checked
-        # willkie.com/careers's static HTML, which apparently doesn't embed this link
-        # server-side. Real tenant confirmed directly by the user.
-        "reason": "Confirmed iCIMS tenant 'jobs-willkie' (note: jobs- subdomain prefix, not "
-        "the more common careers- prefix seen for Orrick/Milbank/Nelson Mullins/Foley & "
-        "Lardner), blocked by the same AWS WAF 'Human Verification' challenge -- not "
-        "scrapable with a plain HTTP client.",
-        "tenant": "jobs-willkie",
-        "search_url": "https://jobs-willkie.icims.com/jobs/search?hashed=-625885970",
-        "check_url": "https://www.willkie.com/careers",
     },
     "Eversheds Sutherland": {
         "reason": "No real careers/job page found via sitemap discovery.",
