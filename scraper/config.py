@@ -521,6 +521,24 @@ FIRMS: dict[str, dict] = {
         "verified against a real live scrape yet. Recommend running the scraper for real "
         "and checking debug_all_titles.txt before fully trusting this entry.",
     },
+    "Vinson & Elkins": {
+        # Third viGlobal row-template shape found in this project, hosted on the firm's own
+        # domain (portal.velaw.com) rather than viglobalcloud.com -- see viglobal.py's module
+        # docstring. Table id is also non-default ("contentPlaceHolder_dataGridMain", not the
+        # usual "contentPlaceHolder_gridviewList").
+        "adapter": ViGlobalAdapter,
+        "list_url": "https://portal.velaw.com/viDesktopEx/viRecruitSelfApply/ReDefault.aspx"
+        "?Tag=bf5353fd-6c9b-41e3-a72f-7abd61690415",
+        "table_id": "contentPlaceHolder_dataGridMain",
+        "notes": "CONFIRMED via live probe -- real postings include 'Billing Coordinator', "
+        "'Event and Travel Logistics Specialist', 'Head of Risk & Compliance, "
+        "International', 'Human Resources Manager', 'International Business Development "
+        "Manager'. Unlike the other two viGlobal tenants, this template's 'More Info' "
+        "control is a real <a href> link (ReJobView.aspx?...&JobID=N), not a "
+        "javascript:__doPostBack(...) postback -- ViGlobalAdapter now picks up real "
+        "per-job URLs and posting IDs when that's available (see viglobal.py), so this "
+        "firm gets accurate deep links unlike O'Melveny/Bryan Cave.",
+    },
 }
 
 
@@ -719,11 +737,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "(/api/v1/job_boards/.../jobs) returned 401 Unauthorized -- a real API exists but "
         "requires credentials this project doesn't have and shouldn't try to bypass.",
         "check_url": "https://klgates.recsolu.com/job_boards/1",
-    },
-    "Vinson & Elkins": {
-        "reason": "Real careers page found (velaw.com/careers/business-professionals/) but "
-        "no known ATS platform domain present in it.",
-        "check_url": "https://www.velaw.com/careers/business-professionals/",
     },
     "Squire Patton Boggs": {
         "reason": "No real careers/job page found via sitemap discovery.",

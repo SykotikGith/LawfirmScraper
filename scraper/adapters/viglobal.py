@@ -23,22 +23,33 @@ ASP.NET GridView table (id=contentPlaceHolder_gridviewList by default)
    description stays "" for this shape, same as adapters with no
    description text available at all.
 
-Both shapes are tried per row, structured-tags first. Job "Apply"
-controls are ASP.NET postback LinkButtons (javascript:__doPostBack(...))
-in both shapes, not real navigable URLs, so there's no per-job URL to
-link to -- every posting points at the shared listing page, and
-posting_id is derived from title+office+group instead of a URL or
-numeric ID.
+Both shapes are tried per row, structured-tags first (and also cover a
+third, Vinson & Elkins' self-hosted deployment -- same <h4>{title}</h4>
+structure but no <h5> office/practice fields at all, so office/group come
+back empty; location sometimes ends up embedded directly in the title
+text instead, e.g. "Billing Coordinator - Austin, Dallas, Houston").
+
+Job "Apply" controls are ASP.NET postback LinkButtons
+(javascript:__doPostBack(...)) for O'Melveny and Bryan Cave -- not real
+navigable URLs, so those postings point at the shared listing page and
+posting_id is derived from title+office+group. Vinson & Elkins' shape is
+different: its "More Info" control is a real <a href="ReJobView.aspx?
+...&JobID=N"> link, so when a non-javascript href is found in the row we
+use that (resolved against list_url) as the real per-job URL, and pull
+the numeric JobID out of it for posting_id instead of hashing.
 """
 from __future__ import annotations
 
 import hashlib
 import re
+from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
 from ..models import Posting
 from .base import Adapter
+
+JOB_ID_RE = re.compile(r"[?&]JobID=(\d+)", re.IGNORECASE)
 
 ROW_TEXT_RE = re.compile(
     r"^(?P<title>.+?)Office(?P<office>.+?)Group(?P<group>.+?)"
@@ -46,10 +57,12 @@ ROW_TEXT_RE = re.compile(
 )
 
 
-def _parse_structured_row(row) -> tuple[str, str, str, str] | None:
-    """Bryan Cave Leighton Paisner's <h4>/<h5><span> shape. Returns
-    (title, office, group, description) or None if this row isn't in
-    that shape at all (h4 missing)."""
+def _parse_structured_row(row) -> tuple[str, str, str, str, str | None] | None:
+    """Bryan Cave Leighton Paisner's <h4>/<h5><span> shape, and Vinson &
+    Elkins' <h4>-only variant. Returns (title, office, group, description,
+    detail_url) or None if this row isn't in that shape at all (h4
+    missing). detail_url is the row's own non-javascript href if one
+    exists (Vinson & Elkins), else None (Bryan Cave/O'Melveny postbacks)."""
     h4 = row.find("h4")
     if h4 is None:
         return None
@@ -70,10 +83,17 @@ def _parse_structured_row(row) -> tuple[str, str, str, str] | None:
         elif label.startswith("Practice") or label.startswith("Group"):
             group = value
 
-    return title, office, group, ""
+    detail_url = None
+    for a in row.find_all("a", href=True):
+        href = a["href"]
+        if href and not href.lower().startswith("javascript:"):
+            detail_url = href
+            break
+
+    return title, office, group, "", detail_url
 
 
-def _parse_text_blob_row(cell_text: str) -> tuple[str, str, str, str] | None:
+def _parse_text_blob_row(cell_text: str) -> tuple[str, str, str, str, str | None] | None:
     """O'Melveny & Myers' concatenated-plain-text shape."""
     match = ROW_TEXT_RE.match(cell_text)
     if not match:
@@ -86,7 +106,7 @@ def _parse_text_blob_row(cell_text: str) -> tuple[str, str, str, str] | None:
     # Full description trails immediately after the regex match -- already
     # fetched, just needs slicing off rather than a second per-job request.
     description = cell_text[match.end():].strip()
-    return title, office, group, description
+    return title, office, group, description, None
 
 
 class ViGlobalAdapter(Adapter):
@@ -115,15 +135,21 @@ class ViGlobalAdapter(Adapter):
                 parsed = _parse_text_blob_row(cells[0].get_text(strip=True))
             if parsed is None:
                 continue
-            title, office, group, description = parsed
+            title, office, group, description, detail_url = parsed
 
-            posting_id = hashlib.sha1(f"{title}|{office}|{group}".encode()).hexdigest()[:12]
+            url = urljoin(list_url, detail_url) if detail_url else list_url
+            job_id_match = JOB_ID_RE.search(detail_url) if detail_url else None
+            posting_id = (
+                job_id_match.group(1)
+                if job_id_match
+                else hashlib.sha1(f"{title}|{office}|{group}".encode()).hexdigest()[:12]
+            )
             postings.append(
                 Posting(
                     firm=self.firm,
                     title=title,
                     location=office,
-                    url=list_url,
+                    url=url,
                     posting_id=posting_id,
                     ats=self.ats_name,
                     description=description,

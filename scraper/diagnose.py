@@ -1,25 +1,24 @@
-"""Batch round 2: deeper structural inspection of the 6 leads round 1
-couldn't resolve from a single top-level fetch.
+"""Batch round 3.
 
-- Vinson & Elkins (viGlobal): round 1 found the table id is
-  "contentPlaceHolder_dataGridMain", not the usual
-  "contentPlaceHolder_gridviewList" -- ViGlobalAdapter already supports a
-  configurable table_id, so this just dumps that table's actual row
-  markup to see which of the two known row shapes (or a third, new one)
-  applies.
-- Venable (ADP myjobs): round 1 confirmed it's a client-side Angular app
-  (myjobs.cf.adp.com bundles) with no API trace in the static HTML. This
-  fetches the main JS bundle and greps it for embedded API base URLs.
-- Sullivan & Cromwell (Taleo Business Edition), Squire Patton Boggs
-  (CV-Mail UK), and Paul Weiss (Taleo Enterprise careersection) all
-  returned substantial real HTML (82-126KB) in round 1 but the first 500
-  chars were just boilerplate/whitespace -- this generically hunts for
-  any element whose class/id mentions "job"/"req" and any href that looks
-  like a job-detail link, across all three.
-- Sheppard Mullin (FloRecruit/Next.js): checks specifically for an
-  embedded __NEXT_DATA__ script tag, which Next.js server-rendering often
-  populates with real initial-page data even when the visible UI is
-  client-rendered.
+Two firms are now essentially just CustomHTMLAdapter selector-tuning --
+Sullivan & Cromwell (a.viewJobLink) and Squire Patton Boggs
+(a.jobMoreDetailCaptionStyle) both showed real server-rendered job data in
+round 2. This dumps each matched link's own text plus its parent row's
+full text, to see exactly what the title/location text looks like and
+whether a location_selector is findable.
+
+The other three (Venable/ADP, Sheppard Mullin/FloRecruit, Paul Weiss/Taleo
+Enterprise) still need an actual data endpoint:
+- Paul Weiss: round 2 showed the *search form* page, not results -- Taleo
+  Enterprise usually executes search via a REST call keyed by a numeric
+  career-section ID embedded somewhere in the page's JS config. This
+  greps for that.
+- Venable: re-greps the ADP main.js bundle for *relative* API paths
+  (previous round only caught absolute https:// URLs and found nothing
+  useful).
+- Sheppard Mullin: round 2's __NEXT_DATA__ was an empty static-export
+  shell (real data fetched client-side after load) -- this pulls the
+  page's actual JS bundle list and greps those for API path patterns.
 
 Usage: python -m scraper.diagnose
 """
@@ -48,78 +47,29 @@ def section(title: str) -> None:
     print(f"\n{'=' * 72}\n{title}\n{'=' * 72}")
 
 
-def find_job_like_elements(html: str, label: str) -> None:
-    class_id_hits = re.findall(
-        r'<(\w+)[^>]*\b(?:class|id)="([^"]*(?:job|req)[^"]*)"[^>]*>', html, re.I
-    )
-    print(f"  [{label}] elements with job/req in class or id: {len(class_id_hits)}")
-    for tag, attr in class_id_hits[:15]:
-        print(f"    <{tag} .../{attr!r}>")
-
-    href_hits = re.findall(r'href="([^"]*(?:job|req|detail)[^"]*)"', html, re.I)
-    print(f"  [{label}] hrefs mentioning job/req/detail: {len(href_hits)}")
-    for href in sorted(set(href_hits))[:15]:
-        print(f"    {href}")
-
-
-# --- Vinson & Elkins (viGlobal, dataGridMain table) -----------------------
-def check_vinson_elkins() -> None:
-    section("Vinson & Elkins -- inspecting contentPlaceHolder_dataGridMain table")
-    url = (
-        "https://portal.velaw.com/viDesktopEx/viRecruitSelfApply/ReDefault.aspx"
-        "?Tag=bf5353fd-6c9b-41e3-a72f-7abd61690415"
-    )
-    resp = fetch(url)
-    if resp is None:
-        return
-    match = re.search(
-        r'<table[^>]*id="contentPlaceHolder_dataGridMain"[^>]*>(.*?)</table>',
-        resp.text,
-        re.DOTALL,
-    )
-    if not match:
-        print("  table not found in re-fetch (unexpected)")
-        return
-    table_html = match.group(1)
-    print(f"  table inner HTML length: {len(table_html)}")
-    rows = re.findall(r"<tr.*?</tr>", table_html, re.DOTALL)
-    print(f"  <tr> rows found: {len(rows)}")
-    for row in rows[:5]:
-        print(f"  --- row ---\n{row[:600]}\n")
-
-
-# --- Venable (ADP myjobs) -- fetch main JS bundle for API base URL --------
-def check_venable() -> None:
-    section("Venable -- fetching ADP main.js bundle for embedded API URLs")
-    resp = fetch("https://myjobs.cf.adp.com/main.9b686673fecb1b74.js")
-    if resp is None:
-        return
-    print(f"  status={resp.status_code} len={len(resp.text)}")
-    if resp.status_code != 200:
-        print("  (bundle hash in filename may have changed since round 1 -- ignore if 404)")
-        return
-    urls = re.findall(r'"(https?://[a-zA-Z0-9.\-]+/[^"]{0,80})"', resp.text)
-    api_like = sorted({u for u in urls if "adp.com" in u or "api" in u.lower()})
-    print(f"  candidate API/base URLs found: {len(api_like)}")
-    for u in api_like[:25]:
-        print(f"    {u}")
-
-
-# --- Sullivan & Cromwell (Taleo Business Edition) --------------------------
+# --- Sullivan & Cromwell: dump viewJobLink rows ----------------------------
 def check_sullivan_cromwell() -> None:
-    section("Sullivan & Cromwell -- hunting for job-listing markup in Taleo TBE HTML")
+    section("Sullivan & Cromwell -- dumping a.viewJobLink rows")
     url = "https://phg.tbe.taleo.net/phg04/ats/careers/v2/searchResults?org=SULLCROM&cws=38"
     resp = fetch(url)
     if resp is None:
         return
-    find_job_like_elements(resp.text, "S&C")
-    mid = len(resp.text) // 3
-    print(f"  body[{mid}:{mid + 800}]: {resp.text[mid:mid + 800]!r}")
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(resp.text, "lxml")
+    links = soup.select("a.viewJobLink")
+    print(f"  a.viewJobLink count: {len(links)}")
+    for link in links[:6]:
+        row = link.find_parent(["tr", "li", "div"])
+        row_text = row.get_text(" | ", strip=True)[:300] if row else "(no parent row found)"
+        print(f"  --- link text: {link.get_text(strip=True)!r}")
+        print(f"      href: {link.get('href')}")
+        print(f"      parent <{row.name if row else '?'}> text: {row_text}")
 
 
-# --- Squire Patton Boggs (CV-Mail UK) ---------------------------------------
+# --- Squire Patton Boggs: dump jobMoreDetailCaptionStyle rows --------------
 def check_squire_patton_boggs() -> None:
-    section("Squire Patton Boggs -- hunting for job-listing markup in CV-Mail HTML")
+    section("Squire Patton Boggs -- dumping a.jobMoreDetailCaptionStyle rows")
     url = (
         "https://fsr.cvmailuk.com/spb/main.cfm?page=jobBoard&rcd=1309578"
         "&srxksl=1&groupType_21=5039&filter="
@@ -127,49 +77,91 @@ def check_squire_patton_boggs() -> None:
     resp = fetch(url)
     if resp is None:
         return
-    find_job_like_elements(resp.text, "SPB")
-    mid = len(resp.text) // 2
-    print(f"  body[{mid}:{mid + 800}]: {resp.text[mid:mid + 800]!r}")
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(resp.text, "lxml")
+    links = soup.select("a.jobMoreDetailCaptionStyle")
+    print(f"  a.jobMoreDetailCaptionStyle count: {len(links)}")
+    for link in links[:6]:
+        row = link.find_parent("tr")
+        row_text = row.get_text(" | ", strip=True)[:300] if row else "(no parent <tr> found)"
+        print(f"  --- link text: {link.get_text(strip=True)!r}")
+        print(f"      href: {link.get('href')}")
+        print(f"      parent <tr> text: {row_text}")
 
 
-# --- Sheppard Mullin (FloRecruit) -- check for __NEXT_DATA__ ---------------
-def check_sheppard_mullin() -> None:
-    section("Sheppard Mullin -- checking for Next.js __NEXT_DATA__ script")
-    url = "https://florecruit.com/v2/app/sheppardbusinessservices/jobs"
-    resp = fetch(url)
-    if resp is None:
-        return
-    match = re.search(
-        r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', resp.text, re.DOTALL
-    )
-    if not match:
-        print("  no __NEXT_DATA__ script tag found")
-        find_job_like_elements(resp.text, "Sheppard Mullin")
-        return
-    blob = match.group(1)
-    print(f"  __NEXT_DATA__ length: {len(blob)}")
-    print(f"  blob[:1500]: {blob[:1500]!r}")
-
-
-# --- Paul Weiss (Taleo Enterprise careersection) ----------------------------
+# --- Paul Weiss: hunt for a Taleo career-section numeric ID ----------------
 def check_paul_weiss() -> None:
-    section("Paul Weiss -- hunting for job-listing markup in Taleo Enterprise HTML")
+    section("Paul Weiss -- hunting for Taleo career-section ID / REST config")
     url = "https://paulweiss.taleo.net/careersection/ex/jobsearch.ftl"
     resp = fetch(url)
     if resp is None:
         return
-    find_job_like_elements(resp.text, "Paul Weiss")
-    mid = len(resp.text) // 2
-    print(f"  body[{mid}:{mid + 800}]: {resp.text[mid:mid + 800]!r}")
+    for pattern in [
+        r"careerSection[A-Za-z]*\s*[:=]\s*['\"]?(\d+)",
+        r"csNo\s*[:=]\s*['\"]?(\d+)",
+        r"portal\s*[:=]\s*['\"]?(\d+)",
+        r"orgId\s*[:=]\s*['\"]?(\w+)",
+    ]:
+        hits = re.findall(pattern, resp.text)
+        print(f"  pattern {pattern!r}: {sorted(set(hits))[:10]}")
+
+    # Career section number is often embedded right in the URL path segment
+    # after /careersection/ on internal links (e.g. /careersection/2/...).
+    cs_paths = re.findall(r"/careersection/(\w+)/", resp.text)
+    print(f"  /careersection/<x>/ path segments: {sorted(set(cs_paths))[:10]}")
+
+
+# --- Venable: re-grep ADP bundle for relative API paths --------------------
+def check_venable() -> None:
+    section("Venable -- re-checking ADP main.js for relative API paths")
+    resp = fetch("https://myjobs.cf.adp.com/main.9b686673fecb1b74.js")
+    if resp is None:
+        return
+    if resp.status_code != 200:
+        print(f"  status={resp.status_code} (bundle hash may have changed -- skip)")
+        return
+    for pattern_label, pattern in [
+        ("relative /api/ or /cx/ paths", r'"(/(?:api|cx)[^"]{0,80})"'),
+        ("graphql mentions", r'"[^"]{0,40}graphql[^"]{0,40}"'),
+        ("environment.* config keys", r'\b(environment\.\w+)\s*[:=]'),
+        ("apiUrl/baseUrl/endpoint keys", r'"(apiUrl|baseUrl|endpoint|restEndpoint)"\s*:\s*"([^"]{0,120})"'),
+    ]:
+        hits = re.findall(pattern, resp.text)
+        print(f"  [{pattern_label}]: {len(hits)} hits, sample: {sorted(set(str(h) for h in hits))[:15]}")
+
+
+# --- Sheppard Mullin: find and grep the real JS bundle ---------------------
+def check_sheppard_mullin() -> None:
+    section("Sheppard Mullin -- listing JS bundles, grepping for API paths")
+    url = "https://florecruit.com/v2/app/sheppardbusinessservices/jobs"
+    resp = fetch(url)
+    if resp is None:
+        return
+    scripts = re.findall(r'<script[^>]+src="([^"]+)"', resp.text)
+    print(f"  script src count: {len(scripts)}")
+    for s in scripts:
+        print(f"    {s}")
+
+    for s in scripts:
+        if "_app" in s or "jobs" in s or "chunks" in s:
+            full = s if s.startswith("http") else f"https://florecruit.com{s}"
+            bundle = fetch(full)
+            if bundle is None or bundle.status_code != 200:
+                continue
+            api_hits = re.findall(r'"(/api/[^"]{0,80})"', bundle.text)
+            v2_hits = re.findall(r'"(https?://[^"]*florecruit[^"]{0,80})"', bundle.text)
+            if api_hits or v2_hits:
+                print(f"  [{full}] /api/ hits: {sorted(set(api_hits))[:10]}")
+                print(f"  [{full}] florecruit URL hits: {sorted(set(v2_hits))[:10]}")
 
 
 def main() -> None:
-    check_vinson_elkins()
-    check_venable()
     check_sullivan_cromwell()
     check_squire_patton_boggs()
-    check_sheppard_mullin()
     check_paul_weiss()
+    check_venable()
+    check_sheppard_mullin()
 
 
 if __name__ == "__main__":
