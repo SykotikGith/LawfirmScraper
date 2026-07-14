@@ -112,14 +112,14 @@ a result.
 `scraper/config.py` has three top-level structures:
 
 - `FIRMS` — the active, automated firm list (adapter class + tenant/URL
-  config per firm). This is what `main.py` actually scrapes. Currently 35
+  config per firm). This is what `main.py` actually scrapes. Currently 36
   firms.
 - `MANUAL_CHECK_FIRMS` — confirmed real target firms that can't be
   reliably automated (blocked by bot protection, no ATS trace in static
   HTML anywhere discoverable via sitemap search, a real ATS exists but
   requires authentication, or a real ATS exists but has no relevant
   listings). Not scraped; printed as a reminder list at the end of every
-  run instead, with a check URL and the reason. Currently 52 firms.
+  run instead, with a check URL and the reason. Currently 53 firms.
 - `REJECTED_LEADS` — slug guesses that turned out to be a different,
   unrelated company on a shared ATS platform (confirmed via real sample
   titles), kept on record so they aren't accidentally retried. Currently 2
@@ -127,7 +127,7 @@ a result.
 
 Adapters live in `scraper/adapters/` — one per ATS platform: iCIMS,
 Workday (19 firms), Oracle Recruiting Cloud, ApplicantStack, Greenhouse (2
-firms), Circa Works, viGlobal (2 firms), UKG/UltiPro Recruiting,
+firms), Circa Works, viGlobal (3 firms), UKG/UltiPro Recruiting,
 PageUp/eArcu, Jobvite, and a generic custom-HTML adapter (6 firms) for
 bespoke career sites. (The iCIMS adapter exists but currently has no
 active `FIRMS` entries — every iCIMS tenant found so far sits behind an

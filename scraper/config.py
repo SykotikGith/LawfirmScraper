@@ -443,6 +443,28 @@ FIRMS: dict[str, dict] = {
         "execution or extra requests needed despite the page initially looking like a "
         "client-side app.",
     },
+    "Winston Taylor (fka Winston & Strawn)": {
+        # Winston & Strawn merged with Taylor Wessing (UK) to form Winston Taylor, effective
+        # June 1, 2026 -- outside this project's prior research window, and only surfaced
+        # when the user provided the real URL directly. NOT the same tenant as the
+        # "winston" HRMdirect collision in REJECTED_LEADS -- that's a real but unrelated
+        # food/manufacturing company that happens to share the name; this is a different
+        # platform (viGlobal) and a different company entirely.
+        "adapter": ViGlobalAdapter,
+        "list_url": "https://careers-winstontaylor-americas.viglobalcloud.com/"
+        "viRecruitSelfApply/RecDefault.aspx?Tag=ebd45de2-7676-4bca-b282-f92bfe9d5968",
+        "notes": "CONFIRMED via user-provided sample (not this project's own live probe, "
+        "sandbox has no outbound network access) -- real postings visible include direct "
+        "target-role hits ('Charlotte - AI Adoption Specialist', 'Chicago - AI Adoption "
+        "Specialist', 'Charlotte - Practice Innovation Product Specialist', 'Charlotte - "
+        "Practice Innovation Workflow Coordinator', 'Chicago - Attorney Integration "
+        "Coordinator') plus business-development titles, across offices consistent with "
+        "Winston & Strawn's real footprint (Chicago is its historic HQ). Row template shape "
+        "(concatenated-text-blob vs. structured <h4>/<h5> tags, see viglobal.py) not yet "
+        "confirmed -- ViGlobalAdapter tries both automatically, but this hasn't been "
+        "verified against a real live scrape yet. Recommend running the scraper for real "
+        "and checking debug_all_titles.txt before fully trusting this entry.",
+    },
 }
 
 
@@ -775,12 +797,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "reason": "No real careers/job page found via sitemap discovery.",
         "check_url": "https://www.mintz.com",
     },
-    "Winston & Strawn": {
-        "reason": "No real careers/job page found via sitemap discovery. Its only signal "
-        "anywhere in this project remains the CONFIRMED REJECTED HRMdirect 'winston' "
-        "collision (see REJECTED_LEADS) -- an unrelated company, not this firm.",
-        "check_url": "https://www.winston.com",
-    },
 }
 
 # ---------------------------------------------------------------------------
@@ -792,7 +808,12 @@ REJECTED_LEADS: dict[str, str] = {
     "winston (HRMdirect)": "Guessed for Winston & Strawn -- confirmed collision. Sample "
     "titles ('R&D Culinary Technologist', 'Quality Assurance Inspector', 'Quality "
     "Engineering Manager') are food/manufacturing-industry titles. This tenant belongs to "
-    "Winston Taylor (winstontaylor.com), an unrelated company.",
+    "an unrelated food/manufacturing company that happens to also be named Winston Taylor "
+    "(winstontaylor.com) -- a naming coincidence with FIRMS['Winston Taylor (fka Winston & "
+    "Strawn)'], NOT the same company. That entry is the real merged law firm (Winston & "
+    "Strawn + Taylor Wessing, June 2026), confirmed on a completely different platform "
+    "(viGlobal) with real legal-industry job titles. Two unrelated real companies "
+    "coincidentally share this name; don't conflate them.",
     "goodwin (Greenhouse board_token)": "Guessed for Goodwin Procter -- confirmed collision, "
     "same shape as Winston & Strawn's. Goodwin Procter's real ATS is Workday (see "
     "FIRMS['Goodwin Procter']); this Greenhouse tenant with its 1 thin, non-legal posting "
