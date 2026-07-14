@@ -761,8 +761,15 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "check_url": "https://www.bracewell.com",
     },
     "Willkie Farr & Gallagher": {
-        "reason": "Real careers page found (willkie.com/careers) but no known ATS platform "
-        "domain present in it.",
+        # Upgraded from "no ATS platform domain present" -- that scan only checked
+        # willkie.com/careers's static HTML, which apparently doesn't embed this link
+        # server-side. Real tenant confirmed directly by the user.
+        "reason": "Confirmed iCIMS tenant 'jobs-willkie' (note: jobs- subdomain prefix, not "
+        "the more common careers- prefix seen for Orrick/Milbank/Nelson Mullins/Foley & "
+        "Lardner), blocked by the same AWS WAF 'Human Verification' challenge -- not "
+        "scrapable with a plain HTTP client.",
+        "tenant": "jobs-willkie",
+        "search_url": "https://jobs-willkie.icims.com/jobs/search?hashed=-625885970",
         "check_url": "https://www.willkie.com/careers",
     },
     "Eversheds Sutherland": {
