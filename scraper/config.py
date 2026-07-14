@@ -21,6 +21,7 @@ from .adapters import (
     GreenhouseAdapter,
     JobviteAdapter,
     OracleRecruitingAdapter,
+    RadancyAdapter,
     UltiProAdapter,
     ViGlobalAdapter,
     WorkdayAdapter,
@@ -687,6 +688,26 @@ FIRMS: dict[str, dict] = {
         "future coverage rather than dropped, since real non-attorney roles do exist here "
         "(unlike Weil Gotshal, which was confirmed 100% attorney-only).",
     },
+    # --- Radancy group ---------------------------------------------------
+    "Ogletree Deakins": {
+        # New platform for this project (tentatively identified as Radancy "Attract" from a
+        # "ccc.attract.portal.url" key in the response's own metadata, not independently
+        # confirmed). Underlying ATS is actually iCIMS per each job's own ats_code field, but
+        # this wrapper endpoint isn't behind the WAF block that blocks iCIMS everywhere else
+        # in this project -- a clean path to the same data.
+        "adapter": RadancyAdapter,
+        "api_url": "https://careers.ogletree.com/api/jobs",
+        "notes": "CONFIRMED via live probe (5 diagnostic rounds) -- 148 real postings across "
+        "15 pages, sample titles plausibly genuine ('Senior Financial Systems Analyst', "
+        "'Sr. Cloud Administrator', 'Litigation Paralegal'). Pagination is page-number-based "
+        "(?page=N, 1-indexed) -- start/offset/num params are all silently ignored, and the "
+        "server hard-caps each page to 10 regardless of what's requested. Verified end-to-"
+        "end: page=15 returns the trailing 8 jobs (140+8=148), page=16 returns empty. Full "
+        "job description text (qualifications + responsibilities) is present in the list "
+        "response at no extra request cost, folded into description the same way Oracle "
+        "Recruiting Cloud's adapter does. meta_data.canonical_url preferred over apply_url "
+        "for the stored link (apply_url redirects straight into an iCIMS login flow).",
+    },
 }
 
 
@@ -930,11 +951,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
     # listings) before it can be classified into the tier above or dropped
     # entirely.
     # =========================================================================
-    "Ogletree Deakins": {
-        "reason": "Real careers page found (ogletree.com/about-us/careers/) but no known ATS "
-        "platform domain present in it.",
-        "check_url": "https://ogletree.com/about-us/careers/",
-    },
     "Duane Morris": {
         "reason": "User pointed at duanemorris.com/site/careers.html#tab_SupportStaffOpportunities "
         "-- confirmed real careers page, but the tab_SupportStaffOpportunities anchor isn't "
