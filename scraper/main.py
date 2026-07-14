@@ -8,7 +8,7 @@ from pathlib import Path
 from .config import FIRMS, MANUAL_CHECK_FIRMS
 from .filters import Classification, classify
 from .models import Posting
-from .report import ReportEntry, write_report
+from .report import ManualCheckEntry, ReportEntry, write_report
 from .store import SeenStore
 from .work_arrangement import WorkArrangement, detect_work_arrangement
 
@@ -17,6 +17,17 @@ DEBUG_TITLES_PATH = Path(__file__).resolve().parent.parent / "debug_all_titles.t
 
 def _review_reason_text(mgmt_hits: list[str]) -> str:
     return "/".join(h.lower() for h in mgmt_hits) + " title"
+
+
+def _best_effort_check_url(firm_cfg: dict) -> str:
+    for key in ("list_url", "board_url", "search_url", "api_url"):
+        if key in firm_cfg:
+            return firm_cfg[key]
+    if "tenant" in firm_cfg and "wd" in firm_cfg:
+        return f"https://{firm_cfg['tenant']}.{firm_cfg['wd']}.myworkdayjobs.com/{firm_cfg.get('site', '')}"
+    if "board_token" in firm_cfg:
+        return f"https://job-boards.greenhouse.io/{firm_cfg['board_token']}"
+    return "#"
 
 
 def scrape_firm(firm_name: str, firm_cfg: dict) -> tuple[list[Posting], str | None]:
@@ -61,6 +72,7 @@ def run(reset_seen: bool = False) -> int:
     debug_file = DEBUG_TITLES_PATH.open("w", encoding="utf-8")
     report_auto: list[ReportEntry] = []
     report_review: list[ReportEntry] = []
+    dynamic_manual_check: list[ManualCheckEntry] = []
 
     for firm_name, firm_cfg in FIRMS.items():
         postings, error = scrape_firm(firm_name, firm_cfg)
@@ -68,9 +80,25 @@ def run(reset_seen: bool = False) -> int:
 
         if error:
             print(f"   ! fetch failed: {error}")
+            dynamic_manual_check.append(
+                ManualCheckEntry(
+                    firm=firm_name,
+                    reason=f"adapter fetch failed this run ({error}) — may be transient, "
+                    "worth checking by hand if it keeps happening",
+                    url=_best_effort_check_url(firm_cfg),
+                )
+            )
             continue
         if not postings:
             print("   (no postings returned — check adapter config)")
+            dynamic_manual_check.append(
+                ManualCheckEntry(
+                    firm=firm_name,
+                    reason="adapter ran but returned zero postings this run — may be "
+                    "transient or the site structure changed",
+                    url=_best_effort_check_url(firm_cfg),
+                )
+            )
             continue
 
         auto_matches = []
@@ -147,14 +175,30 @@ def run(reset_seen: bool = False) -> int:
     print("\n" + "=" * 72)
     print(f"MANUAL CHECK NEEDED ({len(MANUAL_CHECK_FIRMS)} firms not automated) — see notes below")
     print("=" * 72)
+    static_manual_check: list[ManualCheckEntry] = []
     for firm_name, info in MANUAL_CHECK_FIRMS.items():
-        url = info.get("check_url") or info.get("search_url") or info.get("list_url")
+        url = info.get("check_url") or info.get("search_url") or info.get("list_url") or "#"
         print(f"\n## {firm_name}")
-        if url:
+        if url != "#":
             print(f"   {url}")
         print(f"   {info['reason']}")
+        static_manual_check.append(ManualCheckEntry(firm=firm_name, reason=info["reason"], url=url))
 
-    write_report(report_auto, report_review, firms_scanned=len(FIRMS))
+    if dynamic_manual_check:
+        print("\n" + "=" * 72)
+        print(f"ADAPTER FAILURES THIS RUN ({len(dynamic_manual_check)} firms) — see notes below")
+        print("=" * 72)
+        for entry in dynamic_manual_check:
+            print(f"\n## {entry.firm}")
+            print(f"   {entry.url}")
+            print(f"   {entry.reason}")
+
+    write_report(
+        report_auto,
+        report_review,
+        firms_scanned=len(FIRMS),
+        manual_check=static_manual_check + dynamic_manual_check,
+    )
 
     print("\n" + "=" * 72)
     print(f"Done. {total_new} new posting(s) since last run.")

@@ -30,6 +30,12 @@ _WARN_ICON = (
     '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 '
     '1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>'
 )
+_SEARCH_ICON = (
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" '
+    'stroke="currentColor" stroke-width="2.5" stroke-linecap="round" '
+    'stroke-linejoin="round"><circle cx="11" cy="11" r="7"/>'
+    '<path d="m21 21-4.35-4.35"/></svg>'
+)
 
 
 @dataclass
@@ -44,6 +50,13 @@ class ReportEntry:
     # "Remote" or "remote status unclear — verify" -- onsite/hybrid postings
     # never make it into a ReportEntry at all, they're hard-excluded earlier.
     work_arrangement: str | None = None
+
+
+@dataclass
+class ManualCheckEntry:
+    firm: str
+    reason: str
+    url: str
 
 
 def _pill(text: str, css_class: str) -> str:
@@ -89,6 +102,34 @@ def _section(title: str, icon: str, entries: list[ReportEntry], section: str) ->
     </section>"""
 
 
+def _manual_check_card(entry: ManualCheckEntry) -> str:
+    safe_url = html.escape(entry.url, quote=True)
+    return f"""
+      <a class="manual-check-card" href="{safe_url}" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">{html.escape(entry.firm)}</div>
+        <div class="manual-check-reason">{html.escape(entry.reason)}</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>"""
+
+
+def _manual_check_section(entries: list[ManualCheckEntry]) -> str:
+    header = f'<h2 class="section-title manual">{_SEARCH_ICON}Needs Manual Check</h2>'
+    if not entries:
+        return f"""
+    <section class="section">
+      {header}
+      <p class="empty-state">nothing needs manual checking right now</p>
+    </section>"""
+    cards = "".join(_manual_check_card(e) for e in sorted(entries, key=lambda e: e.firm))
+    return f"""
+    <section class="section">
+      {header}
+      <p class="section-subtitle">Firms the scraper can't reach automatically — worth checking by hand.</p>
+      <div class="job-grid">{cards}
+      </div>
+    </section>"""
+
+
 def _metric_card(value: str, label: str, css_class: str = "") -> str:
     return f"""
       <div class="metric-card">
@@ -112,9 +153,11 @@ def render_report(
     auto_matches: list[ReportEntry],
     review_matches: list[ReportEntry],
     firms_scanned: int,
+    manual_check: list[ManualCheckEntry] | None = None,
     generated_at: datetime | None = None,
 ) -> str:
     generated_at = generated_at or datetime.now(timezone.utc)
+    manual_check = manual_check or []
     new_count = sum(1 for e in auto_matches + review_matches if e.is_new)
     total_count = len(auto_matches) + len(review_matches)
     review_count = len(review_matches)
@@ -129,6 +172,7 @@ def render_report(
 
     auto_section = _section("Auto-match", _CHECK_ICON, auto_matches, "auto")
     review_section = _section("Review manually", _WARN_ICON, review_matches, "review")
+    manual_check_section = _manual_check_section(manual_check)
 
     return f"""<!doctype html>
 <html lang="en">
@@ -151,6 +195,8 @@ def render_report(
     --teal-tag-bg: #153138;
     --teal-tag-text: #9FE0E8;
     --teal-border: #1F4A52;
+    --amber: #D9A441;
+    --amber-border: #4A3A22;
   }}
   * {{ box-sizing: border-box; }}
   body {{
@@ -227,6 +273,12 @@ def render_report(
   }}
   .section-title.auto {{ color: var(--green); }}
   .section-title.review {{ color: var(--teal); }}
+  .section-title.manual {{ color: var(--amber); }}
+  .section-subtitle {{
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin: -8px 0 16px;
+  }}
   .empty-state {{
     color: var(--text-secondary);
     font-style: italic;
@@ -311,6 +363,38 @@ def render_report(
     color: var(--teal-tag-text);
     border: 1px solid var(--teal-border);
   }}
+  .manual-check-card {{
+    position: relative;
+    display: block;
+    background: var(--job-card-bg);
+    border: 1px solid var(--amber-border);
+    border-radius: 12px;
+    padding: 18px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.12s ease, border-color 0.12s ease;
+  }}
+  .manual-check-card:hover {{
+    transform: translateY(-2px);
+    border-color: var(--amber);
+  }}
+  .manual-check-firm {{
+    font-size: 1.02rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }}
+  .manual-check-reason {{
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-bottom: 10px;
+  }}
+  .manual-check-link-hint {{
+    font-size: 0.78rem;
+    color: var(--amber);
+    font-weight: 600;
+  }}
   .new-badge {{
     position: absolute;
     top: -8px;
@@ -342,6 +426,7 @@ def render_report(
     </div>
 {auto_section}
 {review_section}
+{manual_check_section}
     <footer>Generated automatically by the law firm ATS scraper.</footer>
   </div>
 </body>
@@ -353,7 +438,8 @@ def write_report(
     auto_matches: list[ReportEntry],
     review_matches: list[ReportEntry],
     firms_scanned: int,
+    manual_check: list[ManualCheckEntry] | None = None,
 ) -> None:
-    html_out = render_report(auto_matches, review_matches, firms_scanned)
+    html_out = render_report(auto_matches, review_matches, firms_scanned, manual_check)
     REPORT_PATH.write_text(html_out, encoding="utf-8")
     INDEX_PATH.write_text(html_out, encoding="utf-8")

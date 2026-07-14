@@ -465,6 +465,27 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "/staff-us/jobs (business professional -- the relevant one), "
         "/non-partner-attorney-us/jobs, /campus-us/jobs.",
     },
+    "Lewis Brisbois": {
+        # Previously dropped entirely from config.py per explicit request (both this firm
+        # and Gordon Rees were confirmed iCIMS tenants blocked by the same WAF challenge as
+        # Orrick/Milbank, with no automatable path). Re-added here as a manual-check entry
+        # so it's visible on the dashboard rather than invisible -- it was never scrapable,
+        # dropping it from FIRMS was correct, but that shouldn't mean losing track of it.
+        "reason": "Confirmed iCIMS tenant 'lewisbrisbois', blocked by the same AWS WAF "
+        "'Human Verification' challenge as Orrick/Milbank -- not scrapable with a plain "
+        "HTTP client.",
+        "tenant": "lewisbrisbois",
+        "search_url": "https://careers-lewisbrisbois.icims.com/jobs/search",
+        "check_url": "https://www.lewisbrisbois.com/careers",
+    },
+    "Gordon Rees": {
+        "reason": "Confirmed iCIMS tenant 'grsm' (Gordon Rees Scully Mansukhani), blocked "
+        "by the same AWS WAF 'Human Verification' challenge as Orrick/Milbank -- not "
+        "scrapable with a plain HTTP client.",
+        "tenant": "grsm",
+        "search_url": "https://careers-grsm.icims.com/jobs/search",
+        "check_url": "https://www.grsm.com/careers",
+    },
     "Milbank": {
         "reason": "Real ATS is iCIMS (found via the firm's own careers page), blocked by the "
         "same AWS WAF 'Human Verification' challenge as Orrick. A Workday tenant also exists "
@@ -507,6 +528,7 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "reason": "Checked manually -- no listings for business-professional/staff roles, "
         "only attorney postings. Not worth an adapter; there's nothing for our filters to "
         "find even if scraping worked.",
+        "check_url": "https://www.weil.com/careers",
     },
     # --- AmLaw 100 expansion batch: real Workday tenants confirmed (path-specific-error
     # signal) but evidently dormant/internal, same pattern as Milbank above -- the real

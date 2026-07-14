@@ -166,6 +166,16 @@ seen on a previous run. Empty sections show a plain "no matches this run"
 message. All scraped text is treated as untrusted and HTML-escaped before
 rendering.
 
+A third section, "Needs Manual Check" (amber accent), lists every firm
+the scraper couldn't reach automatically — combining `MANUAL_CHECK_FIRMS`
+(the permanent, documented list: WAF blocks, SPA-only sites, no
+discoverable ATS, etc.) with any active `FIRMS` entry whose adapter
+failed or returned zero postings *this specific run* (which might be
+transient, or might be the first sign a site changed structure). Each
+card shows the firm name, the specific reason, and a direct link to the
+firm's careers page or main site to check by hand — this is what used to
+only be visible in raw console output/job summary.
+
 ## Automation
 
 `.github/workflows/scrape.yml` runs the scraper twice daily (8am/4pm
