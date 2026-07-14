@@ -992,11 +992,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "a real listing page or known ATS platform.",
         "check_url": "https://katten.com",
     },
-    "Baker Botts": {
-        "reason": "Real careers page found (bakerbotts.com/careers/careers-at-baker-botts) "
-        "but no known ATS platform domain present in it.",
-        "check_url": "https://www.bakerbotts.com/careers/careers-at-baker-botts",
-    },
     "Mintz Levin": {
         "reason": "No real careers/job page found via sitemap discovery.",
         "check_url": "https://www.mintz.com",

@@ -119,7 +119,7 @@ a result.
   HTML anywhere discoverable via sitemap search, a real ATS exists but
   requires authentication, or a real ATS exists but has no relevant
   listings). Not scraped; printed as a reminder list at the end of every
-  run instead, with a check URL and the reason. Currently 34 firms,
+  run instead, with a check URL and the reason. Currently 33 firms,
   split into two tiers: confirmed genuine technical obstacles
   (WAF/bot-protection, credential-gated API, or a JS-rendered page with a
   confirmed real ATS/tenant underneath) versus unresearched leads (no
