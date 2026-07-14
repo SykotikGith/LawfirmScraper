@@ -82,6 +82,22 @@ FIRMS: dict[str, dict] = {
         "Still need to verify the exact field names inside requisitionList entries match "
         "OracleRecruitingAdapter's assumptions (Id/Title/PrimaryLocation).",
     },
+    "Proskauer Rose": {
+        "adapter": OracleRecruitingAdapter,
+        "api_url": (
+            "https://dfa.fa.us1.oraclecloud.com/hcmRestApi/resources/latest/"
+            "recruitingCEJobRequisitions?onlyData=true&expand=requisitionList"
+            "&finder=findReqs;siteNumber=CX_1001,limit=100"
+        ),
+        "job_url_template": (
+            "https://dfa.fa.us1.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/job/{id}"
+        ),
+        "notes": "CONFIRMED via live probe -- 38 real requisitions ('Senior Paralegal', "
+        "'Business Analyst', 'Help Desk Analyst', 'Billing Specialist'), unmistakably a "
+        "real active law-firm ATS. Same Oracle Recruiting Cloud REST pattern already "
+        "confirmed for Cozen O'Connor (different host/siteNumber), no adapter changes "
+        "needed.",
+    },
     "Baker McKenzie": {
         # NOT Oracle/Taleo despite the original grouping guess -- confirmed Avature.
         "adapter": CustomHTMLAdapter,
@@ -372,6 +388,29 @@ FIRMS: dict[str, dict] = {
         "in the path rather than as a subdomain. No AI/KM keyword matches in current "
         "postings, but wired in for future coverage.",
     },
+    "Skadden Arps": {
+        "adapter": WorkdayAdapter,
+        "tenant": "skadden",
+        "wd": "wd5",
+        "site": "Skadden_Careers",
+        "notes": "CONFIRMED via live probe -- 77 real postings ('Senior Paralegal', 'Client "
+        "Accounting Supervisor', 'Junior Technology Support Analyst', 'Technology Support "
+        "Analyst'), unmistakably a real active law-firm ATS. Supersedes an earlier, "
+        "incorrect MANUAL_CHECK_FIRMS note that guessed this tenant was 'apparently "
+        "dormant/internal' -- the site slug is 'Skadden_Careers', not what that earlier "
+        "probe assumed, and it's very much live. Standard old-style Workday subdomain, no "
+        "adapter changes needed.",
+    },
+    "Sidley Austin": {
+        "adapter": WorkdayAdapter,
+        "tenant": "sidley",
+        "wd": "wd501",
+        "site": "US",
+        "notes": "CONFIRMED via live probe -- 79 real postings ('eBilling Analyst', "
+        "'Service Desk Senior Technician', 'Enterprise Architect Senior Director', "
+        "'Senior Product Analyst'), unmistakably a real active law-firm ATS. Standard "
+        "old-style Workday subdomain, no adapter changes needed.",
+    },
     # --- UltiPro / UKG Recruiting group ---------------------------------------------------
     "Akerman": {
         "adapter": UltiProAdapter,
@@ -586,12 +625,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "Next.js SPA with zero job data in static HTML -- the real ATS/API wasn't identified.",
         "check_url": "https://careers.mofo.com/",
     },
-    "Skadden Arps": {
-        "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
-        "apparently dormant/internal. skadden.com/careers is an AngularJS SPA "
-        "(ng-app=\"skadden\") with zero job data in static HTML.",
-        "check_url": "https://www.skadden.com/careers",
-    },
     "Davis Polk": {
         "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
         "apparently dormant/internal. The real careers path wasn't found -- "
@@ -645,10 +678,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "reason": "No real careers/job page found via sitemap.xml, sitemap index, or "
         "robots.txt-declared sitemap locations.",
         "check_url": "https://www.lw.com",
-    },
-    "Sidley Austin": {
-        "reason": "No real careers/job page found via sitemap discovery.",
-        "check_url": "https://www.sidley.com",
     },
     "Paul Weiss": {
         "reason": "Real careers page found (paulweiss.com/careers) but no known ATS "
@@ -722,10 +751,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
     "Duane Morris": {
         "reason": "No real careers/job page found via sitemap discovery.",
         "check_url": "https://www.duanemorris.com",
-    },
-    "Proskauer Rose": {
-        "reason": "No real careers/job page found via sitemap discovery.",
-        "check_url": "https://www.proskauer.com",
     },
     "Kramer Levin": {
         "reason": "No real careers/job page found via sitemap discovery.",
