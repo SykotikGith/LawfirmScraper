@@ -112,14 +112,14 @@ a result.
 `scraper/config.py` has three top-level structures:
 
 - `FIRMS` — the active, automated firm list (adapter class + tenant/URL
-  config per firm). This is what `main.py` actually scrapes. Currently 50
+  config per firm). This is what `main.py` actually scrapes. Currently 52
   firms.
 - `MANUAL_CHECK_FIRMS` — confirmed real target firms that can't be
   reliably automated (blocked by bot protection, no ATS trace in static
   HTML anywhere discoverable via sitemap search, a real ATS exists but
   requires authentication, or a real ATS exists but has no relevant
   listings). Not scraped; printed as a reminder list at the end of every
-  run instead, with a check URL and the reason. Currently 37 firms,
+  run instead, with a check URL and the reason. Currently 35 firms,
   split into two tiers: confirmed genuine technical obstacles
   (WAF/bot-protection, credential-gated API, or a JS-rendered page with a
   confirmed real ATS/tenant underneath) versus unresearched leads (no
@@ -133,7 +133,7 @@ a result.
 Adapters live in `scraper/adapters/` — one per ATS platform: iCIMS,
 Workday (23 firms), Oracle Recruiting Cloud (2 firms), ApplicantStack, Greenhouse (2
 firms), Circa Works, viGlobal (6 firms), UKG/UltiPro Recruiting (4 firms),
-PageUp/eArcu, Jobvite, Breezy HR, and a generic custom-HTML adapter (8 firms) for
+PageUp/eArcu, Jobvite, Breezy HR, and a generic custom-HTML adapter (10 firms) for
 bespoke career sites. (The iCIMS adapter exists but currently has no
 active `FIRMS` entries — every iCIMS tenant found so far sits behind an
 AWS WAF challenge and lives in `MANUAL_CHECK_FIRMS` instead.)

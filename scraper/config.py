@@ -162,6 +162,40 @@ FIRMS: dict[str, dict] = {
         "rather than one flat list -- this adapter config likely needs per-state list_urls once "
         "verified, not a single page.",
     },
+    "Wilson Sonsini": {
+        # WordPress + FacetWP. Generic a[href*='/openings/'] would double-count every posting
+        # (a title link AND a separate "Details" link share the identical href) -- the
+        # a.link--pointy class uniquely matches only the title link.
+        "adapter": CustomHTMLAdapter,
+        "list_url": "https://careers.wsgr.com/openings/?_opening_type=82",
+        "link_selector": "a.link--pointy",
+        "notes": "CONFIRMED via live probe -- real postings include 'Temporary Corporate "
+        "Executive Assistant', 'Project Manager', 'Digital Experience/Website Program Lead', "
+        "and 'Practice Support Lawyer, M&A' (a genuine KM-adjacent role -- its description "
+        "mentions 'building knowledge management infrastructure', though the title itself "
+        "doesn't contain an exact AI_KM_KEYWORDS phrase). No location_selector set -- the "
+        "office/department/remote-status text sits outside the title link's nearest div "
+        "ancestor (CustomHTMLAdapter's row-finding only walks up to the first "
+        "tr/li/div match, which stops one level too shallow here), so location comes back "
+        "blank for now. Worth revisiting if location text turns out to matter for this firm.",
+    },
+    "WilmerHale": {
+        # SilkRoad OpenHire, new platform for this project. The company's careers page
+        # (round 1) was just a search FORM -- fuseaction=app.jobsearch (found via live
+        # probing the form's own fuseaction references) returns real results directly on a
+        # plain GET, no form submission needed.
+        "adapter": CustomHTMLAdapter,
+        "list_url": "https://wilmerhale-openhire.silkroad.com/epostings/index.cfm"
+        "?fuseaction=app.jobsearch&company_id=16437&version=2",
+        "link_selector": "a[href*='fuseaction=app.jobinfo']",
+        "notes": "CONFIRMED via live probe -- 54 real postings, plausible business-"
+        "professional titles ('Business Development Manager', 'Senior Business Intelligence "
+        "Engineer', 'Business Relationship Manager (Law Firm IT Management Consultant)', "
+        "'Project Manager'). Repeated titles with different jobid values (e.g. 'Lateral "
+        "Recruitment Manager' x3) are genuinely distinct multi-location postings, not a "
+        "duplicate-link bug -- same pattern as Fisher Phillips. No location_selector set "
+        "yet (not confirmed from static probing); worth revisiting.",
+    },
     "Reed Smith": {
         # CORRECTION (July 2026, live diagnostics): the original "Oracle PeopleSoft at
         # recruit.reedsmith.com" note was wrong -- that host doesn't even resolve (DNS
@@ -884,15 +918,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
     # listings) before it can be classified into the tier above or dropped
     # entirely.
     # =========================================================================
-    "Wilson Sonsini": {
-        "reason": "Only an events-page mention of careers found (wsgr.com), not a real "
-        "listing page or known ATS platform.",
-        "check_url": "https://www.wsgr.com",
-    },
-    "WilmerHale": {
-        "reason": "No real careers/job page found via sitemap discovery.",
-        "check_url": "https://www.wilmerhale.com",
-    },
     "Ogletree Deakins": {
         "reason": "Real careers page found (ogletree.com/about-us/careers/) but no known ATS "
         "platform domain present in it.",
