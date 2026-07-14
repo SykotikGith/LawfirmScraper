@@ -126,6 +126,22 @@ FIRMS: dict[str, dict] = {
         "fetch -- the list_url's own rcd value does not need to stay in sync with it, "
         "confirmed stable across multiple independent live probes.",
     },
+    "Sullivan & Cromwell": {
+        # New platform for this project: Taleo Business Edition (phg.tbe.taleo.net).
+        "adapter": CustomHTMLAdapter,
+        "list_url": "https://phg.tbe.taleo.net/phg04/ats/careers/v2/searchResults?org=SULLCROM&cws=38",
+        "link_selector": "a.viewJobLink",
+        "location_selector": "div[tabindex='0']:last-of-type",
+        "notes": "CONFIRMED via live probe -- 10 real postings, plausible business-"
+        "professional titles all in New York ('Analyst - Business Development "
+        "(Litigation)', 'Assistant, Legal Talent Office - Talent Management', 'Conference "
+        "Services Support'). Row markup: <div class=\"oracletaleocwsv2-accordion-head-"
+        "info\"> containing <h4><a class=\"viewJobLink\"></a></h4> plus two identical "
+        "<div tabindex=\"0\"> siblings, the first empty and the second holding the "
+        "location text -- :last-of-type picks the second reliably since both share the "
+        "same attributes otherwise. Real per-job URLs (viewRequisition?...&rid=N) "
+        "available directly.",
+    },
     # --- ApplicantStack ---------------------------------------------------
     "Hinshaw & Culbertson": {
         "adapter": ApplicantStackAdapter,
@@ -715,9 +731,15 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "check_url": "https://www.lw.com",
     },
     "Paul Weiss": {
-        "reason": "Real careers page found (paulweiss.com/careers) but no known ATS "
-        "platform domain present in it.",
-        "check_url": "https://www.paulweiss.com/careers",
+        "reason": "Confirmed Taleo Enterprise career section (paulweiss.taleo.net/"
+        "careersection/ex/jobsearch.ftl), but it's the search FORM, not results -- "
+        "classic Taleo Enterprise (not the newer REST-based career sites) executes "
+        "search via a self-submitting POST back to the same jobsearch.ftl URL (confirmed "
+        "<form action=\"jobsearch.ftl\">), with no discoverable AJAX/REST endpoint or "
+        "TFS_-prefixed JS config exposed in static HTML. Would need real browser network "
+        "inspection of an actual search submission to find scrapeable params/response "
+        "shape.",
+        "check_url": "https://paulweiss.taleo.net/careersection/ex/jobsearch.ftl",
     },
     "Dentons": {
         "reason": "The firm's own sitemap directly indexes individual job posting URLs "
@@ -732,11 +754,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
     "Jones Day": {
         "reason": "No real careers/job page found via sitemap discovery.",
         "check_url": "https://www.jonesday.com",
-    },
-    "Sullivan & Cromwell": {
-        "reason": "Real careers-adjacent page found (sullcrom.com/Careers/Alumni-Network) "
-        "but no known ATS platform domain present, and it's not the actual listing page.",
-        "check_url": "https://www.sullcrom.com/Careers/Alumni-Network",
     },
     "Wilson Sonsini": {
         "reason": "Only an events-page mention of careers found (wsgr.com), not a real "
@@ -798,22 +815,31 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "check_url": "https://www.hunton.com",
     },
     "Venable": {
-        "reason": "Real careers page found (venable.com/sitemap/careers) but no known ATS "
-        "platform domain present in it.",
-        "check_url": "https://www.venable.com/sitemap/careers",
+        "reason": "Confirmed ADP myjobs client-side Angular app (myjobs.adp.com/"
+        "venablebusinessprofessionalcareers/cx) -- static HTML is just an empty app "
+        "shell. The main JS bundle references /cx/rm/v1/core/identity and /cx/staffing/"
+        "v2/job-applicant(s) paths, but those are account/application-management "
+        "endpoints, not a job-listing search API; several sibling-path guesses "
+        "(/cx/rm/v1/jobs, /cx/rm/v2/jobs, etc.) all just returned the same SPA shell "
+        "(client-side routing, no server-side 404). The real job-search endpoint wasn't "
+        "discoverable via static probing -- would need real browser network inspection.",
+        "check_url": "https://myjobs.adp.com/venablebusinessprofessionalcareers/cx",
     },
     "Munger Tolles": {
         "reason": "No real careers/job page found via sitemap discovery.",
         "check_url": "https://www.mto.com",
     },
     "Sheppard Mullin": {
-        "reason": "Real domain is sheppard.com, not sheppardmullin.com as guessed. Site runs "
-        "on Sitecore JSS + Next.js; the /careers page's server-rendered __NEXT_DATA__ and "
-        "componentProps blobs were both fully inspected and contain zero job listing data "
-        "(CMS/marketing content only -- badges, related articles, dictionary strings). The "
-        "real job listing is evidently fetched via a separate client-side API call not "
-        "discoverable from this page's static/SSR content.",
-        "check_url": "https://www.sheppard.com/careers",
+        "reason": "The marketing careers page (sheppard.com/careers, Sitecore JSS + "
+        "Next.js) has zero job data in static/SSR content -- but the real ATS was found: "
+        "FloRecruit (florecruit.com/v2/app/sheppardbusinessservices/jobs), a Next.js "
+        "static-export shell (__NEXT_DATA__ present but its pageProps are empty -- data "
+        "loads client-side after export). Its JS bundle references a real /api/v2/graphql "
+        "endpoint, so postings genuinely exist and are technically reachable, but "
+        "automating it would mean reverse-engineering the actual GraphQL query shape "
+        "(introspection likely disabled in production) -- needs real browser network "
+        "inspection of the query/response, not static probing.",
+        "check_url": "https://florecruit.com/v2/app/sheppardbusinessservices/jobs",
     },
     "Bracewell": {
         "reason": "Sitemap has a dedicated career sub-sitemap (poa_career-sitemap.xml) but "
