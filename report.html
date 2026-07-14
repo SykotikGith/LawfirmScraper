@@ -19,6 +19,8 @@
     --teal-tag-bg: #153138;
     --teal-tag-text: #9FE0E8;
     --teal-border: #1F4A52;
+    --amber: #D9A441;
+    --amber-border: #4A3A22;
   }
   * { box-sizing: border-box; }
   body {
@@ -95,6 +97,12 @@
   }
   .section-title.auto { color: var(--green); }
   .section-title.review { color: var(--teal); }
+  .section-title.manual { color: var(--amber); }
+  .section-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin: -8px 0 16px;
+  }
   .empty-state {
     color: var(--text-secondary);
     font-style: italic;
@@ -179,6 +187,38 @@
     color: var(--teal-tag-text);
     border: 1px solid var(--teal-border);
   }
+  .manual-check-card {
+    position: relative;
+    display: block;
+    background: var(--job-card-bg);
+    border: 1px solid var(--amber-border);
+    border-radius: 12px;
+    padding: 18px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.12s ease, border-color 0.12s ease;
+  }
+  .manual-check-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--amber);
+  }
+  .manual-check-firm {
+    font-size: 1.02rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+  .manual-check-reason {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-bottom: 10px;
+  }
+  .manual-check-link-hint {
+    font-size: 0.78rem;
+    color: var(--amber);
+    font-weight: 600;
+  }
   .new-badge {
     position: absolute;
     top: -8px;
@@ -204,7 +244,7 @@
 <body>
   <div class="page">
     <h1>Law Firm Career Radar</h1>
-    <p class="subtitle">IT / Knowledge Management / Legal-AI role filter — updated Jul 13, 2026 10:53 PM UTC</p>
+    <p class="subtitle">IT / Knowledge Management / Legal-AI role filter — updated Jul 14, 2026 02:18 AM UTC</p>
 
     <div class="metrics-grid">
       <div class="metric-card">
@@ -223,7 +263,7 @@
         <div class="metric-label">Needs review</div>
       </div>
       <div class="metric-card">
-        <div class="metric-value metric-value-small">Jul 13, 2026 10:53 PM UTC</div>
+        <div class="metric-value metric-value-small">Jul 14, 2026 02:18 AM UTC</div>
         <div class="metric-label">Last run</div>
       </div>
     </div>
@@ -327,6 +367,288 @@
         <div class="job-title">Director of Knowledge Management</div>
         <div class="job-location">Dallas</div>
         <div class="job-tags"><span class="pill kw-pill">Knowledge Management</span><span class="pill wa-pill-unclear">remote status unclear — verify</span><span class="pill reason-pill">director title</span></div>
+      </a>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title manual"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>Needs Manual Check</h2>
+      <p class="section-subtitle">Firms the scraper can't reach automatically — worth checking by hand.</p>
+      <div class="job-grid">
+      <a class="manual-check-card" href="https://www.akingump.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Akin Gump</div>
+        <div class="manual-check-reason">No real careers/job page found via sitemap discovery.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.arnoldporter.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Arnold &amp; Porter</div>
+        <div class="manual-check-reason">No real careers/job page found via sitemap discovery.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.bakerbotts.com/careers/careers-at-baker-botts" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Baker Botts</div>
+        <div class="manual-check-reason">Real careers page found (bakerbotts.com/careers/careers-at-baker-botts) but no known ATS platform domain present in it.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.bakerdonelson.com/careers" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Baker Donelson</div>
+        <div class="manual-check-reason">Real careers page found (bakerdonelson.com/careers) but no known ATS platform domain present in it.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.bakerlaw.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Baker Hostetler</div>
+        <div class="manual-check-reason">Sitemap has a dedicated career sub-sitemap (poa_career-sitemap.xml) but drilling into it found no real career/job page URLs.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.blankrome.com/careers/overview/business-professionals/" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Blank Rome</div>
+        <div class="manual-check-reason">Real tenant confirmed on Workday wd1 (path-specific-error signal) but the site slug was never found -- the business-professionals careers page has zero ATS trace of any kind in its static HTML (no Workday link old or new format, no other known ATS domain, no search/openings-labeled links). Whatever renders the job list is pure client-side JS with no static fallback.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.bracewell.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Bracewell</div>
+        <div class="manual-check-reason">Sitemap has a dedicated career sub-sitemap (poa_career-sitemap.xml) but drilling into it found no real career/job page URLs.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.clearygottlieb.com/careers" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Cleary Gottlieb</div>
+        <div class="manual-check-reason">Real tenant confirmed on Workday wd5 (path-specific-error signal), apparently dormant/internal. clearygottlieb.com/careers redirects to the bare homepage (Sitefinity CMS) -- the real careers subpage URL wasn&#x27;t found.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.cov.com/en/careers/business-professionals/employment-opportunities" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Covington &amp; Burling</div>
+        <div class="manual-check-reason">Real tenant confirmed on Workday wd1 (path-specific-error signal) but the site slug was never found -- the business-professionals page uses Coveo (static.cloud.coveo.com), an enterprise search layer on their Sitecore CMS, not a job board ATS directly. Job data is fetched via a JS search API call after page load, invisible to static HTML scraping.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.crowell.com/en/careers" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Crowell &amp; Moring</div>
+        <div class="manual-check-reason">Real careers landing and apply-now pages found, but the careers page is an unusually large 4MB with no embedded JSON state and no known ATS platform domain present anywhere in it.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.davispolk.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Davis Polk</div>
+        <div class="manual-check-reason">Real tenant confirmed on Workday wd5 (path-specific-error signal), apparently dormant/internal. The real careers path wasn&#x27;t found -- davispolk.com/careers returns 403 (bot-protected) and the bare domain has no ATS trace.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.dechert.com/careers/law-students.html" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Dechert</div>
+        <div class="manual-check-reason">Real careers page found (dechert.com/careers/law-students.html) but no known ATS platform domain present in it.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.dentons.com/en/careers/careers-in-the-united-states/business-services-in-the-united-states/" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Dentons</div>
+        <div class="manual-check-reason">The firm&#x27;s own sitemap directly indexes individual job posting URLs (e.g. .../careers/careers-in-the-united-states/business-services-in-the-united-states/2026/july/legal-administrative-assistant-newyork) -- a real, bespoke career site, not a 3rd-party ATS. But the category LISTING page itself is Angular-rendered with zero job links in static HTML, so there&#x27;s no automatable way to discover current postings short of relying on the sitemap.xml itself as the listing source (untested, would be a fragile/unusual adapter design for this project).</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.duanemorris.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Duane Morris</div>
+        <div class="manual-check-reason">No real careers/job page found via sitemap discovery.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.eversheds-sutherland.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Eversheds Sutherland</div>
+        <div class="manual-check-reason">No real careers/job page found via sitemap discovery.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.foley.com/careers/" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Foley &amp; Lardner</div>
+        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;foley&#x27; (found embedded in foley.com/careers), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick/Milbank -- not scrapable with a plain HTTP client.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.foxrothschild.com/careers-for-attorneys/open-positions" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Fox Rothschild</div>
+        <div class="manual-check-reason">Real careers page found (foxrothschild.com/careers-for-attorneys/open-positions) but no known ATS platform domain present in it.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.grsm.com/careers" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Gordon Rees</div>
+        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;grsm&#x27; (Gordon Rees Scully Mansukhani), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick/Milbank -- not scrapable with a plain HTTP client.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.hlc.com/" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Hogan Lovells</div>
+        <div class="manual-check-reason">Real tenant confirmed on Workday wd3 (path-specific-error signal), apparently dormant/internal. UNVERIFIED ODDITY: hoganlovells.com redirects to a completely different domain, hlc.com -- could be a legitimate rebrand or could be something else entirely; not confirmed as the same firm. No ATS trace found on that destination page either way. Needs a human to eyeball hlc.com before trusting it as Hogan Lovells&#x27; real site.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.hunton.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Hunton Andrews Kurth</div>
+        <div class="manual-check-reason">Only an events-page mention of careers found (hunton.com), not a real listing page or known ATS platform.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.jonesday.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Jones Day</div>
+        <div class="manual-check-reason">No real careers/job page found via sitemap discovery.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://klgates.recsolu.com/job_boards/1" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">K&amp;L Gates</div>
+        <div class="manual-check-reason">Real &#x27;All Current Openings&#x27; link found, leading to klgates.recsolu.com -- RecSolu (Yello Enterprise), a platform not otherwise seen in this project. The board is JS-rendered with no job data in static HTML; several guessed REST API endpoints (/api/v1/job_boards/.../jobs) returned 401 Unauthorized -- a real API exists but requires credentials this project doesn&#x27;t have and shouldn&#x27;t try to bypass.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://katten.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Katten Muchin Rosenman</div>
+        <div class="manual-check-reason">Only an old publications-page mention of careers found (katten.com), not a real listing page or known ATS platform.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.kirkland.com/sitemap/careers" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Kirkland &amp; Ellis</div>
+        <div class="manual-check-reason">Real careers page found (kirkland.com/sitemap/careers) but no known ATS platform domain present in it.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.kramerlevin.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Kramer Levin</div>
+        <div class="manual-check-reason">No real careers/job page found via sitemap discovery.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.lw.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Latham &amp; Watkins</div>
+        <div class="manual-check-reason">No real careers/job page found via sitemap.xml, sitemap index, or robots.txt-declared sitemap locations.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.lewisbrisbois.com/careers" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Lewis Brisbois</div>
+        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;lewisbrisbois&#x27;, blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick/Milbank -- not scrapable with a plain HTTP client.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.marshalldennehey.com/careers/administrative-professionals" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Marshall Dennehey</div>
+        <div class="manual-check-reason">No scrapable job board found at all. /careers/current-openings 404s; the sitemap (884KB, 4498 URLs) has zero individual job-posting URLs, only marketing landing pages; and /careers/administrative-professionals has no listings, just &#x27;Submit your resume today...&#x27;. May not run an online job board for staff/business-professional roles at all.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.mayerbrown.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Mayer Brown</div>
+        <div class="manual-check-reason">No real careers/job page found via sitemap discovery.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.mcdermottlaw.com/careers" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">McDermott Will &amp; Emery</div>
+        <div class="manual-check-reason">Real tenant confirmed on Workday wd5 (path-specific-error signal), apparently dormant/internal. mwe.com/careers redirects to mcdermottlaw.com/careers, which is blocked by an Imperva Incapsula bot-protection challenge -- not scrapable with a plain HTTP client, same category as iCIMS&#x27;s AWS WAF block.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://careers-milbank.icims.com/jobs/intro?hashed=-435594439" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Milbank</div>
+        <div class="manual-check-reason">Real ATS is iCIMS (found via the firm&#x27;s own careers page), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick. A Workday tenant also exists on wd1 but is apparently dormant/internal, not used for external recruiting.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.mintz.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Mintz Levin</div>
+        <div class="manual-check-reason">No real careers/job page found via sitemap discovery.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://careers.mofo.com/" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Morrison &amp; Foerster</div>
+        <div class="manual-check-reason">Real tenant confirmed on Workday wd5 (path-specific-error signal), apparently dormant/internal. mofo.com/careers redirects to careers.mofo.com, a Next.js SPA with zero job data in static HTML -- the real ATS/API wasn&#x27;t identified.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.mto.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Munger Tolles</div>
+        <div class="manual-check-reason">No real careers/job page found via sitemap discovery.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.nelsonmullins.com/careers" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Nelson Mullins</div>
+        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;nelsonmullins&#x27; (found embedded in nelsonmullins.com/careers), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick/Milbank -- not scrapable with a plain HTTP client.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://ommcareers.viglobalcloud.com/viRecruitSelfApply/RecDefault.aspx?Tag=84c08942-ea6c-4707-a535-258e400c6b3d" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">O&#x27;Melveny &amp; Myers</div>
+        <div class="manual-check-reason">adapter fetch failed this run (ConnectTimeout: HTTPConnectionPool(host=&#x27;www.videsktop.com&#x27;, port=80): Max retries exceeded with url: / (Caused by ConnectTimeoutError(&lt;HTTPConnection(host=&#x27;www.videsktop.com&#x27;, port=80) at 0x7f5d897c03b0&gt;, &#x27;Connection to www.videsktop.com timed out. (connect timeout=30)&#x27;))) — may be transient, worth checking by hand if it keeps happening</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://ogletree.com/about-us/careers/" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Ogletree Deakins</div>
+        <div class="manual-check-reason">Real careers page found (ogletree.com/about-us/careers/) but no known ATS platform domain present in it.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://talent.orrick.com/staff-us/jobs" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Orrick</div>
+        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;orrick&#x27;, but blocked by an AWS WAF &#x27;Human Verification&#x27; challenge -- not scrapable with a plain HTTP client.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.paulweiss.com/careers" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Paul Weiss</div>
+        <div class="manual-check-reason">Real careers page found (paulweiss.com/careers) but no known ATS platform domain present in it.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.proskauer.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Proskauer Rose</div>
+        <div class="manual-check-reason">No real careers/job page found via sitemap discovery.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.quinnemanuel.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Quinn Emanuel</div>
+        <div class="manual-check-reason">No real careers/job page found via sitemap discovery.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://ropesgray.applicantstack.com/x/openings" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Ropes &amp; Gray</div>
+        <div class="manual-check-reason">ropesgray.com 403s on every path (bot protection), blocking the embedded-link-discovery technique used for every other firm here. A real ApplicantStack tenant may exist (ropesgray.applicantstack.com/x/openings returned 0 postings), but that&#x27;s not enough to confirm identity.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.sheppard.com/careers" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Sheppard Mullin</div>
+        <div class="manual-check-reason">Real domain is sheppard.com, not sheppardmullin.com as guessed. Site runs on Sitecore JSS + Next.js; the /careers page&#x27;s server-rendered __NEXT_DATA__ and componentProps blobs were both fully inspected and contain zero job listing data (CMS/marketing content only -- badges, related articles, dictionary strings). The real job listing is evidently fetched via a separate client-side API call not discoverable from this page&#x27;s static/SSR content.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.sidley.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Sidley Austin</div>
+        <div class="manual-check-reason">No real careers/job page found via sitemap discovery.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.skadden.com/careers" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Skadden Arps</div>
+        <div class="manual-check-reason">Real tenant confirmed on Workday wd5 (path-specific-error signal), apparently dormant/internal. skadden.com/careers is an AngularJS SPA (ng-app=&quot;skadden&quot;) with zero job data in static HTML.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.squirepattonboggs.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Squire Patton Boggs</div>
+        <div class="manual-check-reason">No real careers/job page found via sitemap discovery.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.sullcrom.com/Careers/Alumni-Network" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Sullivan &amp; Cromwell</div>
+        <div class="manual-check-reason">Real careers-adjacent page found (sullcrom.com/Careers/Alumni-Network) but no known ATS platform domain present, and it&#x27;s not the actual listing page.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.venable.com/sitemap/careers" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Venable</div>
+        <div class="manual-check-reason">Real careers page found (venable.com/sitemap/careers) but no known ATS platform domain present in it.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.velaw.com/careers/business-professionals/" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Vinson &amp; Elkins</div>
+        <div class="manual-check-reason">Real careers page found (velaw.com/careers/business-professionals/) but no known ATS platform domain present in it.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.wlrk.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Wachtell Lipton</div>
+        <div class="manual-check-reason">No real careers/job page found via sitemap discovery.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.weil.com/careers" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Weil Gotshal</div>
+        <div class="manual-check-reason">Checked manually -- no listings for business-professional/staff roles, only attorney postings. Not worth an adapter; there&#x27;s nothing for our filters to find even if scraping worked.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.willkie.com/careers" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Willkie Farr &amp; Gallagher</div>
+        <div class="manual-check-reason">Real careers page found (willkie.com/careers) but no known ATS platform domain present in it.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.wilmerhale.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">WilmerHale</div>
+        <div class="manual-check-reason">No real careers/job page found via sitemap discovery.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.wsgr.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Wilson Sonsini</div>
+        <div class="manual-check-reason">Only an events-page mention of careers found (wsgr.com), not a real listing page or known ATS platform.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
+      <a class="manual-check-card" href="https://www.winston.com" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Winston &amp; Strawn</div>
+        <div class="manual-check-reason">No real careers/job page found via sitemap discovery. Its only signal anywhere in this project remains the CONFIRMED REJECTED HRMdirect &#x27;winston&#x27; collision (see REJECTED_LEADS) -- an unrelated company, not this firm.</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
       </div>
     </section>
