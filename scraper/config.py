@@ -355,6 +355,23 @@ FIRMS: dict[str, dict] = {
         "live API -- matches WorkdayAdapter's existing request/response handling "
         "exactly, no adapter changes needed.",
     },
+    "Wachtell, Lipton, Rosen & Katz": {
+        "adapter": WorkdayAdapter,
+        "tenant": "vhr_wachtelllipton",
+        "wd": "wd1",
+        "site": "wlrk",
+        "cxs_host": "wd1.myworkdaysite.com",
+        "notes": "CONFIRMED via live probe -- 8 real postings, all New York, unmistakably "
+        "law-firm support-staff/IT titles ('Administrative Legal Assistant', 'Word "
+        "Processing Lead Operator', 'Systems Analyst', 'ServiceNow Solution Architect'). "
+        "Tenant slug 'vhr_wachtelllipton' has an underscore, which is invalid in a real "
+        "hostname/wildcard-cert, so the old-style {tenant}.{wd}.myworkdayjobs.com "
+        "subdomain SSL-fails (confirmed: CERTIFICATE_VERIFY_FAILED hostname mismatch). "
+        "Fix (see cxs_host in WorkdayAdapter): hit the CXS API and build job links "
+        "directly off the wd1.myworkdaysite.com domain instead, keeping the tenant slug "
+        "in the path rather than as a subdomain. No AI/KM keyword matches in current "
+        "postings, but wired in for future coverage.",
+    },
     # --- UltiPro / UKG Recruiting group ---------------------------------------------------
     "Akerman": {
         "adapter": UltiProAdapter,
@@ -632,10 +649,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
     "Sidley Austin": {
         "reason": "No real careers/job page found via sitemap discovery.",
         "check_url": "https://www.sidley.com",
-    },
-    "Wachtell Lipton": {
-        "reason": "No real careers/job page found via sitemap discovery.",
-        "check_url": "https://www.wlrk.com",
     },
     "Quinn Emanuel": {
         "reason": "No real careers/job page found via sitemap discovery.",

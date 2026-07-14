@@ -23,6 +23,8 @@ def _best_effort_check_url(firm_cfg: dict) -> str:
     for key in ("list_url", "board_url", "search_url", "api_url"):
         if key in firm_cfg:
             return firm_cfg[key]
+    if "cxs_host" in firm_cfg and "tenant" in firm_cfg:
+        return f"https://{firm_cfg['cxs_host']}/recruiting/{firm_cfg['tenant']}/{firm_cfg.get('site', '')}"
     if "tenant" in firm_cfg and "wd" in firm_cfg:
         return f"https://{firm_cfg['tenant']}.{firm_cfg['wd']}.myworkdayjobs.com/{firm_cfg.get('site', '')}"
     if "board_token" in firm_cfg:

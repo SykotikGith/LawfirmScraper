@@ -12,6 +12,16 @@ jobPostings-empty as the real stopping condition, capped by a safety
 limit derived from that first total. We also prime the session with a
 GET to the HTML careers page first, matching what a browser does and
 what worked in testing, before hitting the JSON API.
+
+Some tenant slugs (e.g. Wachtell Lipton's "vhr_wachtelllipton") contain an
+underscore, which isn't valid in a real hostname/wildcard-cert -- the
+old-style <tenant>.<wd>.myworkdayjobs.com subdomain SSL-fails for these.
+Confirmed via live probing that the fix is to hit the CXS API directly off
+the <wd>.myworkdaysite.com domain instead, keeping the tenant slug in the
+path rather than as a subdomain, and to build job links off that same
+domain's /recruiting/<tenant>/<site> front-end route rather than the
+old-style /en-US/<site>. Set `cxs_host` in config (e.g. "wd1.myworkdaysite.com")
+to opt a tenant into this pattern; every other tenant is unaffected.
 """
 from __future__ import annotations
 
@@ -29,14 +39,24 @@ class WorkdayAdapter(Adapter):
         tenant = self.config["tenant"]
         wd = self.config.get("wd", "wd1")
         site = self.config["site"]
-        api_url = self.config.get(
-            "api_url",
-            f"https://{tenant}.{wd}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs",
-        )
-        base_job_url = f"https://{tenant}.{wd}.myworkdayjobs.com/en-US/{site}"
+        cxs_host = self.config.get("cxs_host")
+
+        if cxs_host:
+            api_url = self.config.get(
+                "api_url", f"https://{cxs_host}/wday/cxs/{tenant}/{site}/jobs"
+            )
+            base_job_url = f"https://{cxs_host}/recruiting/{tenant}/{site}"
+            prime_url = f"https://{cxs_host}/recruiting/{tenant}/{site}"
+        else:
+            api_url = self.config.get(
+                "api_url",
+                f"https://{tenant}.{wd}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs",
+            )
+            base_job_url = f"https://{tenant}.{wd}.myworkdayjobs.com/en-US/{site}"
+            prime_url = f"https://{tenant}.{wd}.myworkdayjobs.com/{site}"
 
         # Prime the session (cookies) with a normal page load first.
-        self.session.get(f"https://{tenant}.{wd}.myworkdayjobs.com/{site}", timeout=30)
+        self.session.get(prime_url, timeout=30)
 
         postings: list[Posting] = []
         offset = 0
