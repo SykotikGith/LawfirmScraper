@@ -864,6 +864,16 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "load, invisible to static HTML scraping.",
         "check_url": "https://www.cov.com/en/careers/business-professionals/employment-opportunities",
     },
+    "Arnold & Porter": {
+        "reason": "Confirmed Coveo (static.cloud.coveo.com), the exact same enterprise "
+        "search layer already blocking Covington & Burling -- job data is fetched via a JS "
+        "search API call after page load. Checked specifically for an embedded "
+        "organizationId/accessToken in the static HTML (Coveo sites sometimes expose these "
+        "for a public search widget) and found neither -- genuinely invisible to static "
+        "HTML scraping, not just unconfirmed.",
+        "check_url": "https://www.arnoldporter.com/en/careers/professional-staff/"
+        "current-opportunities",
+    },
     "Davis Polk": {
         "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
         "apparently dormant/internal. The real careers path wasn't found -- "
@@ -1014,10 +1024,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "protection-style block (no 403, no WAF/challenge page) -- just couldn't locate the "
         "real data source via static probing.",
         "check_url": "https://www.duanemorris.com/site/careers.html#tab_SupportStaffOpportunities",
-    },
-    "Arnold & Porter": {
-        "reason": "No real careers/job page found via sitemap discovery.",
-        "check_url": "https://www.arnoldporter.com",
     },
     "Dechert": {
         "reason": "Real careers page found (dechert.com/careers/law-students.html) but no "
