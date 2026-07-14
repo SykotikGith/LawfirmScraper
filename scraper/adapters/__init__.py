@@ -10,6 +10,7 @@ from .viglobal import ViGlobalAdapter
 from .ultipro import UltiProAdapter
 from .earcu import EArcuAdapter
 from .jobvite import JobviteAdapter
+from .breezy import BreezyAdapter
 
 __all__ = [
     "Adapter",
@@ -24,4 +25,5 @@ __all__ = [
     "UltiProAdapter",
     "EArcuAdapter",
     "JobviteAdapter",
+    "BreezyAdapter",
 ]

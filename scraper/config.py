@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from .adapters import (
     ApplicantStackAdapter,
+    BreezyAdapter,
     CircaWorksAdapter,
     CustomHTMLAdapter,
     EArcuAdapter,
@@ -638,6 +639,20 @@ FIRMS: dict[str, dict] = {
         "output yet. Recommend checking debug_all_titles.txt after a real run before fully "
         "trusting this entry.",
     },
+    # --- Breezy HR group ---------------------------------------------------
+    "Marshall Dennehey": {
+        "adapter": BreezyAdapter,
+        "json_url": "https://marshall-dennehey.breezy.hr/json",
+        "notes": "CONFIRMED via live probe -- 89 real postings, clean public JSON API "
+        "(https://<subdomain>.breezy.hr/json, no auth/pagination needed). New platform for "
+        "this project (Breezy HR). Every current posting is attorney-track or explicitly "
+        "hard-excluded support staff (Paralegal, Legal Secretary) EXCEPT a handful of "
+        "genuine business-professional/IT-adjacent roles ('Cyber Security Engineer', "
+        "'Litigation Support Specialist', 'Project Assistant') that don't happen to hit any "
+        "current AI_KM_KEYWORDS term -- same situation as Wachtell Lipton, wired in for "
+        "future coverage rather than dropped, since real non-attorney roles do exist here "
+        "(unlike Weil Gotshal, which was confirmed 100% attorney-only).",
+    },
 }
 
 
@@ -869,14 +884,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
     # listings) before it can be classified into the tier above or dropped
     # entirely.
     # =========================================================================
-    "Marshall Dennehey": {
-        "reason": "No scrapable job board found at all. /careers/current-openings 404s; the "
-        "sitemap (884KB, 4498 URLs) has zero individual job-posting URLs, only marketing "
-        "landing pages; and /careers/administrative-professionals has no listings, just "
-        "'Submit your resume today...'. May not run an online job board for staff/"
-        "business-professional roles at all.",
-        "check_url": "https://www.marshalldennehey.com/careers/administrative-professionals",
-    },
     "Wilson Sonsini": {
         "reason": "Only an events-page mention of careers found (wsgr.com), not a real "
         "listing page or known ATS platform.",
@@ -892,8 +899,14 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "check_url": "https://ogletree.com/about-us/careers/",
     },
     "Duane Morris": {
-        "reason": "No real careers/job page found via sitemap discovery.",
-        "check_url": "https://www.duanemorris.com",
+        "reason": "User pointed at duanemorris.com/site/careers.html#tab_SupportStaffOpportunities "
+        "-- confirmed real careers page, but the tab_SupportStaffOpportunities anchor isn't "
+        "present anywhere in the static HTML (no matching id, no iframe embedding an "
+        "external ATS either), so whatever renders that tab's content is pure client-side "
+        "JS with no static/SSR fallback found. Still not confirmed as a genuine bot-"
+        "protection-style block (no 403, no WAF/challenge page) -- just couldn't locate the "
+        "real data source via static probing.",
+        "check_url": "https://www.duanemorris.com/site/careers.html#tab_SupportStaffOpportunities",
     },
     "Kramer Levin": {
         "reason": "No real careers/job page found via sitemap discovery.",
