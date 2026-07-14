@@ -144,6 +144,22 @@ FIRMS: dict[str, dict] = {
         "same attributes otherwise. Real per-job URLs (viewRequisition?...&rid=N) "
         "available directly.",
     },
+    "Katten Muchin Rosenman": {
+        # Same Taleo Business Edition host as Sullivan & Cromwell (phg.tbe.taleo.net), just a
+        # different org/cws pair -- identical adapter config shape.
+        "adapter": CustomHTMLAdapter,
+        "list_url": "https://phg.tbe.taleo.net/phg04/ats/careers/v2/searchResults?org=KATTMUCH2&cws=39",
+        "link_selector": "a.viewJobLink",
+        "location_selector": "div[tabindex='0']:last-of-type",
+        "notes": "CONFIRMED via live probe -- 10 real postings, plausible business-"
+        "professional titles ('Applications Engineer' across 6 offices, 'Billing "
+        "Coordinator', 'e-Billing Manager'). Same row markup as Sullivan & Cromwell "
+        "(oracletaleocwsv2-accordion-head-info wrapping <h4><a class=\"viewJobLink\"></a>"
+        "</h4> plus trailing div[tabindex='0'] siblings) -- this tenant's rows show a "
+        "department field too (e.g. 'Information Technology'), but :last-of-type still "
+        "correctly picks whichever div comes last (location), regardless of how many "
+        "siblings precede it.",
+    },
     # --- ApplicantStack ---------------------------------------------------
     "Hinshaw & Culbertson": {
         "adapter": ApplicantStackAdapter,
@@ -480,6 +496,16 @@ FIRMS: dict[str, dict] = {
         "'Senior Product Analyst'), unmistakably a real active law-firm ATS. Standard "
         "old-style Workday subdomain, no adapter changes needed.",
     },
+    "Munger Tolles": {
+        "adapter": WorkdayAdapter,
+        "tenant": "mto",
+        "wd": "wd503",
+        "site": "MTO_Careers",
+        "notes": "CONFIRMED via live probe -- 10 real postings, plausible business-"
+        "professional titles ('Senior Executive Assistant', 'Legal Systems Administrator - "
+        "Talent Systems', 'Senior Manager of Innovation, Systems and Data', 'Billing "
+        "Supervisor'). Standard old-style Workday subdomain, no adapter changes needed.",
+    },
     "Hogan Lovells": {
         "adapter": WorkdayAdapter,
         "tenant": "hoganlovells",
@@ -541,6 +567,23 @@ FIRMS: dict[str, dict] = {
         "seen for Akerman/Baker Hostetler/Fox Rothschild) -- UltiProAdapter takes the full "
         "board_url as config so this needed no adapter changes, just preserving the exact "
         "host given.",
+    },
+    "Hunton Andrews Kurth": {
+        "adapter": UltiProAdapter,
+        "board_url": "https://recruiting.ultipro.com/HUN1002HW/JobBoard/"
+        "c54d0719-19af-46ae-b27a-8c3695a9ab0a/",
+        "notes": "CONFIRMED via live probe -- 23 real postings, plausible business-"
+        "professional titles ('CIPL Data Policy Analyst', 'Practice Technology Trainer', "
+        "'Legal Project Management Analyst', 'Manager Strategic Communications and "
+        "Advocacy').",
+    },
+    "Eversheds Sutherland": {
+        "adapter": UltiProAdapter,
+        "board_url": "https://recruiting.ultipro.com/SUT1001EVSU/JobBoard/"
+        "80eaa491-46d1-4ef3-93bb-2f523c2631c7/",
+        "notes": "CONFIRMED via live probe -- 17 real postings, plausible business-"
+        "professional titles ('Content and Brand Manager', 'Senior Manager, Client "
+        "Development', 'Public Relations Manager', 'IP Docketing Specialist').",
     },
     # --- AmLaw 100 expansion batch, resolved via ats_probe.py + verify_batch.py -----------
     "Morgan Lewis": {
@@ -673,6 +716,17 @@ FIRMS: dict[str, dict] = {
         "text-blob regex match itself hasn't been verified against this tenant's exact "
         "output yet. Recommend checking debug_all_titles.txt after a real run before fully "
         "trusting this entry.",
+    },
+    "Mintz Levin": {
+        "adapter": ViGlobalAdapter,
+        "list_url": "https://careers.mintz.com/viRecruitSelfApply/RecDefault.aspx"
+        "?Tag=fdfa0684-8265-4911-aece-f31f96213ea9",
+        "notes": "CONFIRMED via live probe -- real postings include 'Business Development "
+        "Coordinator', 'Business Development Manager, Litigation', 'Conflicts Analyst', "
+        "'External Communications Specialist', 'Financial Planning Analyst'. Bryan Cave-"
+        "style structured <h4> row shape confirmed directly (default table_id, no override "
+        "needed), hosted on the firm's own domain (careers.mintz.com) rather than "
+        "viglobalcloud.com, same as Winston Taylor and Vinson & Elkins.",
     },
     # --- Breezy HR group ---------------------------------------------------
     "Marshall Dennehey": {
@@ -965,19 +1019,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "reason": "No real careers/job page found via sitemap discovery.",
         "check_url": "https://www.arnoldporter.com",
     },
-    "Hunton Andrews Kurth": {
-        "reason": "Only an events-page mention of careers found (hunton.com), not a real "
-        "listing page or known ATS platform.",
-        "check_url": "https://www.hunton.com",
-    },
-    "Munger Tolles": {
-        "reason": "No real careers/job page found via sitemap discovery.",
-        "check_url": "https://www.mto.com",
-    },
-    "Eversheds Sutherland": {
-        "reason": "No real careers/job page found via sitemap discovery.",
-        "check_url": "https://www.eversheds-sutherland.com",
-    },
     "Dechert": {
         "reason": "Real careers page found (dechert.com/careers/law-students.html) but no "
         "known ATS platform domain present in it.",
@@ -986,15 +1027,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
     "Akin Gump": {
         "reason": "No real careers/job page found via sitemap discovery.",
         "check_url": "https://www.akingump.com",
-    },
-    "Katten Muchin Rosenman": {
-        "reason": "Only an old publications-page mention of careers found (katten.com), not "
-        "a real listing page or known ATS platform.",
-        "check_url": "https://katten.com",
-    },
-    "Mintz Levin": {
-        "reason": "No real careers/job page found via sitemap discovery.",
-        "check_url": "https://www.mintz.com",
     },
 }
 
