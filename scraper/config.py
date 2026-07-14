@@ -650,10 +650,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "reason": "No real careers/job page found via sitemap discovery.",
         "check_url": "https://www.sidley.com",
     },
-    "Quinn Emanuel": {
-        "reason": "No real careers/job page found via sitemap discovery.",
-        "check_url": "https://www.quinnemanuel.com",
-    },
     "Paul Weiss": {
         "reason": "Real careers page found (paulweiss.com/careers) but no known ATS "
         "platform domain present in it.",
