@@ -109,6 +109,23 @@ FIRMS: dict[str, dict] = {
         "plain GET. No US-vs-global or business-services-vs-attorney URL split confirmed; "
         "verify category filtering is needed once the page is reachable.",
     },
+    "Squire Patton Boggs": {
+        # New platform for this project: CV-Mail UK (ColdFusion, fsr.cvmailuk.com).
+        "adapter": CustomHTMLAdapter,
+        "list_url": "https://fsr.cvmailuk.com/spb/main.cfm?page=jobBoard&rcd=1309578"
+        "&srxksl=1&groupType_21=5039&filter=",
+        "link_selector": "a.jobMoreDetailCaptionStyle",
+        "location_selector": "td.col_Job-Location",
+        "notes": "CONFIRMED via live probe -- 30 real postings, plausible business-"
+        "professional and attorney titles across US offices ('Voice and Unified "
+        "Communications Engineer' - Atlanta, 'Litigation Associate' - Cincinnati, "
+        "'Financial Services Insurance Associate' - Cleveland). Real per-job detail links "
+        "and a dedicated location column (td.col_Job-Location) both confirmed directly in "
+        "server-rendered HTML, no JS execution needed. Note: the 'rcd' query param in "
+        "job-detail links appears to be a session-scoped tracking ID that changes on every "
+        "fetch -- the list_url's own rcd value does not need to stay in sync with it, "
+        "confirmed stable across multiple independent live probes.",
+    },
     # --- ApplicantStack ---------------------------------------------------
     "Hinshaw & Culbertson": {
         "adapter": ApplicantStackAdapter,
@@ -737,10 +754,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "(/api/v1/job_boards/.../jobs) returned 401 Unauthorized -- a real API exists but "
         "requires credentials this project doesn't have and shouldn't try to bypass.",
         "check_url": "https://klgates.recsolu.com/job_boards/1",
-    },
-    "Squire Patton Boggs": {
-        "reason": "No real careers/job page found via sitemap discovery.",
-        "check_url": "https://www.squirepattonboggs.com",
     },
     "Mayer Brown": {
         "reason": "No real careers/job page found via sitemap discovery.",
