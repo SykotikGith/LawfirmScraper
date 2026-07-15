@@ -175,9 +175,7 @@
     background: var(--job-card-bg);
     border-radius: 12px;
     padding: 18px;
-    text-decoration: none;
-    color: inherit;
-    transition: transform 0.12s ease, border-color 0.12s ease;
+    transition: transform 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
   }
   .job-card.auto { border: 1px solid var(--green-border); }
   .job-card.review { border: 1px solid var(--teal-border); }
@@ -186,6 +184,11 @@
   }
   .job-card.auto:hover { border-color: var(--green); }
   .job-card.review:hover { border-color: var(--teal); }
+  .job-card-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
   .job-firm {
     font-size: 0.75rem;
     color: var(--text-secondary);
@@ -284,6 +287,73 @@
     transform: rotate(-4deg);
     box-shadow: 0 2px 6px rgba(0,0,0,0.35);
   }
+  .applied-badge {
+    display: none;
+    position: absolute;
+    top: -8px;
+    left: 14px;
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    padding: 3px 9px;
+    border-radius: 6px;
+    border: 1px solid var(--green-border);
+    transform: rotate(3deg);
+  }
+  .job-card[data-status="applied"] { opacity: 0.55; }
+  .job-card[data-status="applied"]:hover { opacity: 0.85; }
+  .job-card[data-status="applied"] .applied-badge { display: inline-block; }
+  .job-card[data-status="applied"] .new-badge { display: none; }
+  .job-card[data-status="not-interested"] { display: none; }
+  body[data-show-dismissed="true"] .job-card[data-status="not-interested"] {
+    display: block;
+    opacity: 0.5;
+  }
+  .job-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    position: relative;
+    z-index: 1;
+  }
+  .status-btn {
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--green-border);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+  }
+  .status-btn:hover { border-color: var(--green); color: var(--text-primary); }
+  .job-card[data-status="applied"] .status-btn-applied {
+    background: var(--green-badge-bg);
+    border-color: var(--green);
+    color: var(--green-badge-text);
+  }
+  .job-card[data-status="not-interested"] .status-btn-not-interested,
+  body[data-show-dismissed="true"] .job-card[data-status="not-interested"] .status-btn-not-interested {
+    background: var(--amber-border);
+    border-color: var(--amber);
+    color: var(--amber);
+  }
+  .show-dismissed-toggle {
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 40px;
+  }
+  .show-dismissed-toggle:hover { color: var(--text-primary); }
   footer {
     margin-top: 48px;
     color: var(--text-secondary);
@@ -295,7 +365,7 @@
 <body>
   <div class="page">
     <h1>Law Firm Career Radar</h1>
-    <p class="subtitle">IT / Knowledge Management / Legal-AI role filter — updated Jul 15, 2026 05:03 AM UTC</p>
+    <p class="subtitle">IT / Knowledge Management / Legal-AI role filter — updated Jul 15, 2026 05:17 AM UTC</p>
 
     <div class="metrics-grid">
       <div class="metric-card">
@@ -318,7 +388,7 @@
         <div class="metric-label">Needs review</div>
       </div>
       <div class="metric-card">
-        <div class="metric-value metric-value-small">Jul 15, 2026 05:03 AM UTC</div>
+        <div class="metric-value metric-value-small">Jul 15, 2026 05:17 AM UTC</div>
         <div class="metric-label">Last run</div>
       </div>
     </div>
@@ -328,6 +398,8 @@
       <button type="button" class="loc-filter-btn" data-loc-filter="us">US Only</button>
       <button type="button" class="loc-filter-btn" data-loc-filter="remote">Remote</button>
     </div>
+
+    <button type="button" id="show-dismissed-toggle" class="show-dismissed-toggle">Show dismissed</button>
 
     <section class="section">
       <h2 class="section-title new-since"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4" /><path d="m7 7 2.5 2.5M17 7l-2.5 2.5M7 17l2.5-2.5M17 17l-2.5-2.5" /></svg>New Since Last Run</h2>
@@ -339,132 +411,258 @@
       <h2 class="section-title auto"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Auto-match</h2>
       
       <div class="job-grid">
-      <a class="job-card auto" href="https://job-boards.greenhouse.io/wilsonelser/jobs/5198354008" data-loc="us" target="_blank" rel="noopener noreferrer">
+      <div class="job-card auto" data-url="https://job-boards.greenhouse.io/wilsonelser/jobs/5198354008" data-loc="us">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Wilson Elser</div>
-        <div class="job-title">Knowledge Management (KM) Legal AI Specialist</div>
-        <div class="job-location">New York, New York</div>
-        <div class="job-tags"><span class="pill kw-pill">Knowledge Management</span><span class="pill kw-pill">KM</span><span class="pill kw-pill">Legal AI</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
-      </a>
-      <a class="job-card auto" href="https://fisherphillips.hrmdirect.com/employment/job-opening.php?req=3747321&amp;req_loc=1372489&amp;#job" data-loc="us" target="_blank" rel="noopener noreferrer">
+        <a class="job-card-link" href="https://job-boards.greenhouse.io/wilsonelser/jobs/5198354008" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Wilson Elser</div>
+          <div class="job-title">Knowledge Management (KM) Legal AI Specialist</div>
+          <div class="job-location">New York, New York</div>
+          <div class="job-tags"><span class="pill kw-pill">Knowledge Management</span><span class="pill kw-pill">KM</span><span class="pill kw-pill">Legal AI</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
+      <div class="job-card auto" data-url="https://fisherphillips.hrmdirect.com/employment/job-opening.php?req=3747321&amp;req_loc=1372489&amp;#job" data-loc="us">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Fisher Phillips</div>
-        <div class="job-title">Business Process Optimization Specialist</div>
-        <div class="job-location">Location not specified</div>
-        <div class="job-tags"><span class="pill kw-pill">Business Process Optimization</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
-      </a>
-      <a class="job-card auto" href="https://stblaw.wd1.myworkdayjobs.com/en-US/careers/job/New-York-NY/Senior-AI-Enablement---Adoption-Analyst_R-2026-581" data-loc="us" target="_blank" rel="noopener noreferrer">
+        <a class="job-card-link" href="https://fisherphillips.hrmdirect.com/employment/job-opening.php?req=3747321&amp;req_loc=1372489&amp;#job" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Fisher Phillips</div>
+          <div class="job-title">Business Process Optimization Specialist</div>
+          <div class="job-location">Location not specified</div>
+          <div class="job-tags"><span class="pill kw-pill">Business Process Optimization</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
+      <div class="job-card auto" data-url="https://stblaw.wd1.myworkdayjobs.com/en-US/careers/job/New-York-NY/Senior-AI-Enablement---Adoption-Analyst_R-2026-581" data-loc="us">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Simpson Thacher</div>
-        <div class="job-title">Senior AI Enablement &amp; Adoption Analyst</div>
-        <div class="job-location">New York, NY</div>
-        <div class="job-tags"><span class="pill kw-pill">AI Enablement</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
-      </a>
-      <a class="job-card auto" href="https://stblaw.wd1.myworkdayjobs.com/en-US/careers/job/New-York-NY/AI-Enablement---Adoption-Analyst_R-2026-580" data-loc="us" target="_blank" rel="noopener noreferrer">
+        <a class="job-card-link" href="https://stblaw.wd1.myworkdayjobs.com/en-US/careers/job/New-York-NY/Senior-AI-Enablement---Adoption-Analyst_R-2026-581" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Simpson Thacher</div>
+          <div class="job-title">Senior AI Enablement &amp; Adoption Analyst</div>
+          <div class="job-location">New York, NY</div>
+          <div class="job-tags"><span class="pill kw-pill">AI Enablement</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
+      <div class="job-card auto" data-url="https://stblaw.wd1.myworkdayjobs.com/en-US/careers/job/New-York-NY/AI-Enablement---Adoption-Analyst_R-2026-580" data-loc="us">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Simpson Thacher</div>
-        <div class="job-title">AI Enablement + Adoption Analyst</div>
-        <div class="job-location">New York, NY</div>
-        <div class="job-tags"><span class="pill kw-pill">AI Enablement</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
-      </a>
-      <a class="job-card auto" href="https://stblaw.wd1.myworkdayjobs.com/en-US/careers/job/New-York-NY/Legal-Technologist_R-2025-558" data-loc="us" target="_blank" rel="noopener noreferrer">
+        <a class="job-card-link" href="https://stblaw.wd1.myworkdayjobs.com/en-US/careers/job/New-York-NY/AI-Enablement---Adoption-Analyst_R-2026-580" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Simpson Thacher</div>
+          <div class="job-title">AI Enablement + Adoption Analyst</div>
+          <div class="job-location">New York, NY</div>
+          <div class="job-tags"><span class="pill kw-pill">AI Enablement</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
+      <div class="job-card auto" data-url="https://stblaw.wd1.myworkdayjobs.com/en-US/careers/job/New-York-NY/Legal-Technologist_R-2025-558" data-loc="us">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Simpson Thacher</div>
-        <div class="job-title">Legal Technologist</div>
-        <div class="job-location">5 Locations</div>
-        <div class="job-tags"><span class="pill kw-pill">Legal Tech</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
-      </a>
-      <a class="job-card auto" href="https://job-boards.greenhouse.io/gibsondunn/jobs/4253456009" data-loc="us" target="_blank" rel="noopener noreferrer">
+        <a class="job-card-link" href="https://stblaw.wd1.myworkdayjobs.com/en-US/careers/job/New-York-NY/Legal-Technologist_R-2025-558" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Simpson Thacher</div>
+          <div class="job-title">Legal Technologist</div>
+          <div class="job-location">5 Locations</div>
+          <div class="job-tags"><span class="pill kw-pill">Legal Tech</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
+      <div class="job-card auto" data-url="https://job-boards.greenhouse.io/gibsondunn/jobs/4253456009" data-loc="us">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Gibson Dunn</div>
-        <div class="job-title">Knowledge Management Data Steward – Transactions &amp; Regulatory</div>
-        <div class="job-location">California; Century City; Colorado; Dallas; Denver; Houston; Los Angeles; New York; New York City; Orange County; Palo Alto; San Francisco; Texas; Washington, D.C.</div>
-        <div class="job-tags"><span class="pill kw-pill">Knowledge Management</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
-      </a>
-      <a class="job-card auto" href="https://job-boards.greenhouse.io/gibsondunn/jobs/4253439009" data-loc="us" target="_blank" rel="noopener noreferrer">
+        <a class="job-card-link" href="https://job-boards.greenhouse.io/gibsondunn/jobs/4253456009" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Gibson Dunn</div>
+          <div class="job-title">Knowledge Management Data Steward – Transactions &amp; Regulatory</div>
+          <div class="job-location">California; Century City; Colorado; Dallas; Denver; Houston; Los Angeles; New York; New York City; Orange County; Palo Alto; San Francisco; Texas; Washington, D.C.</div>
+          <div class="job-tags"><span class="pill kw-pill">Knowledge Management</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
+      <div class="job-card auto" data-url="https://job-boards.greenhouse.io/gibsondunn/jobs/4253439009" data-loc="us">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Gibson Dunn</div>
-        <div class="job-title">Legal Technology Solutions Architect</div>
-        <div class="job-location">California; Dallas; Denver; Houston; New York; Washington, D.C.</div>
-        <div class="job-tags"><span class="pill kw-pill">Legal Technology</span><span class="pill kw-pill">Legal Tech</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
-      </a>
-      <a class="job-card auto" href="https://hklaw.wd1.myworkdayjobs.com/en-US/Holland_Knight/job/Nashville/Legal-AI-Automation-Specialist-and-Closing-Coordinator_R5313" data-loc="us" target="_blank" rel="noopener noreferrer">
+        <a class="job-card-link" href="https://job-boards.greenhouse.io/gibsondunn/jobs/4253439009" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Gibson Dunn</div>
+          <div class="job-title">Legal Technology Solutions Architect</div>
+          <div class="job-location">California; Dallas; Denver; Houston; New York; Washington, D.C.</div>
+          <div class="job-tags"><span class="pill kw-pill">Legal Technology</span><span class="pill kw-pill">Legal Tech</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
+      <div class="job-card auto" data-url="https://hklaw.wd1.myworkdayjobs.com/en-US/Holland_Knight/job/Nashville/Legal-AI-Automation-Specialist-and-Closing-Coordinator_R5313" data-loc="us">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Holland &amp; Knight</div>
-        <div class="job-title">Legal AI Automation Specialist and Closing Coordinator</div>
-        <div class="job-location">Nashville</div>
-        <div class="job-tags"><span class="pill kw-pill">Legal AI</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
-      </a>
-      <a class="job-card auto" href="https://skadden.wd5.myworkdayjobs.com/en-US/Skadden_Careers/job/New-York/Legal-Technology-Data-Solutions-Specialist_JR_2421" data-loc="us" target="_blank" rel="noopener noreferrer">
+        <a class="job-card-link" href="https://hklaw.wd1.myworkdayjobs.com/en-US/Holland_Knight/job/Nashville/Legal-AI-Automation-Specialist-and-Closing-Coordinator_R5313" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Holland &amp; Knight</div>
+          <div class="job-title">Legal AI Automation Specialist and Closing Coordinator</div>
+          <div class="job-location">Nashville</div>
+          <div class="job-tags"><span class="pill kw-pill">Legal AI</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
+      <div class="job-card auto" data-url="https://skadden.wd5.myworkdayjobs.com/en-US/Skadden_Careers/job/New-York/Legal-Technology-Data-Solutions-Specialist_JR_2421" data-loc="us">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Skadden Arps</div>
-        <div class="job-title">Legal Technology Data Solutions Specialist</div>
-        <div class="job-location">New York</div>
-        <div class="job-tags"><span class="pill kw-pill">Legal Technology</span><span class="pill kw-pill">Legal Tech</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
-      </a>
-      <a class="job-card auto" href="https://skadden.wd5.myworkdayjobs.com/en-US/Skadden_Careers/job/New-York/Legal-Technology-Senior-Software-Engineer_JR_2425" data-loc="us" target="_blank" rel="noopener noreferrer">
+        <a class="job-card-link" href="https://skadden.wd5.myworkdayjobs.com/en-US/Skadden_Careers/job/New-York/Legal-Technology-Data-Solutions-Specialist_JR_2421" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Skadden Arps</div>
+          <div class="job-title">Legal Technology Data Solutions Specialist</div>
+          <div class="job-location">New York</div>
+          <div class="job-tags"><span class="pill kw-pill">Legal Technology</span><span class="pill kw-pill">Legal Tech</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
+      <div class="job-card auto" data-url="https://skadden.wd5.myworkdayjobs.com/en-US/Skadden_Careers/job/New-York/Legal-Technology-Senior-Software-Engineer_JR_2425" data-loc="us">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Skadden Arps</div>
-        <div class="job-title">Legal Technology Senior Software Engineer</div>
-        <div class="job-location">New York</div>
-        <div class="job-tags"><span class="pill kw-pill">Legal Technology</span><span class="pill kw-pill">Legal Tech</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
-      </a>
-      <a class="job-card auto" href="https://sidley.wd501.myworkdayjobs.com/en-US/US/job/Los-Angeles/IAM-Analyst_R01180" data-loc="us" target="_blank" rel="noopener noreferrer">
+        <a class="job-card-link" href="https://skadden.wd5.myworkdayjobs.com/en-US/Skadden_Careers/job/New-York/Legal-Technology-Senior-Software-Engineer_JR_2425" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Skadden Arps</div>
+          <div class="job-title">Legal Technology Senior Software Engineer</div>
+          <div class="job-location">New York</div>
+          <div class="job-tags"><span class="pill kw-pill">Legal Technology</span><span class="pill kw-pill">Legal Tech</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
+      <div class="job-card auto" data-url="https://sidley.wd501.myworkdayjobs.com/en-US/US/job/Los-Angeles/IAM-Analyst_R01180" data-loc="us">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Sidley Austin</div>
-        <div class="job-title">IAM Analyst</div>
-        <div class="job-location">5 Locations</div>
-        <div class="job-tags"><span class="pill kw-pill">IAM</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
-      </a>
-      <a class="job-card auto" href="https://sidley.wd501.myworkdayjobs.com/en-US/US/job/Chicago/IAM-Engineer_R01051" data-loc="us" target="_blank" rel="noopener noreferrer">
+        <a class="job-card-link" href="https://sidley.wd501.myworkdayjobs.com/en-US/US/job/Los-Angeles/IAM-Analyst_R01180" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Sidley Austin</div>
+          <div class="job-title">IAM Analyst</div>
+          <div class="job-location">5 Locations</div>
+          <div class="job-tags"><span class="pill kw-pill">IAM</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
+      <div class="job-card auto" data-url="https://sidley.wd501.myworkdayjobs.com/en-US/US/job/Chicago/IAM-Engineer_R01051" data-loc="us">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Sidley Austin</div>
-        <div class="job-title">IAM Engineer</div>
-        <div class="job-location">Chicago</div>
-        <div class="job-tags"><span class="pill kw-pill">IAM</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
-      </a>
-      <a class="job-card auto" href="https://sidley.wd501.myworkdayjobs.com/en-US/US/job/Chicago/Knowledge-Management-Senior-Analyst_i10793" data-loc="us" target="_blank" rel="noopener noreferrer">
+        <a class="job-card-link" href="https://sidley.wd501.myworkdayjobs.com/en-US/US/job/Chicago/IAM-Engineer_R01051" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Sidley Austin</div>
+          <div class="job-title">IAM Engineer</div>
+          <div class="job-location">Chicago</div>
+          <div class="job-tags"><span class="pill kw-pill">IAM</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
+      <div class="job-card auto" data-url="https://sidley.wd501.myworkdayjobs.com/en-US/US/job/Chicago/Knowledge-Management-Senior-Analyst_i10793" data-loc="us">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Sidley Austin</div>
-        <div class="job-title">Knowledge Management Senior Analyst</div>
-        <div class="job-location">Chicago</div>
-        <div class="job-tags"><span class="pill kw-pill">Knowledge Management</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
-      </a>
-      <a class="job-card auto" href="https://recruiting.ultipro.com/fox1001frllp/JobBoard/88a19d60-0e84-49c7-b754-509a756678e7/OpportunityDetail?opportunityId=5ba762ed-285c-4ecc-b4c6-951605501d46" data-loc="us" target="_blank" rel="noopener noreferrer">
+        <a class="job-card-link" href="https://sidley.wd501.myworkdayjobs.com/en-US/US/job/Chicago/Knowledge-Management-Senior-Analyst_i10793" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Sidley Austin</div>
+          <div class="job-title">Knowledge Management Senior Analyst</div>
+          <div class="job-location">Chicago</div>
+          <div class="job-tags"><span class="pill kw-pill">Knowledge Management</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
+      <div class="job-card auto" data-url="https://recruiting.ultipro.com/fox1001frllp/JobBoard/88a19d60-0e84-49c7-b754-509a756678e7/OpportunityDetail?opportunityId=5ba762ed-285c-4ecc-b4c6-951605501d46" data-loc="us">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Fox Rothschild</div>
-        <div class="job-title">KM Research Analyst</div>
-        <div class="job-location">Seattle, WA; Las Vegas, NV; Los Angeles, CA</div>
-        <div class="job-tags"><span class="pill kw-pill">KM</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
-      </a>
-      <a class="job-card auto" href="https://nrf.wd3.myworkdayjobs.com/en-US/External/job/Newcastle-upon-Tyne-United-Kingdom/Analyst--Application-Support_R-4070-1" target="_blank" rel="noopener noreferrer">
+        <a class="job-card-link" href="https://recruiting.ultipro.com/fox1001frllp/JobBoard/88a19d60-0e84-49c7-b754-509a756678e7/OpportunityDetail?opportunityId=5ba762ed-285c-4ecc-b4c6-951605501d46" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Fox Rothschild</div>
+          <div class="job-title">KM Research Analyst</div>
+          <div class="job-location">Seattle, WA; Las Vegas, NV; Los Angeles, CA</div>
+          <div class="job-tags"><span class="pill kw-pill">KM</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
+      <div class="job-card auto" data-url="https://nrf.wd3.myworkdayjobs.com/en-US/External/job/Newcastle-upon-Tyne-United-Kingdom/Analyst--Application-Support_R-4070-1">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Norton Rose Fulbright</div>
-        <div class="job-title">Analyst: Application Support</div>
-        <div class="job-location">Newcastle upon Tyne, United Kingdom</div>
-        <div class="job-tags"><span class="pill kw-pill">Application Support</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
-      </a>
-      <a class="job-card auto" href="https://nrf.wd3.myworkdayjobs.com/en-US/External/job/Newcastle-upon-Tyne-United-Kingdom/Senior-Analyst--Application-Support_R-4077-1" target="_blank" rel="noopener noreferrer">
+        <a class="job-card-link" href="https://nrf.wd3.myworkdayjobs.com/en-US/External/job/Newcastle-upon-Tyne-United-Kingdom/Analyst--Application-Support_R-4070-1" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Norton Rose Fulbright</div>
+          <div class="job-title">Analyst: Application Support</div>
+          <div class="job-location">Newcastle upon Tyne, United Kingdom</div>
+          <div class="job-tags"><span class="pill kw-pill">Application Support</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
+      <div class="job-card auto" data-url="https://nrf.wd3.myworkdayjobs.com/en-US/External/job/Newcastle-upon-Tyne-United-Kingdom/Senior-Analyst--Application-Support_R-4077-1">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Norton Rose Fulbright</div>
-        <div class="job-title">Senior Analyst: Application Support</div>
-        <div class="job-location">Newcastle upon Tyne, United Kingdom</div>
-        <div class="job-tags"><span class="pill kw-pill">Application Support</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
-      </a>
-      <a class="job-card auto" href="https://nrf.wd3.myworkdayjobs.com/en-US/External/job/Newcastle-upon-Tyne-United-Kingdom/Legal-Technologist_R-4085-1" target="_blank" rel="noopener noreferrer">
+        <a class="job-card-link" href="https://nrf.wd3.myworkdayjobs.com/en-US/External/job/Newcastle-upon-Tyne-United-Kingdom/Senior-Analyst--Application-Support_R-4077-1" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Norton Rose Fulbright</div>
+          <div class="job-title">Senior Analyst: Application Support</div>
+          <div class="job-location">Newcastle upon Tyne, United Kingdom</div>
+          <div class="job-tags"><span class="pill kw-pill">Application Support</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
+      <div class="job-card auto" data-url="https://nrf.wd3.myworkdayjobs.com/en-US/External/job/Newcastle-upon-Tyne-United-Kingdom/Legal-Technologist_R-4085-1">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Norton Rose Fulbright</div>
-        <div class="job-title">Legal Technologist</div>
-        <div class="job-location">Newcastle upon Tyne, United Kingdom</div>
-        <div class="job-tags"><span class="pill kw-pill">Legal Tech</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
-      </a>
-      <a class="job-card auto" href="https://careers.mintz.com/viRecruitSelfApply/RecDefault.aspx?Tag=fdfa0684-8265-4911-aece-f31f96213ea9" data-loc="us" target="_blank" rel="noopener noreferrer">
+        <a class="job-card-link" href="https://nrf.wd3.myworkdayjobs.com/en-US/External/job/Newcastle-upon-Tyne-United-Kingdom/Legal-Technologist_R-4085-1" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Norton Rose Fulbright</div>
+          <div class="job-title">Legal Technologist</div>
+          <div class="job-location">Newcastle upon Tyne, United Kingdom</div>
+          <div class="job-tags"><span class="pill kw-pill">Legal Tech</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
+      <div class="job-card auto" data-url="https://careers.mintz.com/viRecruitSelfApply/RecDefault.aspx?Tag=fdfa0684-8265-4911-aece-f31f96213ea9" data-loc="us">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Mintz Levin</div>
-        <div class="job-title">Knowledge Management and Innovation Strategist - Boston</div>
-        <div class="job-location">Boston</div>
-        <div class="job-tags"><span class="pill kw-pill">Knowledge Management</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
-      </a>
+        <a class="job-card-link" href="https://careers.mintz.com/viRecruitSelfApply/RecDefault.aspx?Tag=fdfa0684-8265-4911-aece-f31f96213ea9" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Mintz Levin</div>
+          <div class="job-title">Knowledge Management and Innovation Strategist - Boston</div>
+          <div class="job-location">Boston</div>
+          <div class="job-tags"><span class="pill kw-pill">Knowledge Management</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
       </div>
     </section>
 
@@ -472,25 +670,39 @@
       <h2 class="section-title review"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>Potential Matches</h2>
       <p class="section-subtitle">Needs your judgment — the title matched a keyword but isn&#x27;t a clear auto-match.</p>
       <div class="job-grid">
-      <a class="job-card review" href="https://jacksonlewis.wd1.myworkdayjobs.com/en-US/JacksonLewisBusinessandLegalProfessionalsCareers/job/US---CO---Denver/Knowledge-Management-Team-Director_R423-2026" data-loc="us" target="_blank" rel="noopener noreferrer">
+      <div class="job-card review" data-url="https://jacksonlewis.wd1.myworkdayjobs.com/en-US/JacksonLewisBusinessandLegalProfessionalsCareers/job/US---CO---Denver/Knowledge-Management-Team-Director_R423-2026" data-loc="us">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Jackson Lewis</div>
-        <div class="job-title">Knowledge Management Team Director</div>
-        <div class="job-location">Location not specified</div>
-        <div class="job-tags"><span class="pill kw-pill">Knowledge Management</span><span class="pill wa-pill-unclear">remote status unclear — verify</span><span class="pill reason-pill">director title</span></div>
-      </a>
-      <a class="job-card review" href="https://haynesboone.wd503.myworkdayjobs.com/en-US/HaynesandBoone/job/Dallas/Director-of-Knowledge-Management_R1363" data-loc="us" target="_blank" rel="noopener noreferrer">
+        <a class="job-card-link" href="https://jacksonlewis.wd1.myworkdayjobs.com/en-US/JacksonLewisBusinessandLegalProfessionalsCareers/job/US---CO---Denver/Knowledge-Management-Team-Director_R423-2026" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Jackson Lewis</div>
+          <div class="job-title">Knowledge Management Team Director</div>
+          <div class="job-location">Location not specified</div>
+          <div class="job-tags"><span class="pill kw-pill">Knowledge Management</span><span class="pill wa-pill-unclear">remote status unclear — verify</span><span class="pill reason-pill">director title</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
+      <div class="job-card review" data-url="https://haynesboone.wd503.myworkdayjobs.com/en-US/HaynesandBoone/job/Dallas/Director-of-Knowledge-Management_R1363" data-loc="us">
+        <span class="applied-badge">APPLIED</span>
         
-        <div class="job-firm">Haynes and Boone</div>
-        <div class="job-title">Director of Knowledge Management</div>
-        <div class="job-location">Dallas</div>
-        <div class="job-tags"><span class="pill kw-pill">Knowledge Management</span><span class="pill wa-pill-unclear">remote status unclear — verify</span><span class="pill reason-pill">director title</span></div>
-      </a>
+        <a class="job-card-link" href="https://haynesboone.wd503.myworkdayjobs.com/en-US/HaynesandBoone/job/Dallas/Director-of-Knowledge-Management_R1363" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">Haynes and Boone</div>
+          <div class="job-title">Director of Knowledge Management</div>
+          <div class="job-location">Dallas</div>
+          <div class="job-tags"><span class="pill kw-pill">Knowledge Management</span><span class="pill wa-pill-unclear">remote status unclear — verify</span><span class="pill reason-pill">director title</span></div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>
       </div>
     </section>
 
     <details class="section manual-check-details">
-      <summary class="section-title manual"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg><span>Manual Firm Check</span><span class="section-count">(20)</span><span class="chevron">▸</span></summary>
+      <summary class="section-title manual"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg><span>Manual Firm Check</span><span class="section-count">(21)</span><span class="chevron">▸</span></summary>
       <p class="section-subtitle">Scraper can't reach this firm automatically — worth checking by hand.</p><div class="job-grid">
       <a class="manual-check-card" href="https://www.arnoldporter.com/en/careers/professional-staff/current-opportunities" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">Arnold &amp; Porter</div>
@@ -532,6 +744,11 @@
         <div class="manual-check-reason">Real &#x27;All Current Openings&#x27; link found, leading to klgates.recsolu.com -- RecSolu (Yello Enterprise), a platform not otherwise seen in this project. The board is JS-rendered with no job data in static HTML; several guessed REST API endpoints (/api/v1/job_boards/.../jobs) returned 401 Unauthorized -- a real API exists but requires credentials this project doesn&#x27;t have and shouldn&#x27;t try to bypass.</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
+      <a class="manual-check-card" href="https://staffjobsus.kirkland.com/jobs/search/" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Kirkland &amp; Ellis</div>
+        <div class="manual-check-reason">adapter ran but returned zero postings this run — may be transient or the site structure changed</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
       <a class="manual-check-card" href="https://www.lw.com" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">Latham &amp; Watkins</div>
         <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;lw&#x27; (careers-lw.icims.com), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick/Milbank -- not scrapable with a plain HTTP client. CONFIRMED still blocked with a genuine headless-Chromium Playwright session too.</div>
@@ -564,7 +781,7 @@
       </a>
       <a class="manual-check-card" href="https://ommcareers.viglobalcloud.com/viRecruitSelfApply/RecDefault.aspx?Tag=84c08942-ea6c-4707-a535-258e400c6b3d" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">O&#x27;Melveny &amp; Myers</div>
-        <div class="manual-check-reason">adapter fetch failed this run (ConnectTimeout: HTTPConnectionPool(host=&#x27;www.videsktop.com&#x27;, port=80): Max retries exceeded with url: / (Caused by ConnectTimeoutError(&lt;HTTPConnection(host=&#x27;www.videsktop.com&#x27;, port=80) at 0x7f75c62dc800&gt;, &#x27;Connection to www.videsktop.com timed out. (connect timeout=30)&#x27;))) — may be transient, worth checking by hand if it keeps happening</div>
+        <div class="manual-check-reason">adapter fetch failed this run (ConnectTimeout: HTTPConnectionPool(host=&#x27;www.videsktop.com&#x27;, port=80): Max retries exceeded with url: / (Caused by ConnectTimeoutError(&lt;HTTPConnection(host=&#x27;www.videsktop.com&#x27;, port=80) at 0x7f243bee03e0&gt;, &#x27;Connection to www.videsktop.com timed out. (connect timeout=30)&#x27;))) — may be transient, worth checking by hand if it keeps happening</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
       <a class="manual-check-card" href="https://talent.orrick.com/staff-us/jobs" target="_blank" rel="noopener noreferrer">
@@ -606,6 +823,69 @@
           document.body.setAttribute("data-loc-filter", btn.getAttribute("data-loc-filter"));
         });
       });
+    })();
+
+    (function () {
+      // Per-posting Applied/Not Interested status, kept in localStorage
+      // (single-device only -- doesn't sync across browsers/computers,
+      // that's an accepted limitation) keyed by the posting's real URL,
+      // which is stable across dashboard regenerations even though the
+      // rest of the HTML is rebuilt from scratch every run.
+      var STORAGE_KEY = "lfcr_posting_status";
+
+      function loadStatuses() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        } catch (e) {
+          return {};
+        }
+      }
+
+      function saveStatuses(statuses) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(statuses));
+      }
+
+      function renderAll() {
+        var statuses = loadStatuses();
+        document.querySelectorAll(".job-card[data-url]").forEach(function (card) {
+          var status = statuses[card.getAttribute("data-url")];
+          if (status === "applied") {
+            card.setAttribute("data-status", "applied");
+          } else if (status === "not_interested") {
+            card.setAttribute("data-status", "not-interested");
+          } else {
+            card.removeAttribute("data-status");
+          }
+        });
+      }
+
+      document.addEventListener("click", function (e) {
+        var btn = e.target.closest(".status-btn");
+        if (!btn) return;
+        e.preventDefault();
+        var card = btn.closest(".job-card");
+        var url = card.getAttribute("data-url");
+        var action = btn.getAttribute("data-status-action");
+        // Every copy of this posting (it can appear in both "New Since
+        // Last Run" and its home section) shares the same URL, so setting
+        // status once here and re-rendering all cards keeps them in sync.
+        var statuses = loadStatuses();
+        statuses[url] = statuses[url] === action ? undefined : action;
+        if (statuses[url] === undefined) delete statuses[url];
+        saveStatuses(statuses);
+        renderAll();
+      });
+
+      var dismissToggle = document.getElementById("show-dismissed-toggle");
+      if (dismissToggle) {
+        dismissToggle.addEventListener("click", function () {
+          var shown = document.body.getAttribute("data-show-dismissed") === "true";
+          document.body.setAttribute("data-show-dismissed", shown ? "false" : "true");
+          dismissToggle.textContent = shown ? "Show dismissed" : "Hide dismissed";
+        });
+      }
+
+      renderAll();
     })();
   </script>
 </body>
