@@ -6,14 +6,50 @@ import re
 import sys
 from pathlib import Path
 
+import requests
+from bs4 import BeautifulSoup
+
+from .adapters.base import DEFAULT_HEADERS
 from .config import FIRMS, MANUAL_CHECK_FIRMS
 from .filters import Classification, classify
+from .jd_requirement import check_jd_requirement
 from .models import Posting
 from .report import ManualCheckEntry, ReportEntry, write_report
 from .store import SeenStore
 from .work_arrangement import WorkArrangement, detect_work_arrangement
 
 DEBUG_TITLES_PATH = Path(__file__).resolve().parent.parent / "debug_all_titles.txt"
+DESCRIPTION_FETCH_TIMEOUT = 20
+
+
+def _fetch_description(url: str, session: requests.Session, cache: dict[str, str]) -> str:
+    """Best-effort full-page text fetch for the JD-requirement check.
+
+    Only called for postings that already passed the title-level and
+    work-arrangement filters -- a small enough set that one extra request
+    per posting is affordable, unlike fetching a description for every
+    posting scraped. Cached per-run by URL since some adapters (Venable,
+    postback-only viGlobal tenants) point every posting at the same
+    fallback URL, which would otherwise mean fetching the identical page
+    repeatedly.
+
+    Returns "" on any failure (timeout, non-200, JS-rendered page with no
+    server-side text) -- the JD check fails open on empty text, same as
+    every other best-effort filter in this project.
+    """
+    if not url or url == "#":
+        return ""
+    if url in cache:
+        return cache[url]
+    try:
+        resp = session.get(url, timeout=DESCRIPTION_FETCH_TIMEOUT)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "lxml")
+        text = soup.get_text(separator=" ", strip=True)
+    except Exception:  # noqa: BLE001 - best-effort; a failed fetch just means the check can't fire
+        text = ""
+    cache[url] = text
+    return text
 
 
 def _review_reason_text(mgmt_hits: list[str]) -> str:
@@ -136,6 +172,10 @@ def run(reset_seen: bool = False) -> int:
     report_review: list[ReportEntry] = []
     dynamic_manual_check: list[ManualCheckEntry] = []
 
+    jd_check_session = requests.Session()
+    jd_check_session.headers.update(DEFAULT_HEADERS)
+    description_cache: dict[str, str] = {}
+
     for firm_name, firm_cfg in FIRMS.items():
         postings, error = scrape_firm(firm_name, firm_cfg)
         print(f"\n## {firm_name} ({firm_cfg['adapter'].ats_name})")
@@ -186,6 +226,21 @@ def run(reset_seen: bool = False) -> int:
                 debug_file.write(
                     f"    -> excluded from {cls.tier}: work arrangement is {wa.status} "
                     f"({'; '.join(wa.signals)})\n"
+                )
+                continue
+
+            # Only fetch a description for postings that already survived the
+            # title-level and work-arrangement filters -- a much smaller set
+            # than everything scraped, so one extra request per posting here
+            # is affordable in a way it wouldn't be earlier in the pipeline.
+            description = posting.description or _fetch_description(
+                posting.url, jd_check_session, description_cache
+            )
+            jd = check_jd_requirement(description)
+            if jd.excluded:
+                debug_file.write(
+                    f'    -> excluded from {cls.tier}: JD/bar admission required '
+                    f'("{jd.matched_phrase}")\n'
                 )
                 continue
 

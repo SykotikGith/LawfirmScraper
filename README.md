@@ -28,8 +28,10 @@ finally writes:
   Location | URL | title_tier=... | work_arrangement=...`, plus a
   `signals:` note when the work-arrangement detector found any), matched
   or not, for tuning the title and work-arrangement filters against real
-  data. Postings hard-excluded for being onsite/hybrid get an extra
-  `-> excluded from ...` line explaining why.
+  data. Postings hard-excluded for being onsite/hybrid, or for explicit
+  JD/bar-admission-required language (see the JD-requirement filter
+  below), get an extra `-> excluded from ...` line explaining why —
+  including the exact matched phrase for a JD/bar-admission exclusion.
 - `report.html` / `index.html` — an identical static HTML report (see
   below), regenerated every run.
 
@@ -97,15 +99,47 @@ console output or the HTML report. Remote postings flow through tagged
 verify" so they get a second look rather than being silently trusted.
 
 Full job description text (a stronger signal than location alone) is only
-available for adapters that already fetch it as part of the data they'd
-pull anyway, at no extra request cost: Greenhouse (`content=true` on the
-existing API call), Oracle Recruiting Cloud (`WorkplaceType`/
-`WorkplaceTypeCode` plus description fields), and viGlobal (trailing text
-already present in the row it scrapes). Every other adapter — Workday,
-Circa Works, ApplicantStack, and custom-HTML firms — detects from location
-text alone, since fetching a full description would mean an extra HTTP
-request per posting; those firms lean on "onsite"/"unclear" more often as
-a result.
+available *at scrape time* for adapters that already fetch it as part of
+the data they'd pull anyway, at no extra request cost: Greenhouse
+(`content=true` on the existing API call), Oracle Recruiting Cloud
+(`WorkplaceType`/`WorkplaceTypeCode` plus description fields), and
+viGlobal (trailing text already present in the row it scrapes). Every
+other adapter — Workday, Circa Works, ApplicantStack, and custom-HTML
+firms — detects work arrangement from location text alone at this stage,
+since fetching a full description for every scraped posting (hundreds
+across 69 firms) would mean an extra HTTP request per posting; those
+firms lean on "onsite"/"unclear" more often here as a result. (See the
+JD-requirement filter below for where a description *does* get fetched
+on demand, once the set of candidate postings is much smaller.)
+
+### JD-requirement filter
+
+`scraper/jd_requirement.py` runs after the title and work-arrangement
+filters, on the much smaller set of postings that already survived both
+(typically a couple dozen per run, not the hundreds scraped) — small
+enough that fetching each one's full description page on demand (one
+extra HTTP request per posting, cached per-run by URL since some
+adapters point every posting at the same fallback URL) is affordable in
+a way it isn't earlier in the pipeline. If the adapter already has a
+description on hand (Greenhouse/Oracle/viGlobal, see above), that's
+reused instead of a redundant fetch.
+
+Looks for EXPLICIT "required" framing around a law degree or bar
+admission — "J.D. required," "must have a J.D.," "active bar admission
+required," "licensed attorney required," etc. — and hard-excludes the
+posting if found, the same way title-level hard excludes work. Every
+pattern requires "required" (or must have/hold/possess) wording
+specifically, so "preferred"/"a plus"/"nice to have" framing around a JD
+never matches to begin with — no separate suppression logic needed.
+Negation-aware ("no J.D. required," "law degree not required" don't
+trigger it). Fails open on missing/unfetchable description text (network
+failure, JS-rendered detail page with no server-side text) — the
+posting stays visible rather than being wrongly excluded, the same
+"don't default to the exclusionary bucket without positive evidence"
+principle used throughout this project's filters. Every exclusion is
+logged to `debug_all_titles.txt` with the exact matched phrase, so this
+can be tuned the same way the title-level Lawyer/Attorney/Counsel
+exclusions were.
 
 ## Firm coverage
 
