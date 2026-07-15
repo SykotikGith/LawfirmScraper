@@ -195,11 +195,14 @@ def run(reset_seen: bool = False) -> int:
             print(f"   {entry.url}")
             print(f"   {entry.reason}")
 
+    firms_partial = sum(1 for cfg in FIRMS.values() if cfg.get("partial_coverage"))
     write_report(
         report_auto,
         report_review,
         firms_scanned=len(FIRMS),
         manual_check=static_manual_check + dynamic_manual_check,
+        firms_partial=firms_partial,
+        firms_manual=len(MANUAL_CHECK_FIRMS),
     )
 
     print("\n" + "=" * 72)

@@ -113,7 +113,12 @@ a result.
 
 - `FIRMS` — the active, automated firm list (adapter class + tenant/URL
   config per firm). This is what `main.py` actually scrapes. Currently 69
-  firms.
+  firms, 2 of which carry a `partial_coverage` note (Akin Gump, Kirkland &
+  Ellis — both confirmed page-1-only due to pagination the adapter can't
+  get past) — surfaced on the dashboard as a distinct "Partial" count in
+  the "Firm coverage" metric card, alongside "Automated" (the rest of
+  `FIRMS`) and "Manual" (`len(MANUAL_CHECK_FIRMS)`), summing to a
+  "tracked" total.
 - `MANUAL_CHECK_FIRMS` — confirmed real target firms that can't be
   reliably automated (blocked by bot protection, no ATS trace in static
   HTML anywhere discoverable via sitemap search, a real ATS exists but

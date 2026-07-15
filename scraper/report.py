@@ -201,12 +201,27 @@ def _metric_card_new_total(new_count: int, total_count: int) -> str:
       </div>"""
 
 
+def _metric_card_coverage(automated_full: int, partial: int, manual: int) -> str:
+    tracked = automated_full + partial + manual
+    return f"""
+      <div class="metric-card">
+        <div class="metric-value-stack">
+          <div class="metric-stack-line"><span class="metric-stack-tag">Automated:</span> <span class="accent-green">{automated_full}</span></div>
+          <div class="metric-stack-line"><span class="metric-stack-tag">Partial:</span> <span class="accent-amber">{partial}</span></div>
+          <div class="metric-stack-line"><span class="metric-stack-tag">Manual:</span> <span class="accent-amber">{manual}</span></div>
+        </div>
+        <div class="metric-label">Firm coverage ({tracked} tracked)</div>
+      </div>"""
+
+
 def render_report(
     auto_matches: list[ReportEntry],
     review_matches: list[ReportEntry],
     firms_scanned: int,
     manual_check: list[ManualCheckEntry] | None = None,
     generated_at: datetime | None = None,
+    firms_partial: int = 0,
+    firms_manual: int = 0,
 ) -> str:
     generated_at = generated_at or datetime.now(timezone.utc)
     manual_check = manual_check or []
@@ -214,10 +229,11 @@ def render_report(
     total_count = len(auto_matches) + len(review_matches)
     review_count = len(review_matches)
     timestamp_str = generated_at.strftime("%b %d, %Y %I:%M %p UTC")
+    firms_automated_full = firms_scanned - firms_partial
 
     metrics = "".join([
         _metric_card_new_total(new_count, total_count),
-        _metric_card(str(firms_scanned), "Firms scanned"),
+        _metric_card_coverage(firms_automated_full, firms_partial, firms_manual),
         _metric_card(str(review_count), "Needs review", "accent-teal"),
         _metric_card(timestamp_str, "Last run", "metric-value-small"),
     ])
@@ -310,6 +326,7 @@ def render_report(
     line-height: 1.3;
   }}
   .metric-stack-line .accent-green {{ color: var(--green); }}
+  .metric-stack-line .accent-amber {{ color: var(--amber); }}
   .metric-stack-tag {{
     font-size: 0.75rem;
     font-weight: 600;
@@ -524,7 +541,16 @@ def write_report(
     review_matches: list[ReportEntry],
     firms_scanned: int,
     manual_check: list[ManualCheckEntry] | None = None,
+    firms_partial: int = 0,
+    firms_manual: int = 0,
 ) -> None:
-    html_out = render_report(auto_matches, review_matches, firms_scanned, manual_check)
+    html_out = render_report(
+        auto_matches,
+        review_matches,
+        firms_scanned,
+        manual_check,
+        firms_partial=firms_partial,
+        firms_manual=firms_manual,
+    )
     REPORT_PATH.write_text(html_out, encoding="utf-8")
     INDEX_PATH.write_text(html_out, encoding="utf-8")

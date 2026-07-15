@@ -231,6 +231,7 @@ FIRMS: dict[str, dict] = {
         "link_selector": "a.sr-panel",
         "title_selector": ".sr-panel__title",
         "location_selector": ".sr-panel__location .sr-panel__meta",
+        "partial_coverage": "Page 1 of 2 only -- CustomHTMLAdapter has no pagination support.",
         "notes": "CONFIRMED via live browser network capture -- real postings include "
         "'Litigation Practice Coordinator' (Washington, DC), 'Public Law & Policy Practice "
         "Manager', 'Billing Assistant', 'Regional IT Support Manager', 'Corporate Practice "
@@ -964,6 +965,8 @@ FIRMS: dict[str, dict] = {
         # limitation.
         "adapter": KirklandAdapter,
         "list_url": "https://staffjobsus.kirkland.com/jobs/search/",
+        "partial_coverage": "Page 1 of ~155 only -- every page-2+ URL hits a hard "
+        "Cloudflare challenge even with a passed-challenge browser session.",
         "notes": "CONFIRMED via live browser -- real postings include 'Senior Revenue "
         "Management Analyst', 'Associate Director of Product Management, Practice "
         "Innovation Delivery', 'Strategic Procurement Counsel', 'AI Infrastructure "
