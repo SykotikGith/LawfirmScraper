@@ -242,6 +242,15 @@ def run(reset_seen: bool = False) -> int:
                     f'    -> excluded from {cls.tier}: JD/bar admission required '
                     f'("{jd.matched_phrase}")\n'
                 )
+                # Also printed to console (not just the debug_all_titles.txt
+                # artifact) since the artifact requires downloading a zip from
+                # the Actions run to inspect -- this way the exclusion is
+                # visible directly in the job's own output/summary too, for
+                # tuning without an extra download step.
+                print(
+                    f'   ⚠ excluding "{posting.title}" ({firm_name}) — JD/bar admission '
+                    f'required: "{jd.matched_phrase}"'
+                )
                 continue
 
             work_arrangement_tag = None
