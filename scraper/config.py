@@ -26,6 +26,7 @@ from .adapters import (
     OracleRecruitingAdapter,
     RadancyAdapter,
     UltiProAdapter,
+    VenableAdapter,
     ViGlobalAdapter,
     WorkdayAdapter,
 )
@@ -864,6 +865,28 @@ FIRMS: dict[str, dict] = {
         "browser session rather than independently derived. No location field in the "
         "response; narrative (real description HTML) folded into description instead.",
     },
+    # --- Playwright (runtime browser) group ---------------------------------------------------
+    "Venable": {
+        # First genuine runtime PlaywrightAdapter use in this project -- every other firm
+        # found via the Playwright investigation turned out to have a plain HTTP-reachable
+        # API or static HTML underneath once discovered. Venable's ADP myjobs site renders
+        # job cards as Angular web components (<sdf-button>) with no plain <a href> at all,
+        # and the real underlying REST API 400s on every replay attempt tried (fresh
+        # context, established session) -- reading the rendered DOM directly is the only
+        # path found after 4 diagnostic rounds.
+        "adapter": VenableAdapter,
+        "list_url": "https://myjobs.adp.com/venablebusinessprofessionalcareers/cx",
+        "notes": "CONFIRMED via live browser network capture -- real postings include "
+        "'Conflicts Attorney' (Los Angeles). Title comes from an sdf-button's aria-label "
+        "attribute, location from a .reqLocation span, both nested in div.job-details. No "
+        "real per-job URL exists in the DOM (JS-only interactive buttons) -- posting_id is "
+        "a title+location hash and url falls back to list_url, same pattern as viGlobal's "
+        "postback-only tenants. UNCONFIRMED: the API reported 26 total postings during "
+        "discovery but only a handful render without interaction -- this scrolls the page "
+        "a few times first on the assumption jobs lazy-load, but that specific behavior "
+        "wasn't independently verified. Check debug_all_titles.txt after a real run to "
+        "confirm the full count comes through.",
+    },
 }
 
 
@@ -1015,17 +1038,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "(/api/v1/job_boards/.../jobs) returned 401 Unauthorized -- a real API exists but "
         "requires credentials this project doesn't have and shouldn't try to bypass.",
         "check_url": "https://klgates.recsolu.com/job_boards/1",
-    },
-    "Venable": {
-        "reason": "Confirmed ADP myjobs client-side Angular app (myjobs.adp.com/"
-        "venablebusinessprofessionalcareers/cx) -- static HTML is just an empty app "
-        "shell. The main JS bundle references /cx/rm/v1/core/identity and /cx/staffing/"
-        "v2/job-applicant(s) paths, but those are account/application-management "
-        "endpoints, not a job-listing search API; several sibling-path guesses "
-        "(/cx/rm/v1/jobs, /cx/rm/v2/jobs, etc.) all just returned the same SPA shell "
-        "(client-side routing, no server-side 404). The real job-search endpoint wasn't "
-        "discoverable via static probing -- would need real browser network inspection.",
-        "check_url": "https://myjobs.adp.com/venablebusinessprofessionalcareers/cx",
     },
     "Paul Weiss": {
         "reason": "Confirmed Taleo Enterprise career section (paulweiss.taleo.net/"

@@ -16,6 +16,7 @@ from .aem_career_search import AEMCareerSearchAdapter
 from .playwright_base import PlaywrightAdapter
 from .florecruit import FloRecruitAdapter
 from .dentons import DentonsCareerAdapter
+from .venable import VenableAdapter
 
 __all__ = [
     "Adapter",
@@ -36,4 +37,5 @@ __all__ = [
     "PlaywrightAdapter",
     "FloRecruitAdapter",
     "DentonsCareerAdapter",
+    "VenableAdapter",
 ]
