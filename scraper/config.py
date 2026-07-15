@@ -216,6 +216,25 @@ FIRMS: dict[str, dict] = {
         "duplicate-link bug -- same pattern as Fisher Phillips. No location_selector set "
         "yet (not confirmed from static probing); worth revisiting.",
     },
+    "Akin Gump": {
+        # SilkRoad again (same platform as WilmerHale) but a different URL shape
+        # (jobs.silkroad.com/<company>/<company> vs <company>-openhire.silkroad.com/
+        # epostings/...), and the WilmerHale fuseaction trick didn't apply. Found via
+        # Playwright: the job data is genuinely server-rendered in the raw pre-JS HTML with
+        # clean, stable class names -- no Playwright needed at runtime after all.
+        "adapter": CustomHTMLAdapter,
+        "list_url": "https://jobs.silkroad.com/AkinGump/AkinGump",
+        "link_selector": "a.sr-panel",
+        "title_selector": ".sr-panel__title",
+        "location_selector": ".sr-panel__location .sr-panel__meta",
+        "notes": "CONFIRMED via live browser network capture -- real postings include "
+        "'Litigation Practice Coordinator' (Washington, DC), 'Public Law & Policy Practice "
+        "Manager', 'Billing Assistant', 'Regional IT Support Manager', 'Corporate Practice "
+        "Manager'. Real per-job URLs confirmed (/AkinGump/AkinGump/jobs/<id>). KNOWN GAP: "
+        "results are paginated ('Page 1 of 2' seen live) and CustomHTMLAdapter has no "
+        "pagination support -- this only captures page 1 for now. Worth revisiting if a "
+        "simple page= query param turns out to work.",
+    },
     "Reed Smith": {
         # CORRECTION (July 2026, live diagnostics): the original "Oracle PeopleSoft at
         # recruit.reedsmith.com" note was wrong -- that host doesn't even resolve (DNS
@@ -509,6 +528,27 @@ FIRMS: dict[str, dict] = {
         "Talent Systems', 'Senior Manager of Innovation, Systems and Data', 'Billing "
         "Supervisor'). Standard old-style Workday subdomain, no adapter changes needed.",
     },
+    "Kramer Levin (now Herbert Smith Freehills Kramer)": {
+        # Discovered via Playwright network capture, not static probing -- the visible
+        # careers.hsfkramer.com site is Phenom People, but its own embedded search results
+        # (phApp.eagerLoadRefineSearch, present directly in the raw pre-JS HTML) revealed
+        # each job's real applyUrl pointing at a Workday tenant. Phenom is just a front-end
+        # wrapper here; Workday is the actual underlying ATS, and it's directly reachable
+        # with zero adapter changes -- no need to fight Phenom's undocumented REST API at
+        # all.
+        "adapter": WorkdayAdapter,
+        "tenant": "herbertsmithfreehills",
+        "wd": "wd3",
+        "site": "External",
+        "notes": "CONFIRMED via live browser network capture -- real postings visible in "
+        "Phenom's own embedded search results included 'Help Desk Technician' (New York, "
+        "genuine IT/business-professional role) with "
+        "applyUrl=https://herbertsmithfreehills.wd3.myworkdayjobs.com/External/job/"
+        "New-York/Help-Desk-Technician_R-102884/apply -- confirmed Workday tenant "
+        "'herbertsmithfreehills', pod wd3, site 'External'. 12 total postings reported by "
+        "Phenom's own search (totalHits:12) at time of discovery. Standard old-style "
+        "Workday subdomain, no adapter changes needed despite how it was found.",
+    },
     "Hogan Lovells": {
         "adapter": WorkdayAdapter,
         "tenant": "hoganlovells",
@@ -686,7 +726,7 @@ FIRMS: dict[str, dict] = {
         # usual "contentPlaceHolder_gridviewList").
         "adapter": ViGlobalAdapter,
         "list_url": "https://portal.velaw.com/viDesktopEx/viRecruitSelfApply/ReDefault.aspx"
-        "?Tag=bf5353fd-6c9b-41e3-a72f-7abd61690415",
+        "?FilterREID=7",
         "table_id": "contentPlaceHolder_dataGridMain",
         "notes": "CONFIRMED via live probe -- real postings include 'Billing Coordinator', "
         "'Event and Travel Logistics Specialist', 'Head of Risk & Compliance, "
@@ -695,7 +735,13 @@ FIRMS: dict[str, dict] = {
         "control is a real <a href> link (ReJobView.aspx?...&JobID=N), not a "
         "javascript:__doPostBack(...) postback -- ViGlobalAdapter now picks up real "
         "per-job URLs and posting IDs when that's available (see viglobal.py), so this "
-        "firm gets accurate deep links unlike O'Melveny/Bryan Cave.",
+        "firm gets accurate deep links unlike O'Melveny/Bryan Cave. FIXED (via Playwright "
+        "investigation) the intermittent zero-postings bug seen on scheduled runs: the "
+        "original list_url used a ?Tag=<GUID> parameter that turned out to be a "
+        "session-scoped/expiring link -- loading it in a fresh browser redirected straight "
+        "to the plain velaw.com homepage instead of the job board. The real careers page's "
+        "'Explore Current Opportunities' link uses a stable ?FilterREID=7 parameter instead, "
+        "which doesn't expire -- switched to that.",
     },
     "Bracewell": {
         "adapter": ViGlobalAdapter,
@@ -970,20 +1016,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "requires credentials this project doesn't have and shouldn't try to bypass.",
         "check_url": "https://klgates.recsolu.com/job_boards/1",
     },
-    "Akin Gump": {
-        "reason": "Confirmed real SilkRoad OpenHire search page (jobs.silkroad.com/AkinGump/"
-        "AkinGump) -- same platform already working for WilmerHale, but a different URL "
-        "shape (jobs.silkroad.com/<company>/<company> instead of <company>-openhire."
-        "silkroad.com/epostings/...). Unlike WilmerHale, the fuseaction=app.jobsearch trick "
-        "that returns real results directly doesn't apply here -- tried multiple fuseaction "
-        "guesses and a real POST submission of the actual search form (with its genuine "
-        "hidden fields: SearchString/SelectedLocations/SelectedCategory/"
-        "SelectedPositionType) over 3 diagnostic rounds, always getting the same empty "
-        "search-form shell back rather than results. This tenant's results likely load via "
-        "a separate AJAX call after submission (session/token-based) -- would need real "
-        "browser network inspection to find it.",
-        "check_url": "https://jobs.silkroad.com/AkinGump/AkinGump",
-    },
     "Venable": {
         "reason": "Confirmed ADP myjobs client-side Angular app (myjobs.adp.com/"
         "venablebusinessprofessionalcareers/cx) -- static HTML is just an empty app "
@@ -1031,18 +1063,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "obstacle. Underlying ATS platform not identified (blocked before any platform "
         "signal was visible).",
         "check_url": "https://staffjobsus.kirkland.com/jobs/search/",
-    },
-    "Kramer Levin (now Herbert Smith Freehills Kramer)": {
-        "reason": "Confirmed real Phenom People career site (careers.hsfkramer.com) -- "
-        "found the actual REST endpoint shape used by the platform "
-        "(/api/apply/v2/jobs?domain=<tenant>&start=N&num=N, same convention Ogletree "
-        "Deakins' Jibe platform coincidentally uses) via the page's embedded phApp.ddo JS "
-        "config, but every domain value tried (careers.hsfkramer.com, hsfkramer.com, "
-        "hsfkramer, the full URL path) returned {\"errorMsg\": \"Tenant not identified\"} -- "
-        "the real tenant identifier Phenom expects isn't present anywhere in the static "
-        "page config found so far (4 diagnostic rounds). Would need real browser network "
-        "inspection to capture the actual outgoing request.",
-        "check_url": "https://careers.hsfkramer.com/global/en/us/search-results",
     },
     "Blank Rome": {
         # Explicit decision, not a technical dead end -- user confirmed live that the
