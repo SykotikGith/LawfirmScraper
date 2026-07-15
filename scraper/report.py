@@ -11,12 +11,49 @@ external data -- everything gets html.escape()'d before interpolation.
 from __future__ import annotations
 
 import html
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
 REPORT_PATH = Path(__file__).resolve().parent.parent / "report.html"
 INDEX_PATH = Path(__file__).resolve().parent.parent / "index.html"
+
+_US_STATE_CODES = frozenset(
+    """AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS
+    MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV
+    WI WY DC PR GU VI""".split()
+)
+_STATE_CODE_RE = re.compile(r"\b([A-Z]{2})\b")
+
+
+def _is_us_location(location: str) -> bool:
+    """Best-effort US-location detector, from location text alone.
+
+    Deliberately a positive-match heuristic (US state code, or "United
+    States"/"USA") rather than trying to enumerate every non-US place --
+    international postings (e.g. Norton Rose Fulbright's Newcastle, UK
+    listings, mixed into the same Workday tenant as its US postings) simply
+    won't match any US signal and fall through to "not US", which is the
+    correct/safe direction for a filter meant to hide them.
+    """
+    if not location:
+        return False
+    # Strip periods first so "Washington, D.C." matches the same as "DC".
+    cleaned = location.replace(".", "")
+    lowered = cleaned.lower()
+    if "united states" in lowered or re.search(r"\busa\b", lowered):
+        return True
+    return any(m in _US_STATE_CODES for m in _STATE_CODE_RE.findall(cleaned))
+
+
+def _location_tags(location: str, work_arrangement: str | None) -> str:
+    tags = []
+    if _is_us_location(location):
+        tags.append("us")
+    if work_arrangement == "Remote":
+        tags.append("remote")
+    return " ".join(tags)
 
 _CHECK_ICON = (
     '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" '
@@ -82,9 +119,11 @@ def _card(entry: ReportEntry, section: str, show_new_badge: bool = True) -> str:
     )
     location = html.escape(entry.location) if entry.location.strip() else "Location not specified"
     safe_url = html.escape(entry.url, quote=True)
+    loc_tags = _location_tags(entry.location, entry.work_arrangement)
+    loc_attr = f' data-loc="{loc_tags}"' if loc_tags else ""
 
     return f"""
-      <a class="job-card {section}" href="{safe_url}" target="_blank" rel="noopener noreferrer">
+      <a class="job-card {section}" href="{safe_url}"{loc_attr} target="_blank" rel="noopener noreferrer">
         {new_badge}
         <div class="job-firm">{html.escape(entry.firm)}</div>
         <div class="job-title">{html.escape(entry.title)}</div>
@@ -297,8 +336,34 @@ def render_report(
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 12px;
+    margin-bottom: 24px;
+  }}
+  .loc-filter {{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     margin-bottom: 40px;
   }}
+  .loc-filter-btn {{
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 7px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--green-border);
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+  }}
+  .loc-filter-btn:hover {{ border-color: var(--green); color: var(--text-primary); }}
+  .loc-filter-btn.active {{
+    background: var(--green-badge-bg);
+    border-color: var(--green);
+    color: var(--green-badge-text);
+  }}
+  body[data-loc-filter="us"] .job-card:not([data-loc~="us"]) {{ display: none; }}
+  body[data-loc-filter="remote"] .job-card:not([data-loc~="remote"]) {{ display: none; }}
   .metric-card {{
     background: var(--card-bg);
     border: 1px solid var(--green-border);
@@ -525,12 +590,30 @@ def render_report(
 
     <div class="metrics-grid">{metrics}
     </div>
+
+    <div class="loc-filter" role="group" aria-label="Filter by location">
+      <button type="button" class="loc-filter-btn active" data-loc-filter="all">All Locations</button>
+      <button type="button" class="loc-filter-btn" data-loc-filter="us">US Only</button>
+      <button type="button" class="loc-filter-btn" data-loc-filter="remote">Remote</button>
+    </div>
 {new_since_section}
 {auto_section}
 {review_section}
 {manual_check_section}
     <footer>Generated automatically by the law firm ATS scraper.</footer>
   </div>
+  <script>
+    (function () {{
+      var buttons = document.querySelectorAll(".loc-filter-btn");
+      buttons.forEach(function (btn) {{
+        btn.addEventListener("click", function () {{
+          buttons.forEach(function (b) {{ b.classList.remove("active"); }});
+          btn.classList.add("active");
+          document.body.setAttribute("data-loc-filter", btn.getAttribute("data-loc-filter"));
+        }});
+      }});
+    }})();
+  </script>
 </body>
 </html>
 """

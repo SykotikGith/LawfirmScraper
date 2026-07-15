@@ -176,8 +176,17 @@ extending coverage to new firms:
 ## HTML report
 
 `scraper/report.py` renders `report.html` (and an identical `index.html`)
-on every run: a metrics row (new matches, firms scanned, needs review,
-last run time), a "New Since Last Run" section at the top (a filtered
+on every run: a metrics row (new matches, firm coverage, needs review,
+last run time), an "All Locations / US Only / Remote" filter toolbar
+(client-side, no server round-trip — a small vanilla-JS click handler
+toggles a `data-loc-filter` attribute on `<body>`, and CSS `:not([data-loc~=...])`
+rules hide non-matching cards; each card's US/Remote tags are computed at
+render time in `_location_tags()`/`_is_us_location()` from its location text
+and work-arrangement status — a positive-match heuristic, US state code or
+"United States"/"USA", so genuinely international postings like Norton Rose
+Fulbright's Newcastle, UK listings simply don't match and fall out of "US
+Only" rather than needing an exhaustive non-US location list), a "New
+Since Last Run" section at the top (a filtered
 view — every posting flagged new, pulled from both the auto-match and
 review pools, so "what changed" doesn't require scanning the full list;
 these same postings still appear in their normal section below too, NEW
