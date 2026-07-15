@@ -28,6 +28,7 @@ from .adapters import (
     UltiProAdapter,
     VenableAdapter,
     PaulWeissAdapter,
+    McDermottAdapter,
     ViGlobalAdapter,
     WorkdayAdapter,
 )
@@ -934,6 +935,23 @@ FIRMS: dict[str, dict] = {
         "including 'Business Development Coordinator', 'Collections Specialist', "
         "'eDiscovery & Data Solutions Technical Analyst'.",
     },
+    "McDermott Will & Emery": {
+        # Category 2 (WAF/bot-protection experimental pass) breakthrough -- the
+        # mcdermottlaw.com site itself sits behind an Imperva challenge, but its job data
+        # comes from a separate, ungated Algolia index called directly from the browser.
+        # Plain requests.post() replicates it standalone -- no Playwright needed at all.
+        "adapter": McDermottAdapter,
+        "notes": "CONFIRMED via live browser network capture -- 85 English-locale postings "
+        "(47 tagged 'Business Professionals' after server-side category filtering), "
+        "including 'Senior Design Manager, Events', 'Pricing Data Engineer', 'Senior "
+        "Information Security Engineer', 'Accounting & Finance Systems Manager'. Each hit "
+        "has a real numeric post_id, clean post_title, relative permalink, and a "
+        "free-text job_location field -- but no reliable description: the hit's `content` "
+        "field is stale/mismatched (one hit titled 'Senior Design Manager, Events' had "
+        "`content` describing an unrelated 2020 document-review attorney posting, "
+        "apparently orphaned CMS content), and post_excerpt is identical generic "
+        "marketing boilerplate on every hit -- description left empty.",
+    },
 }
 
 
@@ -1029,13 +1047,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "tenant": "jobs-willkie",
         "search_url": "https://jobs-willkie.icims.com/jobs/search?hashed=-625885970",
         "check_url": "https://www.willkie.com/careers",
-    },
-    "McDermott Will & Emery": {
-        "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
-        "apparently dormant/internal. mwe.com/careers redirects to mcdermottlaw.com/careers, "
-        "which is blocked by an Imperva Incapsula bot-protection challenge -- not scrapable "
-        "with a plain HTTP client, same category as iCIMS's AWS WAF block.",
-        "check_url": "https://www.mcdermottlaw.com/careers",
     },
     "Covington & Burling": {
         "reason": "Real tenant confirmed on Workday wd1 (path-specific-error signal) but the "

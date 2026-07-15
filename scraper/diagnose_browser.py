@@ -1,26 +1,20 @@
-"""Category 2, round 7 -- final verification before building both adapters.
+"""Category 2, round 8 -- Kirkland & Ellis pagination + real row markup.
 
-- Kirkland & Ellis: round 6 found real per-job links
-  (staffjobsus.kirkland.com/jobs/<id>-<slug>) and confirmed
-  /search/jobs/in/<city> URLs render real rows. Round 1 hit
-  /jobs/search/ (WITH a trailing slash, unlike the no-trailing-slash
-  version that hit the hard Cloudflare challenge in round 4) and got a
-  clean 200 with facet content -- this checks whether THAT exact URL
-  also renders individual job rows for ALL locations at once (no
-  location selected), which would mean the adapter needs one page load
-  instead of looping over ~13 city facets.
-- McDermott: round 6 found the real Algolia multi-query endpoint
-  (/1/indexes/*/queries) returns real hits with post_title/permalink/
-  taxonomies, but the sample hit got cut off at 800 chars before a
-  location field (if any) was visible. This dumps 2 full hit objects
-  untruncated to find the location field and confirm every field an
-  adapter needs (title, location, url, id, description) is present.
+McDermott is done (McDermottAdapter added -- plain Algolia POST, no
+Playwright needed, see mcdermott.py).
+
+Round 7 confirmed /jobs/search/ (trailing slash) shows ALL 155 jobs
+unfiltered in one page load rather than needing to loop over ~13 city
+facets, but only 25 job links were found on initial load -- this finds
+out whether that's real pagination (a page=N URL param, numbered page
+links) or a "load more"/infinite-scroll pattern, and grabs the real
+per-row DOM structure (title link, category, location, posted date) so
+a clean selector-based Playwright adapter can be built instead of
+regexing loose body text.
 
 Usage: python -m scraper.diagnose_browser
 """
 from __future__ import annotations
-
-import json
 
 from playwright.sync_api import sync_playwright
 
@@ -47,48 +41,47 @@ def main() -> None:
         browser = p.chromium.launch(headless=True)
 
         def kirkland():
-            section("Kirkland & Ellis -- does /jobs/search/ (trailing slash) show ALL jobs unfiltered?")
+            section("Kirkland & Ellis -- pagination + real row markup")
             ctx = browser.new_context(user_agent=UA)
             page = ctx.new_page()
             page.goto("https://staffjobsus.kirkland.com/jobs/search/", wait_until="load")
             page.wait_for_timeout(WAIT_MS)
-            print(f"  status via title check: {page.title()!r}")
-            job_links = page.query_selector_all("a[href*='staffjobsus.kirkland.com/jobs/']")
-            print(f"  real job detail links found: {len(job_links)}")
-            body = page.inner_text("body")
-            idx = body.find("Jobs Found")
-            print(f"  near 'Jobs Found': {body[max(0,idx-80):idx+80]!r}")
-            ctx.close()
 
-        def mcdermott():
-            section("McDermott -- full untruncated hit objects")
-            ctx = browser.new_context(user_agent=UA)
-            page = ctx.new_page()
-            captured = []
+            # Look for pagination controls.
+            for sel in [
+                "a[href*='page=']", "[class*='pagination'] a", "[class*='pager'] a",
+                "a:has-text('Next')", "a:has-text('2')", "button:has-text('Load More')",
+                "button:has-text('Show More')",
+            ]:
+                els = page.query_selector_all(sel)
+                if els:
+                    print(f"  selector {sel!r}: {len(els)} elements")
+                    for el in els[:5]:
+                        try:
+                            print(f"    href={el.get_attribute('href')!r} text={el.inner_text()!r}")
+                        except Exception:
+                            pass
 
-            def on_resp(r):
-                if "algolia" in r.url.lower() and "queries" in r.url.lower():
-                    try:
-                        resp_json = r.json() if r.ok else None
-                    except Exception:
-                        resp_json = None
-                    if resp_json:
-                        captured.append(resp_json)
+            # Try an explicit page=2 URL guess.
+            page2 = ctx.new_page()
+            page2.goto("https://staffjobsus.kirkland.com/jobs/search/?page=2", wait_until="load")
+            page2.wait_for_timeout(WAIT_MS)
+            links2 = page2.query_selector_all("a[href*='staffjobsus.kirkland.com/jobs/']")
+            print(f"  ?page=2 real job links found: {len(links2)}")
+            if links2:
+                print(f"    first: {links2[0].get_attribute('href')!r} {links2[0].inner_text()!r}")
 
-            page.on("response", on_resp)
-            page.goto("https://www.mcdermottlaw.com/careers/open-roles/", wait_until="load")
-            page.wait_for_timeout(WAIT_MS)
-
-            for resp_json in captured:
-                hits = resp_json.get("results", [{}])[0].get("hits", [])
-                print(f"  hit count: {len(hits)}")
-                for hit in hits[:2]:
-                    print(f"  --- full hit ---")
-                    print(json.dumps(hit, indent=2, default=str)[:3000])
+            # Real row markup for the first job on page 1.
+            first_link = page.query_selector("a[href*='staffjobsus.kirkland.com/jobs/']")
+            if first_link:
+                row = first_link.evaluate_handle(
+                    "el => el.closest('tr') || el.closest('li') || el.closest('div')"
+                )
+                row_html = row.evaluate("el => el ? el.outerHTML : null")
+                print(f"  first row outerHTML[:2500]: {row_html[:2500] if row_html else None!r}")
             ctx.close()
 
         run_safely("Kirkland & Ellis", kirkland)
-        run_safely("McDermott", mcdermott)
 
         browser.close()
 
