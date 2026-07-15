@@ -93,14 +93,19 @@ If it doesn't serve one of those, it's lower priority.
   automated / partial / manual), adapter failures, and the current "Needs
   Manual Check" list, moved off the main matches page so the dashboard's
   primary view stays focused on "what should I look at today."
-- Playwright integration for Manual Check firms: Category 1
-  (JS-rendering-only, no active bot protection) is done — 9 of 10 firms
+- Playwright integration for Manual Check firms — DONE (2026-07-15).
+  Category 1 (JS-rendering-only, no active bot protection): 9 of 10 firms
   automated, 1 (Ropes & Gray) confirmed genuinely Cloudflare-blocked even
-  with a real browser. Category 2 (WAF/Cloudflare/Imperva-blocked firms) is
-  the current secondary pass — round 1 confirmed the iCIMS WAF block (Lewis
-  Brisbois, Gordon Rees, Orrick, Milbank, Nelson Mullins, Foley & Lardner,
-  Mayer Brown, Latham & Watkins, Willkie Farr) still holds even against a
-  genuine headless-Chromium session, so that one's no longer "just needs
-  Playwright" — it's a real, confirmed dead end, not a cost/priority
-  question. Kirkland & Ellis and McDermott broke through, though, and are
-  being built out now.
+  with a real browser. Category 2 (WAF/Cloudflare/Imperva-blocked firms,
+  11 total): the iCIMS AWS WAF block (Lewis Brisbois, Gordon Rees, Orrick,
+  Milbank, Nelson Mullins, Foley & Lardner, Mayer Brown, Latham & Watkins,
+  Willkie Farr — 9 firms) confirmed genuinely stuck even against a real
+  headless-Chromium session — a real, confirmed dead end, not a
+  cost/priority question, nothing left to try. Kirkland & Ellis and
+  McDermott broke through: McDermott turned out to have a plain public
+  Algolia search API once found via Playwright network capture (no
+  browser needed at scrape time at all), Kirkland & Ellis needed a real
+  runtime PlaywrightAdapter but has a confirmed hard pagination ceiling
+  (only page 1, ~25 of ~155 postings — every page-2+ URL hits the same
+  Cloudflare challenge even with a passed-challenge session). FIRMS now
+  69, MANUAL_CHECK_FIRMS 17.
