@@ -1007,10 +1007,18 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "check_url": "https://www.davispolk.com",
     },
     "Ropes & Gray": {
-        "reason": "ropesgray.com 403s on every path (bot protection), blocking the "
-        "embedded-link-discovery technique used for every other firm here. A real "
-        "ApplicantStack tenant may exist (ropesgray.applicantstack.com/x/openings returned "
-        "0 postings), but that's not enough to confirm identity.",
+        # CONFIRMED via genuine headless-Chromium Playwright, not just plain requests --
+        # ropesgrayrecruiting.com's own "US Careers" click-through returns a real
+        # Cloudflare "Attention Required!" interstitial ("Sorry, you have been blocked" /
+        # security-service block page) to a real browser session, not just a bare HTTP
+        # client. Same category of obstacle as Kirkland & Ellis's Cloudflare block --
+        # genuinely not scrapable, not just JS-rendering-blocked.
+        "reason": "Confirmed Cloudflare bot-management block (real 'Attention Required!' "
+        "challenge page, not just a 403) on ropesgrayrecruiting.com's US Careers page, "
+        "verified with a real headless-Chromium browser session -- not scrapable even "
+        "with Playwright. A real ApplicantStack tenant may exist "
+        "(ropesgray.applicantstack.com/x/openings returned 0 postings), but that's not "
+        "enough to confirm identity.",
         "check_url": "https://ropesgray.applicantstack.com/x/openings",
     },
     "Cleary Gottlieb": {

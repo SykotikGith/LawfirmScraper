@@ -1,24 +1,24 @@
-"""Round 5 -- last 4 firms. Each section is now wrapped so one firm's
-failure can't kill the rest of the run (round 4 lost the entire Ropes &
-Gray section because Crowell & Moring's URL handling threw an unhandled
-exception partway through).
+"""Round 6 -- last 3 firms (Ropes & Gray confirmed Cloudflare-blocked in round 5,
+moved to MANUAL_CHECK_FIRMS, done).
 
-- Paul Weiss: round 4 confirmed the real per-row id pattern
-  (requisitionListInterface.reqTitleLinkAction.rowN) and "11 jobs found"
-  -- this finds the actual <tr> wrapping one full row (title + location +
-  date) rather than the header/controls elements caught by the broader
-  [id*='requisitionList'] search.
-- Duane Morris: round 4 found real hrefs for Support Staff Opportunities
-  and Lateral Current Opportunities (both same-page hash fragments) --
-  clicking them didn't reveal new content in earlier rounds because the
-  fragment differs by capitalization from what was tried; retrying with
-  the exact href found.
-- Crowell & Moring: the corrupted href actually does contain a real URL
-  in parentheses (confirmed working in isolation) -- this retries the
-  extraction with a fallback (just look for any https:// substring) and
-  proper exception handling so a bad URL can't crash the run.
-- Ropes & Gray: never got to run last round -- retrying the "US Careers"
-  click-through now.
+- Paul Weiss: round 5 found the real row1 <tr> and confirmed the title
+  ("Business Services Assistant") via a[id*='reqTitleLinkAction'], but the
+  outerHTML dump got truncated before showing location/date. This grabs
+  row.inner_text() instead (clean visible text, no HTML noise) for row1,
+  and also counts how many rowN links exist so an adapter knows how to
+  loop.
+- Duane Morris: round 5 confirmed the careers page has a list of city
+  names (Atlanta, Austin, Boca Raton, ...) as the "Current Opportunities"
+  links, not actual job postings. This dumps each city link's href to see
+  where they actually point -- likely a different ATS/portal per office,
+  or a shared one with a location filter param.
+- Crowell & Moring: round 5's regex-based href extraction failed against
+  the real corrupted string for reasons still unclear (worked in isolated
+  testing, not against the live page). Since we already know the intended
+  destination from the raw href text itself
+  (https://www.crowell.com/en/careers/professional-staff/open-positions),
+  this skips parsing the broken link entirely and just navigates straight
+  there to see whether that destination page is plain scrapable HTML.
 
 Usage: python -m scraper.diagnose_browser
 """
@@ -51,7 +51,7 @@ def main() -> None:
         browser = p.chromium.launch(headless=True)
 
         def paul_weiss():
-            section("Paul Weiss -- finding the full per-row markup")
+            section("Paul Weiss -- row inner_text + row count")
             ctx = browser.new_context(user_agent=UA)
             page = ctx.new_page()
             page.goto("https://paulweiss.taleo.net/careersection/ex/jobsearch.ftl", wait_until="load")
@@ -61,17 +61,21 @@ def main() -> None:
             except Exception as exc:
                 print(f"  could not click Search: {exc}")
             page.wait_for_timeout(WAIT_MS)
-            title_link = page.query_selector("a[id='requisitionListInterface.reqTitleLinkAction.row1']")
-            if title_link:
-                row = title_link.evaluate_handle("el => el.closest('tr')")
-                row_html = row.evaluate("el => el ? el.outerHTML : null")
-                print(f"  row1 <tr> outerHTML[:2500]: {row_html[:2500] if row_html else None!r}")
-            else:
-                print("  row1 title link not found this time")
+
+            title_links = page.query_selector_all("a[id*='reqTitleLinkAction']")
+            print(f"  total title links found: {len(title_links)}")
+            for link in title_links:
+                print(f"    id={link.get_attribute('id')!r} text={link.inner_text()!r}")
+
+            row1 = page.query_selector("a[id='requisitionListInterface.reqTitleLinkAction.row1']")
+            if row1:
+                row = row1.evaluate_handle("el => el.closest('tr')")
+                row_text = row.evaluate("el => el ? el.innerText : null")
+                print(f"  row1 inner_text: {row_text!r}")
             ctx.close()
 
         def duane_morris():
-            section("Duane Morris -- clicking the real Support Staff Opportunities href")
+            section("Duane Morris -- city link hrefs under Support Staff Opportunities")
             ctx = browser.new_context(user_agent=UA)
             page = ctx.new_page()
             page.goto(
@@ -79,35 +83,23 @@ def main() -> None:
                 wait_until="load",
             )
             page.wait_for_timeout(WAIT_MS)
-            body_text = page.inner_text("body")
-            idx = body_text.find("Support Staff Opportunities")
-            print(f"  text around 'Support Staff Opportunities'[{idx}:{idx+2000}]:")
-            print(body_text[idx:idx + 2000])
+            cities = [
+                "Multiple Locations", "Atlanta", "Austin", "Boca Raton", "Boston",
+                "Chicago", "Dallas", "Fort Worth", "Houston", "Los Angeles",
+                "New York", "North Jersey", "Philadelphia", "Pittsburgh",
+                "San Diego", "San Francisco", "Silicon Valley", "Washington D.C.",
+            ]
+            for city in cities:
+                try:
+                    link = page.get_by_role("link", name=city, exact=True).first
+                    href = link.get_attribute("href", timeout=3000)
+                    print(f"    {city}: {href!r}")
+                except Exception as exc:
+                    print(f"    {city}: EXCEPTION {type(exc).__name__}: {exc}")
             ctx.close()
 
         def crowell_moring():
-            section("Crowell & Moring -- extracting and following the real Open Positions URL")
-            ctx = browser.new_context(user_agent=UA)
-            page = ctx.new_page()
-            page.goto("https://www.crowell.com/en/careers/professional-staff", wait_until="load")
-            page.wait_for_timeout(WAIT_MS)
-            link = page.get_by_text("Open Positions", exact=False).first
-            raw_href = link.get_attribute("href")
-            print(f"  raw href: {raw_href!r}")
-            urls_found = re.findall(r"https?://[^\s()\[\]]+", raw_href or "")
-            print(f"  https:// substrings found: {urls_found}")
-            if urls_found:
-                real_url = urls_found[-1]
-                page.goto(real_url, wait_until="load")
-                page.wait_for_timeout(WAIT_MS)
-                print(f"  page title: {page.title()!r}")
-                print(f"  body text[:1500]: {page.inner_text('body')[:1500]!r}")
-            else:
-                print("  no https:// URL found in href, skipping navigation")
-            ctx.close()
-
-        def ropes_gray():
-            section("Ropes & Gray -- clicking through to US Careers")
+            section("Crowell & Moring -- navigating straight to the known open-positions URL")
             ctx = browser.new_context(user_agent=UA)
             page = ctx.new_page()
             candidates = []
@@ -119,25 +111,21 @@ def main() -> None:
                         candidates.append((r.url, r.status, ct))
 
             page.on("response", on_resp)
-            page.goto("https://www.ropesgrayrecruiting.com/en/", wait_until="load")
+            page.goto(
+                "https://www.crowell.com/en/careers/professional-staff/open-positions",
+                wait_until="load",
+            )
             page.wait_for_timeout(WAIT_MS)
-            try:
-                page.get_by_text("US CAREERS", exact=False).first.click(timeout=5000)
-                page.wait_for_timeout(WAIT_MS)
-                print("  clicked 'US CAREERS'")
-            except Exception as exc:
-                print(f"  could not click US CAREERS: {exc}")
-            print(f"  page title after click: {page.title()!r}")
-            print(f"  current URL: {page.url}")
+            print(f"  page title: {page.title()!r}")
+            print(f"  final URL: {page.url}")
             for url, status, ct in candidates[:20]:
                 print(f"    [{status}] {ct} {url}")
-            print(f"  body text[:1200]: {page.inner_text('body')[:1200]!r}")
+            print(f"  body text[:2000]: {page.inner_text('body')[:2000]!r}")
             ctx.close()
 
         run_safely("Paul Weiss", paul_weiss)
         run_safely("Duane Morris", duane_morris)
         run_safely("Crowell & Moring", crowell_moring)
-        run_safely("Ropes & Gray", ropes_gray)
 
         browser.close()
 
