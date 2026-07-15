@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -30,6 +31,65 @@ def _best_effort_check_url(firm_cfg: dict) -> str:
     if "board_token" in firm_cfg:
         return f"https://job-boards.greenhouse.io/{firm_cfg['board_token']}"
     return "#"
+
+
+# Fallback for MANUAL_CHECK_FIRMS entries without a hand-authored
+# "short_reason" -- best-effort keyword extraction from the long-form
+# `reason` prose, roughly "platform — blocker type". Every current entry
+# has a hand-authored short_reason (more accurate than guessing), this only
+# protects future entries that forget to add one.
+_SHORT_REASON_PLATFORMS = (
+    ("iCIMS", "iCIMS"),
+    ("Workday", "Workday"),
+    ("Coveo", "Coveo"),
+    ("RecSolu", "RecSolu"),
+    ("Cloudflare", "Cloudflare"),
+    ("Imperva", "Imperva"),
+    ("ApplicantStack", "ApplicantStack"),
+    ("SilkRoad", "SilkRoad"),
+    ("Taleo", "Taleo"),
+)
+_SHORT_REASON_BLOCKERS = (
+    ("AWS WAF", "AWS WAF blocked"),
+    ("bot-management", "bot-protection blocked"),
+    ("bot protection", "bot-protection blocked"),
+    ("dormant", "dormant tenant"),
+    ("credentials", "requires credentials"),
+    ("Unauthorized", "requires auth"),
+    ("JS search", "client-side JS only"),
+    ("client-side", "client-side JS only"),
+    ("email-based apply", "email-apply only"),
+    ("no ATS", "no ATS found"),
+)
+
+
+def _derive_short_reason(long_reason: str) -> str:
+    lowered = long_reason.lower()
+    platform = next(
+        (label for kw, label in _SHORT_REASON_PLATFORMS if kw.lower() in lowered), None
+    )
+    blocker = next(
+        (label for kw, label in _SHORT_REASON_BLOCKERS if kw.lower() in lowered), None
+    )
+    if platform and blocker:
+        return f"{platform} — {blocker}"
+    if platform:
+        return f"{platform} — see notes"
+    if blocker:
+        return blocker
+    return "See notes for detail"
+
+
+def _dynamic_failure_short_reason(error: str) -> str:
+    exc_type = error.split(":", 1)[0]
+    if "Timeout" in exc_type:
+        return "Network timeout this run"
+    if "ConnectionError" in exc_type:
+        return "Connection failed this run"
+    status_match = re.search(r"\b([45]\d{2})\b", error)
+    if status_match:
+        return f"HTTP {status_match.group(1)} error this run"
+    return "Fetch failed this run"
 
 
 def scrape_firm(firm_name: str, firm_cfg: dict) -> tuple[list[Posting], str | None]:
@@ -87,6 +147,7 @@ def run(reset_seen: bool = False) -> int:
                     firm=firm_name,
                     reason=f"adapter fetch failed this run ({error}) — may be transient, "
                     "worth checking by hand if it keeps happening",
+                    short_reason=_dynamic_failure_short_reason(error),
                     url=_best_effort_check_url(firm_cfg),
                 )
             )
@@ -98,6 +159,7 @@ def run(reset_seen: bool = False) -> int:
                     firm=firm_name,
                     reason="adapter ran but returned zero postings this run — may be "
                     "transient or the site structure changed",
+                    short_reason="Zero postings this run",
                     url=_best_effort_check_url(firm_cfg),
                 )
             )
@@ -184,7 +246,12 @@ def run(reset_seen: bool = False) -> int:
         if url != "#":
             print(f"   {url}")
         print(f"   {info['reason']}")
-        static_manual_check.append(ManualCheckEntry(firm=firm_name, reason=info["reason"], url=url))
+        short_reason = info.get("short_reason") or _derive_short_reason(info["reason"])
+        static_manual_check.append(
+            ManualCheckEntry(
+                firm=firm_name, reason=info["reason"], short_reason=short_reason, url=url
+            )
+        )
 
     if dynamic_manual_check:
         print("\n" + "=" * 72)

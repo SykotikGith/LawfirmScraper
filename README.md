@@ -227,11 +227,21 @@ lists every firm the scraper couldn't reach automatically — combining
 SPA-only sites, no discoverable ATS, etc.) with any active `FIRMS` entry
 whose adapter failed or returned zero postings *this specific run*
 (which might be transient, or might be the first sign a site changed
-structure). Each card shows the firm name, the specific reason, and a
-direct link to the firm's careers page or main site to check by hand —
-this is what used to only be visible in raw console output/job summary.
-Named and separated from "Potential Matches" specifically because the
-two are easy to conflate but mean different things: one is about a job
+structure). Rendered as a compact Firm / Reason / Link table (not cards
+— with ~20 entries, cards took far more vertical space than the content
+justified) linking straight to the firm's careers page or main site to
+check by hand. The Reason column is a compressed ~3-6-word version
+("iCIMS — AWS WAF blocked", "Workday (dormant), no careers page found")
+of the full diagnostic paragraph still tracked in `config.py` — each
+`MANUAL_CHECK_FIRMS` entry carries an explicit hand-authored
+`short_reason` key (more accurate than an automated guess, and there
+are only ~17 of them); `main.py`'s `_derive_short_reason()` is a
+keyword-extraction fallback for any entry that doesn't (mainly a safety
+net for future entries), and `_dynamic_failure_short_reason()` covers
+this-run-only adapter failures (timeouts, HTTP error codes, zero
+postings) that can't be hand-authored ahead of time. Named and
+separated from "Potential Matches" specifically because the two are
+easy to conflate but mean different things: one is about a job
 title needing a judgment call, the other is about the scraper's
 technical reach.
 

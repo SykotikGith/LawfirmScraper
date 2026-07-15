@@ -134,6 +134,11 @@ class ManualCheckEntry:
     firm: str
     reason: str
     url: str
+    # Compressed, table-friendly version of `reason` (~3-6 words, "platform —
+    # blocker type"). Always populated by the caller -- see
+    # main.py's _derive_short_reason() fallback for entries that don't have
+    # one hand-authored in config.py's MANUAL_CHECK_FIRMS.
+    short_reason: str = ""
 
 
 def _pill(text: str, css_class: str) -> str:
@@ -237,14 +242,15 @@ def _new_since_section(
     </section>"""
 
 
-def _manual_check_card(entry: ManualCheckEntry) -> str:
+def _manual_check_row(entry: ManualCheckEntry) -> str:
     safe_url = html.escape(entry.url, quote=True)
+    short_reason = entry.short_reason or entry.reason
     return f"""
-      <a class="manual-check-card" href="{safe_url}" target="_blank" rel="noopener noreferrer">
-        <div class="manual-check-firm">{html.escape(entry.firm)}</div>
-        <div class="manual-check-reason">{html.escape(entry.reason)}</div>
-        <div class="manual-check-link-hint">Check firm's site →</div>
-      </a>"""
+        <tr>
+          <td class="mc-firm">{html.escape(entry.firm)}</td>
+          <td class="mc-reason">{html.escape(short_reason)}</td>
+          <td class="mc-link"><a href="{safe_url}" target="_blank" rel="noopener noreferrer">Check firm's site →</a></td>
+        </tr>"""
 
 
 def _manual_check_section(entries: list[ManualCheckEntry]) -> str:
@@ -258,10 +264,14 @@ def _manual_check_section(entries: list[ManualCheckEntry]) -> str:
     if not entries:
         body = '<p class="empty-state">nothing needs manual checking right now</p>'
     else:
-        cards = "".join(_manual_check_card(e) for e in sorted(entries, key=lambda e: e.firm))
+        rows = "".join(_manual_check_row(e) for e in sorted(entries, key=lambda e: e.firm))
         body = (
             '<p class="section-subtitle">Scraper can\'t reach this firm automatically — '
-            f'worth checking by hand.</p><div class="job-grid">{cards}\n      </div>'
+            "worth checking by hand.</p>"
+            '<div class="manual-check-table-wrap"><table class="manual-check-table">'
+            "<thead><tr><th>Firm</th><th>Reason</th><th>Link</th></tr></thead>"
+            f"<tbody>{rows}\n        </tbody>"
+            "</table></div>"
         )
     return f"""
     <details class="section manual-check-details">
@@ -581,38 +591,47 @@ def render_report(
     color: var(--teal-tag-text);
     border: 1px solid var(--teal-border);
   }}
-  .manual-check-card {{
-    position: relative;
-    display: block;
-    background: var(--job-card-bg);
+  .manual-check-table-wrap {{
+    overflow: auto;
     border: 1px solid var(--amber-border);
     border-radius: 12px;
-    padding: 18px;
-    text-decoration: none;
-    color: inherit;
-    transition: transform 0.12s ease, border-color 0.12s ease;
   }}
-  .manual-check-card:hover {{
-    transform: translateY(-2px);
-    border-color: var(--amber);
+  .manual-check-table {{
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card-bg);
   }}
-  .manual-check-firm {{
-    font-size: 1.02rem;
+  .manual-check-table th {{
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--amber);
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--amber-border);
+  }}
+  .manual-check-table td {{
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--amber-border);
+    vertical-align: top;
+  }}
+  .manual-check-table tr:last-child td {{ border-bottom: none; }}
+  .manual-check-table tr:hover td {{ background: var(--job-card-bg); }}
+  .manual-check-table .mc-firm {{
     font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: 6px;
+    white-space: nowrap;
   }}
-  .manual-check-reason {{
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    line-height: 1.4;
-    margin-bottom: 10px;
-  }}
-  .manual-check-link-hint {{
-    font-size: 0.78rem;
+  .manual-check-table .mc-reason {{ color: var(--text-secondary); }}
+  .manual-check-table .mc-link a {{
     color: var(--amber);
     font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
   }}
+  .manual-check-table .mc-link a:hover {{ text-decoration: underline; }}
   .new-badge {{
     position: absolute;
     top: -8px;

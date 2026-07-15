@@ -1000,6 +1000,7 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
     # just to hit a smaller number.
     # =========================================================================
     "Orrick": {
+        "short_reason": "iCIMS — AWS WAF blocked",
         "reason": "Confirmed iCIMS tenant 'orrick', but blocked by an AWS WAF 'Human "
         "Verification' challenge -- not scrapable with a plain HTTP client. CONFIRMED "
         "still blocked (405, 'Human Verification' challenge page) with a genuine "
@@ -1018,6 +1019,7 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         # Orrick/Milbank, with no automatable path). Re-added here as a manual-check entry
         # so it's visible on the dashboard rather than invisible -- it was never scrapable,
         # dropping it from FIRMS was correct, but that shouldn't mean losing track of it.
+        "short_reason": "iCIMS — AWS WAF blocked",
         "reason": "Confirmed iCIMS tenant 'lewisbrisbois', blocked by the same AWS WAF "
         "'Human Verification' challenge as Orrick/Milbank -- not scrapable with a plain "
         "HTTP client. CONFIRMED still blocked with a genuine headless-Chromium Playwright "
@@ -1027,6 +1029,7 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "check_url": "https://www.lewisbrisbois.com/careers",
     },
     "Gordon Rees": {
+        "short_reason": "iCIMS — AWS WAF blocked",
         "reason": "Confirmed iCIMS tenant 'grsm' (Gordon Rees Scully Mansukhani), blocked "
         "by the same AWS WAF 'Human Verification' challenge as Orrick/Milbank -- not "
         "scrapable with a plain HTTP client. CONFIRMED still blocked with a genuine "
@@ -1036,6 +1039,7 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "check_url": "https://www.grsm.com/careers",
     },
     "Milbank": {
+        "short_reason": "iCIMS — AWS WAF blocked",
         "reason": "Real ATS is iCIMS (found via the firm's own careers page), blocked by the "
         "same AWS WAF 'Human Verification' challenge as Orrick. A Workday tenant also exists "
         "on wd1 but is apparently dormant/internal, not used for external recruiting. "
@@ -1044,6 +1048,7 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "search_url": "https://careers-milbank.icims.com/jobs/intro?hashed=-435594439",
     },
     "Nelson Mullins": {
+        "short_reason": "iCIMS — AWS WAF blocked",
         "reason": "Confirmed iCIMS tenant 'nelsonmullins' (found embedded in "
         "nelsonmullins.com/careers), blocked by the same AWS WAF 'Human Verification' "
         "challenge as Orrick/Milbank -- not scrapable with a plain HTTP client. CONFIRMED "
@@ -1053,6 +1058,7 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "check_url": "https://www.nelsonmullins.com/careers",
     },
     "Foley & Lardner": {
+        "short_reason": "iCIMS — AWS WAF blocked",
         "reason": "Confirmed iCIMS tenant 'foley' (found embedded in foley.com/careers), "
         "blocked by the same AWS WAF 'Human Verification' challenge as Orrick/Milbank -- "
         "not scrapable with a plain HTTP client. CONFIRMED still blocked with a genuine "
@@ -1065,6 +1071,7 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         # Upgraded from "no ATS platform domain present" -- that scan only checked
         # willkie.com/careers's static HTML, which apparently doesn't embed this link
         # server-side. Real tenant confirmed directly by the user.
+        "short_reason": "iCIMS — AWS WAF blocked",
         "reason": "Confirmed iCIMS tenant 'jobs-willkie' (note: jobs- subdomain prefix, not "
         "the more common careers- prefix seen for Orrick/Milbank/Nelson Mullins/Foley & "
         "Lardner), blocked by the same AWS WAF 'Human Verification' challenge -- not "
@@ -1075,6 +1082,7 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "check_url": "https://www.willkie.com/careers",
     },
     "Covington & Burling": {
+        "short_reason": "Coveo — client-side JS search",
         "reason": "Real tenant confirmed on Workday wd1 (path-specific-error signal) but the "
         "site slug was never found -- the business-professionals page uses Coveo "
         "(static.cloud.coveo.com), an enterprise search layer on their Sitecore CMS, not a "
@@ -1083,6 +1091,7 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "check_url": "https://www.cov.com/en/careers/business-professionals/employment-opportunities",
     },
     "Arnold & Porter": {
+        "short_reason": "Coveo — client-side JS search",
         "reason": "Confirmed Coveo (static.cloud.coveo.com), the exact same enterprise "
         "search layer already blocking Covington & Burling -- job data is fetched via a JS "
         "search API call after page load. Checked specifically for an embedded "
@@ -1093,6 +1102,7 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "current-opportunities",
     },
     "Davis Polk": {
+        "short_reason": "Workday (dormant), no careers page found",
         "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
         "apparently dormant/internal. The real careers path wasn't found -- "
         "davispolk.com/careers returns 403 (bot-protected) and the bare domain has no ATS "
@@ -1106,6 +1116,7 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         # security-service block page) to a real browser session, not just a bare HTTP
         # client. Same category of obstacle as Kirkland & Ellis's Cloudflare block --
         # genuinely not scrapable, not just JS-rendering-blocked.
+        "short_reason": "Cloudflare blocked (confirmed w/ browser)",
         "reason": "Confirmed Cloudflare bot-management block (real 'Attention Required!' "
         "challenge page, not just a 403) on ropesgrayrecruiting.com's US Careers page, "
         "verified with a real headless-Chromium browser session -- not scrapable even "
@@ -1115,18 +1126,21 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "check_url": "https://ropesgray.applicantstack.com/x/openings",
     },
     "Cleary Gottlieb": {
+        "short_reason": "Workday (dormant), no careers page found",
         "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
         "apparently dormant/internal. clearygottlieb.com/careers redirects to the bare "
         "homepage (Sitefinity CMS) -- the real careers subpage URL wasn't found.",
         "check_url": "https://www.clearygottlieb.com/careers",
     },
     "Morrison & Foerster": {
+        "short_reason": "Workday (dormant); Next.js SPA, no data",
         "reason": "Real tenant confirmed on Workday wd5 (path-specific-error signal), "
         "apparently dormant/internal. mofo.com/careers redirects to careers.mofo.com, a "
         "Next.js SPA with zero job data in static HTML -- the real ATS/API wasn't identified.",
         "check_url": "https://careers.mofo.com/",
     },
     "K&L Gates": {
+        "short_reason": "RecSolu — JS board, needs auth",
         "reason": "Real 'All Current Openings' link found, leading to klgates.recsolu.com -- "
         "RecSolu (Yello Enterprise), a platform not otherwise seen in this project. The board "
         "is JS-rendered with no job data in static HTML; several guessed REST API endpoints "
@@ -1135,6 +1149,7 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "check_url": "https://klgates.recsolu.com/job_boards/1",
     },
     "Latham & Watkins": {
+        "short_reason": "iCIMS — AWS WAF blocked",
         "reason": "Confirmed iCIMS tenant 'lw' (careers-lw.icims.com), blocked by the same "
         "AWS WAF 'Human Verification' challenge as Orrick/Milbank -- not scrapable with a "
         "plain HTTP client. CONFIRMED still blocked with a genuine headless-Chromium "
@@ -1144,6 +1159,7 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "check_url": "https://www.lw.com",
     },
     "Mayer Brown": {
+        "short_reason": "iCIMS — AWS WAF blocked",
         "reason": "Confirmed iCIMS tenant 'mayerbrown' (note: globalcareers- subdomain "
         "prefix, a third variant after careers-/jobs- seen for other firms), blocked by "
         "the same AWS WAF 'Human Verification' challenge -- not scrapable with a plain "
@@ -1158,6 +1174,7 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         # business-professionals page has real per-position hyperlinks, but every one leads
         # to an email-based apply form rather than any scrapable ATS/listing API. Nothing
         # left for an adapter to hook into; staying manual permanently per explicit request.
+        "short_reason": "Email-apply only, no ATS",
         "reason": "CONFIRMED (user's own live check): the business-professionals careers "
         "page has real per-position hyperlinks, but each leads to an email-based apply "
         "form, not a third-party ATS or any scrapable listing API. No fetchable job data "
