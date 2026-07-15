@@ -29,6 +29,7 @@ from .adapters import (
     VenableAdapter,
     PaulWeissAdapter,
     McDermottAdapter,
+    KirklandAdapter,
     ViGlobalAdapter,
     WorkdayAdapter,
 )
@@ -952,6 +953,28 @@ FIRMS: dict[str, dict] = {
         "apparently orphaned CMS content), and post_excerpt is identical generic "
         "marketing boilerplate on every hit -- description left empty.",
     },
+    "Kirkland & Ellis": {
+        # Category 2 breakthrough with a confirmed partial-coverage caveat: the Cloudflare
+        # challenge on this site's no-trailing-slash /jobs/search path (which every real
+        # pagination link uses) blocks even a genuine passed-challenge browser session --
+        # confirmed by clicking the real in-page "NEXT" link, not just guessing a URL. Only
+        # page 1 (25 of ~155 total postings) is reachable. Per the "don't force it"
+        # instruction, shipping page-1-only coverage rather than spending more time on the
+        # pagination block -- same category of gap as Akin Gump's documented single-page
+        # limitation.
+        "adapter": KirklandAdapter,
+        "list_url": "https://staffjobsus.kirkland.com/jobs/search/",
+        "notes": "CONFIRMED via live browser -- real postings include 'Senior Revenue "
+        "Management Analyst', 'Associate Director of Product Management, Practice "
+        "Innovation Delivery', 'Strategic Procurement Counsel', 'AI Infrastructure "
+        "Director'. Only /jobs/search/ (trailing slash) renders cleanly; /jobs/search "
+        "(no trailing slash, which every pagination link uses: /jobs/search?page=N) hits "
+        "a hard Cloudflare 'Just a moment...' challenge that a real passed-challenge "
+        "browser session still can't get past -- page 1 (25 jobs) is a confirmed ceiling, "
+        "not a bug. Title/category/location/date parsed from the page's rendered visible "
+        "text (no isolated per-row DOM container found), matched positionally against "
+        "real per-job <a href> links for accurate URLs/IDs -- see kirkland.py.",
+    },
 }
 
 
@@ -1126,15 +1149,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "tenant": "mayerbrown",
         "search_url": "https://globalcareers-mayerbrown.icims.com/jobs/search?hashed=124489139",
         "check_url": "https://www.mayerbrown.com",
-    },
-    "Kirkland & Ellis": {
-        "reason": "Real careers site confirmed (staffjobsus.kirkland.com/jobs/search/), but "
-        "blocked by a Cloudflare bot-management challenge ('Just a moment...' interstitial, "
-        "confirmed via response body/CSP headers) -- a different bot-protection vendor than "
-        "the AWS WAF/Imperva blocks seen elsewhere in this project, but the same category of "
-        "obstacle. Underlying ATS platform not identified (blocked before any platform "
-        "signal was visible).",
-        "check_url": "https://staffjobsus.kirkland.com/jobs/search/",
     },
     "Blank Rome": {
         # Explicit decision, not a technical dead end -- user confirmed live that the

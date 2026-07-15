@@ -19,6 +19,7 @@ from .dentons import DentonsCareerAdapter
 from .venable import VenableAdapter
 from .paulweiss import PaulWeissAdapter
 from .mcdermott import McDermottAdapter
+from .kirkland import KirklandAdapter
 
 __all__ = [
     "Adapter",
@@ -42,4 +43,5 @@ __all__ = [
     "VenableAdapter",
     "PaulWeissAdapter",
     "McDermottAdapter",
+    "KirklandAdapter",
 ]
