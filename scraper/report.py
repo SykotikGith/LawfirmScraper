@@ -19,32 +19,66 @@ from pathlib import Path
 REPORT_PATH = Path(__file__).resolve().parent.parent / "report.html"
 INDEX_PATH = Path(__file__).resolve().parent.parent / "index.html"
 
-_US_STATE_CODES = frozenset(
-    """AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS
-    MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV
-    WI WY DC PR GU VI""".split()
+# Country/region names that show up in real AmLaw-100 global-office location
+# text. Deliberately NOT an exhaustive list of every non-US place on Earth --
+# see _is_us_location's docstring for why that's fine.
+_NON_US_COUNTRY_SIGNALS = (
+    "united kingdom", "great britain", "england", "scotland", "wales",
+    "northern ireland", "ireland", "germany", "france", "belgium",
+    "netherlands", "luxembourg", "switzerland", "spain", "italy", "portugal",
+    "austria", "poland", "czech republic", "hungary", "sweden", "denmark",
+    "norway", "finland", "canada", "mexico", "brazil", "argentina", "chile",
+    "colombia", "peru", "china", "hong kong", "japan", "south korea",
+    "singapore", "australia", "new zealand", "india", "united arab emirates",
+    "saudi arabia", "qatar", "kuwait", "bahrain", "south africa", "kenya",
+    "nigeria", "israel", "turkey", "russia", "philippines", "indonesia",
+    "malaysia", "thailand", "vietnam", "taiwan",
 )
-_STATE_CODE_RE = re.compile(r"\b([A-Z]{2})\b")
+# Major non-US cities that could plausibly show up without their country
+# name attached (e.g. "Newcastle upon Tyne, United Kingdom" already matches
+# the country list above, but a tenant might just say "Newcastle" or
+# "London"). Deliberately excludes short/common names that collide with
+# real US towns (there IS a London, KY and a London, OH) -- the risk of
+# under-excluding a handful of rare cases is much smaller than the risk of
+# over-excluding real US postings, which is the bug this list exists to fix.
+_NON_US_CITY_SIGNALS = (
+    "newcastle upon tyne", "toronto", "vancouver", "montreal", "dubai",
+    "abu dhabi", "sydney", "melbourne", "tokyo", "beijing", "shanghai",
+    "munich", "frankfurt", "berlin", "milan", "madrid", "barcelona",
+    "zurich", "geneva", "brussels", "amsterdam", "dublin", "mexico city",
+    "sao paulo", "johannesburg", "seoul", "mumbai", "bangalore", "riyadh",
+    "doha",
+)
+_NON_US_ABBREV_RE = re.compile(r"\b(UK|UAE)\b")
 
 
 def _is_us_location(location: str) -> bool:
     """Best-effort US-location detector, from location text alone.
 
-    Deliberately a positive-match heuristic (US state code, or "United
-    States"/"USA") rather than trying to enumerate every non-US place --
-    international postings (e.g. Norton Rose Fulbright's Newcastle, UK
-    listings, mixed into the same Workday tenant as its US postings) simply
-    won't match any US signal and fall through to "not US", which is the
-    correct/safe direction for a filter meant to hide them.
+    Defaults to US (True) unless there's a clear non-US signal (a country
+    name, a known non-US city) -- an unrecognized bare city name ("Nashville",
+    "Chicago"), a spelled-out state ("New York, New York"), "5 Locations", or
+    an unspecified/empty location is NOT evidence of being outside the US, so
+    it defaults to included, not excluded. Same "don't default to the
+    exclusionary bucket without positive evidence" principle already used in
+    work_arrangement.py -- an earlier version of this function required
+    positive US evidence (a state code, "United States") to include a
+    posting, which silently dropped genuine US postings like Wilson Elser's
+    "New York, New York" or Sidley Austin's "5 Locations" from "US Only"
+    alongside the Norton Rose Fulbright UK postings it was meant to exclude.
     """
     if not location:
-        return False
+        return True
     # Strip periods first so "Washington, D.C." matches the same as "DC".
     cleaned = location.replace(".", "")
     lowered = cleaned.lower()
-    if "united states" in lowered or re.search(r"\busa\b", lowered):
-        return True
-    return any(m in _US_STATE_CODES for m in _STATE_CODE_RE.findall(cleaned))
+    if any(sig in lowered for sig in _NON_US_COUNTRY_SIGNALS):
+        return False
+    if any(sig in lowered for sig in _NON_US_CITY_SIGNALS):
+        return False
+    if _NON_US_ABBREV_RE.search(cleaned):
+        return False
+    return True
 
 
 def _location_tags(location: str, work_arrangement: str | None) -> str:
