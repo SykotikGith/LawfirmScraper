@@ -27,6 +27,7 @@ from .adapters import (
     RadancyAdapter,
     UltiProAdapter,
     VenableAdapter,
+    PaulWeissAdapter,
     ViGlobalAdapter,
     WorkdayAdapter,
 )
@@ -887,6 +888,32 @@ FIRMS: dict[str, dict] = {
         "wasn't independently verified. Check debug_all_titles.txt after a real run to "
         "confirm the full count comes through.",
     },
+    "Paul Weiss": {
+        # Second genuine runtime PlaywrightAdapter use -- classic Taleo Enterprise search
+        # only populates results after a self-submitting POST triggered by clicking Search,
+        # with no discoverable AJAX/REST endpoint after several diagnostic rounds.
+        "adapter": PaulWeissAdapter,
+        "list_url": "https://paulweiss.taleo.net/careersection/ex/jobsearch.ftl",
+        "notes": "CONFIRMED via live browser -- 11 real postings including 'Business "
+        "Services Assistant', 'Conflicts Analyst', 'Docketing Clerk'. Title + requisition "
+        "ID + work location come from each row's rendered text (no real per-job href in "
+        "the listing itself, postback-only JS), but classic Taleo Enterprise serves a "
+        "real, plain GET-able detail page at jobdetail.ftl?job=<requisitionID> -- "
+        "confirmed live for requisition 26000223 -- used as the per-posting URL/ID "
+        "instead of falling back to the list page.",
+    },
+    "Crowell & Moring": {
+        # Confirmed via live browser network capture to be plain Greenhouse underneath a
+        # custom embed UI -- same adapter as Wilson Elser/Gibson Dunn, no new code needed.
+        "adapter": GreenhouseAdapter,
+        "board_token": "crowellmoring",
+        "notes": "CONFIRMED via live probe -- the careers page embeds "
+        "job-boards.greenhouse.io (for=crowellmoring) through the newer embed UI, but the "
+        "classic public boards-api.greenhouse.io/v1/boards/crowellmoring/jobs endpoint "
+        "this project's GreenhouseAdapter already calls works too: 17 real postings "
+        "including 'Business Development Coordinator', 'Collections Specialist', "
+        "'eDiscovery & Data Solutions Technical Analyst'.",
+    },
 }
 
 
@@ -1033,12 +1060,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "Next.js SPA with zero job data in static HTML -- the real ATS/API wasn't identified.",
         "check_url": "https://careers.mofo.com/",
     },
-    "Crowell & Moring": {
-        "reason": "Real careers landing and apply-now pages found, but the careers page is "
-        "an unusually large 4MB with no embedded JSON state and no known ATS platform domain "
-        "present anywhere in it.",
-        "check_url": "https://www.crowell.com/en/careers",
-    },
     "K&L Gates": {
         "reason": "Real 'All Current Openings' link found, leading to klgates.recsolu.com -- "
         "RecSolu (Yello Enterprise), a platform not otherwise seen in this project. The board "
@@ -1046,17 +1067,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "(/api/v1/job_boards/.../jobs) returned 401 Unauthorized -- a real API exists but "
         "requires credentials this project doesn't have and shouldn't try to bypass.",
         "check_url": "https://klgates.recsolu.com/job_boards/1",
-    },
-    "Paul Weiss": {
-        "reason": "Confirmed Taleo Enterprise career section (paulweiss.taleo.net/"
-        "careersection/ex/jobsearch.ftl), but it's the search FORM, not results -- "
-        "classic Taleo Enterprise (not the newer REST-based career sites) executes "
-        "search via a self-submitting POST back to the same jobsearch.ftl URL (confirmed "
-        "<form action=\"jobsearch.ftl\">), with no discoverable AJAX/REST endpoint or "
-        "TFS_-prefixed JS config exposed in static HTML. Would need real browser network "
-        "inspection of an actual search submission to find scrapeable params/response "
-        "shape.",
-        "check_url": "https://paulweiss.taleo.net/careersection/ex/jobsearch.ftl",
     },
     "Latham & Watkins": {
         "reason": "Confirmed iCIMS tenant 'lw' (careers-lw.icims.com), blocked by the same "

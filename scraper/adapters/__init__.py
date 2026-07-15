@@ -17,6 +17,7 @@ from .playwright_base import PlaywrightAdapter
 from .florecruit import FloRecruitAdapter
 from .dentons import DentonsCareerAdapter
 from .venable import VenableAdapter
+from .paulweiss import PaulWeissAdapter
 
 __all__ = [
     "Adapter",
@@ -38,4 +39,5 @@ __all__ = [
     "FloRecruitAdapter",
     "DentonsCareerAdapter",
     "VenableAdapter",
+    "PaulWeissAdapter",
 ]
