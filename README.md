@@ -112,33 +112,35 @@ a result.
 `scraper/config.py` has three top-level structures:
 
 - `FIRMS` — the active, automated firm list (adapter class + tenant/URL
-  config per firm). This is what `main.py` actually scrapes. Currently 64
+  config per firm). This is what `main.py` actually scrapes. Currently 67
   firms.
 - `MANUAL_CHECK_FIRMS` — confirmed real target firms that can't be
   reliably automated (blocked by bot protection, no ATS trace in static
   HTML anywhere discoverable via sitemap search, a real ATS exists but
   requires authentication, or a real ATS exists but has no relevant
   listings). Not scraped; printed as a reminder list at the end of every
-  run instead, with a check URL and the reason. Currently 22 firms,
+  run instead, with a check URL and the reason. Currently 19 firms,
   split into two tiers: confirmed genuine technical obstacles
   (WAF/bot-protection, credential-gated API, or a JS-rendered page with a
-  confirmed real ATS/tenant underneath) versus unresearched leads (no
-  confirmed block, no confirmed absence of postings either) still
-  awaiting a fresh look.
+  confirmed real ATS/tenant underneath, including two Cloudflare/AWS WAF
+  blocks confirmed with a genuine headless-browser session, not just
+  plain HTTP) versus unresearched leads (no confirmed block, no
+  confirmed absence of postings either) still awaiting a fresh look.
 - `REJECTED_LEADS` — slug guesses that turned out to be a different,
   unrelated company on a shared ATS platform (confirmed via real sample
   titles), kept on record so they aren't accidentally retried. Currently 2
   entries.
 
 Adapters live in `scraper/adapters/` — one per ATS platform: iCIMS,
-Workday (25 firms), Oracle Recruiting Cloud (2 firms), ApplicantStack, Greenhouse (2
-firms), Circa Works, viGlobal (7 firms), UKG/UltiPro Recruiting (6 firms),
+Workday (25 firms), Oracle Recruiting Cloud (2 firms), ApplicantStack, Greenhouse (3
+firms), Circa Works, viGlobal (8 firms), UKG/UltiPro Recruiting (6 firms),
 PageUp/eArcu, Jobvite, Breezy HR, Radancy, AEM Career Search, FloRecruit,
-Dentons Career Search, a generic custom-HTML adapter (12 firms), and one
-Playwright-backed adapter (Venable) for a firm whose job data has no
-plain-HTTP-reachable form at all. (The iCIMS adapter exists but currently has no
-active `FIRMS` entries — every iCIMS tenant found so far sits behind an
-AWS WAF challenge and lives in `MANUAL_CHECK_FIRMS` instead.)
+Dentons Career Search, a generic custom-HTML adapter (12 firms), and two
+Playwright-backed adapters (Venable, Paul Weiss) for firms whose job data
+has no plain-HTTP-reachable form at all. (The iCIMS adapter exists but
+currently has no active `FIRMS` entries — every iCIMS tenant found so far
+sits behind an AWS WAF challenge and lives in `MANUAL_CHECK_FIRMS`
+instead.)
 
 Several career sites sit behind bot protection that blocks plain HTTP
 scraping, or turned out to run entirely client-side with no static HTML

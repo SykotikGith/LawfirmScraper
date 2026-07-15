@@ -779,6 +779,26 @@ FIRMS: dict[str, dict] = {
         "needed), hosted on the firm's own domain (careers.mintz.com) rather than "
         "viglobalcloud.com, same as Winston Taylor and Vinson & Elkins.",
     },
+    "Duane Morris": {
+        # Found via its marketing page's "Support Staff Opportunities" accordion, whose
+        # per-city links (selfapply.duanemorris.com/viselfapply/viRecruitSelfApply/
+        # RecDefault.aspx?FilterREID=2&FilterJobCategoryID=22&FilterJobID=N) are the same
+        # viRecruitSelfApply platform as O'Melveny/Bryan Cave/Vinson & Elkins/Bracewell/
+        # Mintz -- no Playwright or new adapter code needed, just this config entry.
+        "adapter": ViGlobalAdapter,
+        "list_url": "https://selfapply.duanemorris.com/viselfapply/viRecruitSelfApply/"
+        "RecDefault.aspx?FilterREID=2",
+        "notes": "CONFIRMED via plain zero-JS HTTP request (not just browser-rendered) -- "
+        "the FilterREID=2 param matches the one embedded in every real per-job href found "
+        "on the marketing page's Support Staff accordion, and the response's first real "
+        "row is 'Accounts Payable Clerk - Philadelphia', a genuine staff posting (not an "
+        "attorney role) confirming the filter targets the right bucket. Bryan Cave-style "
+        "structured <h4>/<h5> row shape confirmed directly (default table_id, no override "
+        "needed) -- unlike Bryan Cave's tenant, this one's description div is populated "
+        "server-side too, but ViGlobalAdapter's structured-row parser doesn't currently "
+        "read it (hardcoded empty), same as every other structured-shape tenant -- a "
+        "possible future enhancement, not required for this firm to work.",
+    },
     # --- Breezy HR group ---------------------------------------------------
     "Marshall Dennehey": {
         "adapter": BreezyAdapter,
@@ -1113,16 +1133,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
     # listings) before it can be classified into the tier above or dropped
     # entirely.
     # =========================================================================
-    "Duane Morris": {
-        "reason": "User pointed at duanemorris.com/site/careers.html#tab_SupportStaffOpportunities "
-        "-- confirmed real careers page, but the tab_SupportStaffOpportunities anchor isn't "
-        "present anywhere in the static HTML (no matching id, no iframe embedding an "
-        "external ATS either), so whatever renders that tab's content is pure client-side "
-        "JS with no static/SSR fallback found. Still not confirmed as a genuine bot-"
-        "protection-style block (no 403, no WAF/challenge page) -- just couldn't locate the "
-        "real data source via static probing.",
-        "check_url": "https://www.duanemorris.com/site/careers.html#tab_SupportStaffOpportunities",
-    },
 }
 
 # ---------------------------------------------------------------------------
