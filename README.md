@@ -204,6 +204,22 @@ plain "no matches this run" (or "nothing new since the last run") message.
 All scraped text is treated as untrusted and HTML-escaped before
 rendering.
 
+Every Auto-match/Potential-Matches card also has "✓ Applied" / "Not
+Interested" buttons, tracked client-side in `localStorage` keyed by the
+posting's own URL (stable across dashboard regenerations even though the
+rest of the HTML is rebuilt from scratch every run) — single-device only,
+an accepted limitation since `localStorage` doesn't sync across browsers.
+Applied dims the card, adds an "APPLIED" badge, and suppresses its NEW
+badge (even if the same posting somehow gets re-flagged new in a future
+run, it won't look urgent again); Not Interested hides the card
+everywhere it appears (including in "New Since Last Run", since the same
+`data-url` drives every copy) until the "Show dismissed" toggle near the
+top reveals it again, e.g. to undo a mis-click (clicking the same status
+button again clears it). Each button's HTML structure changed from a
+single `<a class="job-card">` to a `<div class="job-card">` wrapping an
+inner `<a class="job-card-link">` plus the status buttons as siblings —
+an anchor can't validly contain `<button>`s.
+
 A third section, "Manual Firm Check" (amber accent, collapsed by default
 in a `<details>` toggle below a divider so it doesn't dominate the page),
 lists every firm the scraper couldn't reach automatically — combining

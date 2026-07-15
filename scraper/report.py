@@ -156,14 +156,29 @@ def _card(entry: ReportEntry, section: str, show_new_badge: bool = True) -> str:
     loc_tags = _location_tags(entry.location, entry.work_arrangement)
     loc_attr = f' data-loc="{loc_tags}"' if loc_tags else ""
 
+    # The card used to be a single <a> covering the whole thing; it's now a
+    # <div> wrapping an inner link (job title etc.) plus a sibling row of
+    # status buttons -- an <a> can't validly contain <button>s, and clicking
+    # a button inside an anchor is a click-handling headache. data-url is
+    # the localStorage key (the posting's real URL, stable run to run) that
+    # the status-tracking JS uses to keep every copy of this same posting
+    # (e.g. it may appear in both "New Since Last Run" and its home section)
+    # in sync.
     return f"""
-      <a class="job-card {section}" href="{safe_url}"{loc_attr} target="_blank" rel="noopener noreferrer">
+      <div class="job-card {section}" data-url="{safe_url}"{loc_attr}>
+        <span class="applied-badge">APPLIED</span>
         {new_badge}
-        <div class="job-firm">{html.escape(entry.firm)}</div>
-        <div class="job-title">{html.escape(entry.title)}</div>
-        <div class="job-location">{location}</div>
-        <div class="job-tags">{keyword_pills}{wa_pill}{reason_pill}</div>
-      </a>"""
+        <a class="job-card-link" href="{safe_url}" target="_blank" rel="noopener noreferrer">
+          <div class="job-firm">{html.escape(entry.firm)}</div>
+          <div class="job-title">{html.escape(entry.title)}</div>
+          <div class="job-location">{location}</div>
+          <div class="job-tags">{keyword_pills}{wa_pill}{reason_pill}</div>
+        </a>
+        <div class="job-actions">
+          <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
+          <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+        </div>
+      </div>"""
 
 
 def _section(
@@ -500,9 +515,7 @@ def render_report(
     background: var(--job-card-bg);
     border-radius: 12px;
     padding: 18px;
-    text-decoration: none;
-    color: inherit;
-    transition: transform 0.12s ease, border-color 0.12s ease;
+    transition: transform 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
   }}
   .job-card.auto {{ border: 1px solid var(--green-border); }}
   .job-card.review {{ border: 1px solid var(--teal-border); }}
@@ -511,6 +524,11 @@ def render_report(
   }}
   .job-card.auto:hover {{ border-color: var(--green); }}
   .job-card.review:hover {{ border-color: var(--teal); }}
+  .job-card-link {{
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }}
   .job-firm {{
     font-size: 0.75rem;
     color: var(--text-secondary);
@@ -609,6 +627,73 @@ def render_report(
     transform: rotate(-4deg);
     box-shadow: 0 2px 6px rgba(0,0,0,0.35);
   }}
+  .applied-badge {{
+    display: none;
+    position: absolute;
+    top: -8px;
+    left: 14px;
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    padding: 3px 9px;
+    border-radius: 6px;
+    border: 1px solid var(--green-border);
+    transform: rotate(3deg);
+  }}
+  .job-card[data-status="applied"] {{ opacity: 0.55; }}
+  .job-card[data-status="applied"]:hover {{ opacity: 0.85; }}
+  .job-card[data-status="applied"] .applied-badge {{ display: inline-block; }}
+  .job-card[data-status="applied"] .new-badge {{ display: none; }}
+  .job-card[data-status="not-interested"] {{ display: none; }}
+  body[data-show-dismissed="true"] .job-card[data-status="not-interested"] {{
+    display: block;
+    opacity: 0.5;
+  }}
+  .job-actions {{
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    position: relative;
+    z-index: 1;
+  }}
+  .status-btn {{
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--green-border);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+  }}
+  .status-btn:hover {{ border-color: var(--green); color: var(--text-primary); }}
+  .job-card[data-status="applied"] .status-btn-applied {{
+    background: var(--green-badge-bg);
+    border-color: var(--green);
+    color: var(--green-badge-text);
+  }}
+  .job-card[data-status="not-interested"] .status-btn-not-interested,
+  body[data-show-dismissed="true"] .job-card[data-status="not-interested"] .status-btn-not-interested {{
+    background: var(--amber-border);
+    border-color: var(--amber);
+    color: var(--amber);
+  }}
+  .show-dismissed-toggle {{
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 40px;
+  }}
+  .show-dismissed-toggle:hover {{ color: var(--text-primary); }}
   footer {{
     margin-top: 48px;
     color: var(--text-secondary);
@@ -630,6 +715,8 @@ def render_report(
       <button type="button" class="loc-filter-btn" data-loc-filter="us">US Only</button>
       <button type="button" class="loc-filter-btn" data-loc-filter="remote">Remote</button>
     </div>
+
+    <button type="button" id="show-dismissed-toggle" class="show-dismissed-toggle">Show dismissed</button>
 {new_since_section}
 {auto_section}
 {review_section}
@@ -646,6 +733,69 @@ def render_report(
           document.body.setAttribute("data-loc-filter", btn.getAttribute("data-loc-filter"));
         }});
       }});
+    }})();
+
+    (function () {{
+      // Per-posting Applied/Not Interested status, kept in localStorage
+      // (single-device only -- doesn't sync across browsers/computers,
+      // that's an accepted limitation) keyed by the posting's real URL,
+      // which is stable across dashboard regenerations even though the
+      // rest of the HTML is rebuilt from scratch every run.
+      var STORAGE_KEY = "lfcr_posting_status";
+
+      function loadStatuses() {{
+        try {{
+          return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{{}}");
+        }} catch (e) {{
+          return {{}};
+        }}
+      }}
+
+      function saveStatuses(statuses) {{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(statuses));
+      }}
+
+      function renderAll() {{
+        var statuses = loadStatuses();
+        document.querySelectorAll(".job-card[data-url]").forEach(function (card) {{
+          var status = statuses[card.getAttribute("data-url")];
+          if (status === "applied") {{
+            card.setAttribute("data-status", "applied");
+          }} else if (status === "not_interested") {{
+            card.setAttribute("data-status", "not-interested");
+          }} else {{
+            card.removeAttribute("data-status");
+          }}
+        }});
+      }}
+
+      document.addEventListener("click", function (e) {{
+        var btn = e.target.closest(".status-btn");
+        if (!btn) return;
+        e.preventDefault();
+        var card = btn.closest(".job-card");
+        var url = card.getAttribute("data-url");
+        var action = btn.getAttribute("data-status-action");
+        // Every copy of this posting (it can appear in both "New Since
+        // Last Run" and its home section) shares the same URL, so setting
+        // status once here and re-rendering all cards keeps them in sync.
+        var statuses = loadStatuses();
+        statuses[url] = statuses[url] === action ? undefined : action;
+        if (statuses[url] === undefined) delete statuses[url];
+        saveStatuses(statuses);
+        renderAll();
+      }});
+
+      var dismissToggle = document.getElementById("show-dismissed-toggle");
+      if (dismissToggle) {{
+        dismissToggle.addEventListener("click", function () {{
+          var shown = document.body.getAttribute("data-show-dismissed") === "true";
+          document.body.setAttribute("data-show-dismissed", shown ? "false" : "true");
+          dismissToggle.textContent = shown ? "Show dismissed" : "Hide dismissed";
+        }});
+      }}
+
+      renderAll();
     }})();
   </script>
 </body>
