@@ -14,6 +14,8 @@ from .breezy import BreezyAdapter
 from .radancy import RadancyAdapter
 from .aem_career_search import AEMCareerSearchAdapter
 from .playwright_base import PlaywrightAdapter
+from .florecruit import FloRecruitAdapter
+from .dentons import DentonsCareerAdapter
 
 __all__ = [
     "Adapter",
@@ -32,4 +34,6 @@ __all__ = [
     "RadancyAdapter",
     "AEMCareerSearchAdapter",
     "PlaywrightAdapter",
+    "FloRecruitAdapter",
+    "DentonsCareerAdapter",
 ]

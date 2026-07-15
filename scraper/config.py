@@ -18,7 +18,9 @@ from .adapters import (
     BreezyAdapter,
     CircaWorksAdapter,
     CustomHTMLAdapter,
+    DentonsCareerAdapter,
     EArcuAdapter,
+    FloRecruitAdapter,
     GreenhouseAdapter,
     JobviteAdapter,
     OracleRecruitingAdapter,
@@ -780,6 +782,42 @@ FIRMS: dict[str, dict] = {
         "viGlobal backend), but this AEM wrapper endpoint has no bot protection unlike "
         "hitting that backend directly.",
     },
+    # --- FloRecruit group ---------------------------------------------------
+    "Sheppard Mullin": {
+        # First real win from the Playwright network-capture investigation (see
+        # diagnose_browser.py) -- previously blocked because the visible page only calls a
+        # GraphQL endpoint with an undiscoverable query shape, but a plain public REST
+        # endpoint returns everything directly with no auth/session needed at all.
+        "adapter": FloRecruitAdapter,
+        "api_url": "https://florecruit.com/api/v2/public-jobs/sheppardbusinessservices/"
+        "career-page-jobs",
+        "list_url": "https://florecruit.com/v2/app/sheppardbusinessservices/jobs",
+        "notes": "CONFIRMED via live browser network capture -- 16 real postings in one "
+        "response, no pagination needed. Sample titles unmistakably genuine ('IP Docketing "
+        "Specialist', 'Trademark Paralegal', 'eDiscovery Project Manager', 'Technology "
+        "Services Administrator'). Confirmed the endpoint works from a completely fresh, "
+        "unauthenticated request (not just from within an established browser session), so "
+        "no Playwright needed at runtime despite how it was discovered. No confirmed "
+        "per-job URL pattern yet -- falls back to list_url.",
+    },
+    # --- Dentons Career Search group ---------------------------------------------------
+    "Dentons": {
+        "adapter": DentonsCareerAdapter,
+        "api_url": "https://www.dentons.com/DentonsServices/career.asmx/GetJobsByState",
+        "context_item": "{4CCB9477-3A1B-4C92-8FB9-6282C913B18D}",
+        "context_url": "https://www.dentons.com/en/careers/careers-in-the-united-states/"
+        "business-services-in-the-united-states/",
+        "notes": "CONFIRMED via live browser network capture -- a bespoke ASP.NET .asmx "
+        "web service (career.asmx/GetJobsByState), not a 3rd-party ATS. Real postings with "
+        "genuine per-job URLs ('E-Billing Coordinator', 'Lateral Conflicts Analyst', 'Legal "
+        "Administrative Assistant (Intellectual Property & Technology) - New York'). All "
+        "context needed is carried directly in the query string (contextItem/"
+        "contextItemUrl/contextSite) rather than session cookies, so this should work via a "
+        "plain request without a prior page visit -- confirmed the endpoint itself returns "
+        "real data this way, though the exact contextItem GUID was sourced from a live "
+        "browser session rather than independently derived. No location field in the "
+        "response; narrative (real description HTML) folded into description instead.",
+    },
 }
 
 
@@ -967,28 +1005,6 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "inspection of an actual search submission to find scrapeable params/response "
         "shape.",
         "check_url": "https://paulweiss.taleo.net/careersection/ex/jobsearch.ftl",
-    },
-    "Sheppard Mullin": {
-        "reason": "The marketing careers page (sheppard.com/careers, Sitecore JSS + "
-        "Next.js) has zero job data in static/SSR content -- but the real ATS was found: "
-        "FloRecruit (florecruit.com/v2/app/sheppardbusinessservices/jobs), a Next.js "
-        "static-export shell (__NEXT_DATA__ present but its pageProps are empty -- data "
-        "loads client-side after export). Its JS bundle references a real /api/v2/graphql "
-        "endpoint, so postings genuinely exist and are technically reachable, but "
-        "automating it would mean reverse-engineering the actual GraphQL query shape "
-        "(introspection likely disabled in production) -- needs real browser network "
-        "inspection of the query/response, not static probing.",
-        "check_url": "https://florecruit.com/v2/app/sheppardbusinessservices/jobs",
-    },
-    "Dentons": {
-        "reason": "The firm's own sitemap directly indexes individual job posting URLs "
-        "(e.g. .../careers/careers-in-the-united-states/business-services-in-the-united-"
-        "states/2026/july/legal-administrative-assistant-newyork) -- a real, bespoke career "
-        "site, not a 3rd-party ATS. But the category LISTING page itself is Angular-rendered "
-        "with zero job links in static HTML, so there's no automatable way to discover "
-        "current postings short of relying on the sitemap.xml itself as the listing source "
-        "(untested, would be a fragile/unusual adapter design for this project).",
-        "check_url": "https://www.dentons.com/en/careers/careers-in-the-united-states/business-services-in-the-united-states/",
     },
     "Latham & Watkins": {
         "reason": "Confirmed iCIMS tenant 'lw' (careers-lw.icims.com), blocked by the same "
