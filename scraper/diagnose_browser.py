@@ -1,30 +1,21 @@
-"""Round 8 -- last firm standing: Duane Morris.
+"""Category 2 experimental pass -- per the original Playwright request,
+these are the WAF/Cloudflare/Imperva-blocked firms to try with a real
+headless browser as a second pass after Category 1 (now fully done).
+Explicit instruction: don't force it if the challenge still blocks a
+real browser, just report which succeed vs. which are genuinely stuck.
 
-Paul Weiss and Crowell & Moring are done (PaulWeissAdapter added as a
-genuine runtime PlaywrightAdapter; Crowell & Moring turned out to be
-plain Greenhouse, board_token=crowellmoring).
-
-Duane Morris's per-city job links found in round 7
-(selfapply.duanemorris.com/viselfapply/viRecruitSelfApply/RecDefault.aspx
-?FilterREID=2&FilterJobCategoryID=22&FilterJobID=492) are the exact same
-viRecruitSelfApply URL pattern this project's ViGlobalAdapter already
-handles for O'Melveny, Bryan Cave, Vinson & Elkins, Bracewell, and Mintz
--- meaning Duane Morris may not need Playwright OR a new adapter at all,
-just a ViGlobalAdapter config entry. This checks two things with a
-*plain, no-JS* HTTP request (ctx.request.get, not page.goto) to confirm
-that's really true and not just how it renders after JS runs:
-
-1. Does .../viRecruitSelfApply/RecDefault.aspx?FilterREID=2 (guessed,
-   same FilterREID=2 seen in the per-job hrefs, no job-specific filter)
-   return a real GridView table (id=contentPlaceHolder_gridviewList)
-   with real rows, via plain HTTP with zero JS execution?
-2. What shape are the rows in -- one of the two shapes ViGlobalAdapter
-   already knows how to parse (structured <h4>/<h5> tags, or an
-   O'Melveny-style mashed text blob), or something new?
+9 of these are iCIMS tenants blocked by AWS WAF's "Human Verification"
+challenge (confirmed via plain HTTP in earlier research); Kirkland &
+Ellis is a Cloudflare "Just a moment..." challenge; McDermott is an
+Imperva Incapsula challenge. This navigates each with a real
+headless-Chromium session and checks whether the challenge page still
+shows, or whether real job content gets through.
 
 Usage: python -m scraper.diagnose_browser
 """
 from __future__ import annotations
+
+import re
 
 from playwright.sync_api import sync_playwright
 
@@ -32,6 +23,28 @@ UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 )
+WAIT_MS = 5_000
+
+CHALLENGE_SIGNATURES = [
+    "just a moment", "attention required", "human verification",
+    "access denied", "pardon our interruption", "checking your browser",
+    "cf-browser-verification", "request unsuccessful", "incident id",
+    "are you a robot", "verify you are a human", "sorry, you have been blocked",
+]
+
+FIRMS = [
+    ("Orrick", "https://careers-orrick.icims.com/jobs/search?pr=0&in_iframe=1"),
+    ("Milbank", "https://careers-milbank.icims.com/jobs/intro?hashed=-435594439"),
+    ("Lewis Brisbois", "https://careers-lewisbrisbois.icims.com/jobs/search"),
+    ("Gordon Rees", "https://careers-grsm.icims.com/jobs/search"),
+    ("Foley & Lardner", "https://careers-foley.icims.com/jobs/intro?hashed=-626009846"),
+    ("Nelson Mullins", "https://careers-nelsonmullins.icims.com/jobs/search"),
+    ("Mayer Brown", "https://globalcareers-mayerbrown.icims.com/jobs/search?hashed=124489139"),
+    ("Latham & Watkins", "https://careers-lw.icims.com/jobs/search?hashed=-625915638"),
+    ("Willkie Farr & Gallagher", "https://jobs-willkie.icims.com/jobs/search?hashed=-625885970"),
+    ("Kirkland & Ellis", "https://staffjobsus.kirkland.com/jobs/search/"),
+    ("McDermott Will & Emery", "https://www.mcdermottlaw.com/careers"),
+]
 
 
 def section(title: str) -> None:
@@ -49,26 +62,28 @@ def main() -> None:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
 
-        def duane_morris():
-            section("Duane Morris -- plain HTTP (no JS) fetch of guessed viGlobal list URL")
+        def check(name: str, url: str):
+            section(f"{name} -- {url}")
             ctx = browser.new_context(user_agent=UA)
-            for guess in [
-                "https://selfapply.duanemorris.com/viselfapply/viRecruitSelfApply/RecDefault.aspx?FilterREID=2",
-                "https://selfapply.duanemorris.com/viselfapply/viRecruitSelfApply/RecDefault.aspx",
-            ]:
-                resp = ctx.request.get(guess, timeout=15000)
-                print(f"  {guess}")
-                print(f"    status: {resp.status}")
-                body = resp.text()
-                print(f"    body length: {len(body)}")
-                has_table = "contentPlaceHolder_gridviewList" in body
-                print(f"    has contentPlaceHolder_gridviewList table: {has_table}")
-                if has_table:
-                    idx = body.find("contentPlaceHolder_gridviewList")
-                    print(f"    table region[:3000]: {body[idx:idx+3000]!r}")
+            page = ctx.new_page()
+            resp = page.goto(url, wait_until="load")
+            page.wait_for_timeout(WAIT_MS)
+            print(f"  status: {resp.status if resp else None}")
+            print(f"  title: {page.title()!r}")
+            body = page.inner_text("body")
+            body_lower = body.lower()
+            hit = next((sig for sig in CHALLENGE_SIGNATURES if sig in body_lower), None)
+            if hit:
+                print(f"  BLOCKED -- challenge signature found: {hit!r}")
+            else:
+                print("  no challenge signature found -- possible real content")
+                job_count = len(re.findall(r"job|position|opening", body, re.I))
+                print(f"  job/position/opening keyword count: {job_count}")
+            print(f"  body text[:1000]: {body[:1000]!r}")
             ctx.close()
 
-        run_safely("Duane Morris", duane_morris)
+        for name, url in FIRMS:
+            run_safely(name, lambda name=name, url=url: check(name, url))
 
         browser.close()
 
