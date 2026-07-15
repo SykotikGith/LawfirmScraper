@@ -36,6 +36,12 @@ _SEARCH_ICON = (
     'stroke-linejoin="round"><circle cx="11" cy="11" r="7"/>'
     '<path d="m21 21-4.35-4.35"/></svg>'
 )
+_SPARKLE_ICON = (
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" '
+    'stroke="currentColor" stroke-width="2.5" stroke-linecap="round" '
+    'stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4" />'
+    '<path d="m7 7 2.5 2.5M17 7l-2.5 2.5M7 17l2.5-2.5M17 17l-2.5-2.5" /></svg>'
+)
 
 
 @dataclass
@@ -63,7 +69,7 @@ def _pill(text: str, css_class: str) -> str:
     return f'<span class="pill {css_class}">{html.escape(text)}</span>'
 
 
-def _card(entry: ReportEntry, section: str) -> str:
+def _card(entry: ReportEntry, section: str, show_new_badge: bool = True) -> str:
     keyword_pills = "".join(_pill(k, "kw-pill") for k in entry.matched_keywords)
     wa_pill = ""
     if entry.work_arrangement == "Remote":
@@ -71,7 +77,9 @@ def _card(entry: ReportEntry, section: str) -> str:
     elif entry.work_arrangement:
         wa_pill = _pill(entry.work_arrangement, "wa-pill-unclear")
     reason_pill = _pill(entry.review_reason, "reason-pill") if entry.review_reason else ""
-    new_badge = '<span class="new-badge">NEW</span>' if entry.is_new else ""
+    new_badge = (
+        '<span class="new-badge">NEW</span>' if entry.is_new and show_new_badge else ""
+    )
     location = html.escape(entry.location) if entry.location.strip() else "Location not specified"
     safe_url = html.escape(entry.url, quote=True)
 
@@ -108,6 +116,34 @@ def _section(
     <section class="section">
       {header}
       {subtitle_html}
+      <div class="job-grid">{cards}
+      </div>
+    </section>"""
+
+
+def _new_since_section(
+    auto_matches: list[ReportEntry], review_matches: list[ReportEntry]
+) -> str:
+    header = f'<h2 class="section-title new-since">{_SPARKLE_ICON}New Since Last Run</h2>'
+    subtitle = (
+        '<p class="section-subtitle">Postings that weren\'t here last run -- the '
+        "fastest way to see what changed.</p>"
+    )
+    new_entries = [(e, "auto") for e in auto_matches if e.is_new] + [
+        (e, "review") for e in review_matches if e.is_new
+    ]
+    if not new_entries:
+        return f"""
+    <section class="section">
+      {header}
+      {subtitle}
+      <p class="empty-state">nothing new since the last run</p>
+    </section>"""
+    cards = "".join(_card(e, section, show_new_badge=False) for e, section in new_entries)
+    return f"""
+    <section class="section">
+      {header}
+      {subtitle}
       <div class="job-grid">{cards}
       </div>
     </section>"""
@@ -186,6 +222,7 @@ def render_report(
         _metric_card(timestamp_str, "Last run", "metric-value-small"),
     ])
 
+    new_since_section = _new_since_section(auto_matches, review_matches)
     auto_section = _section("Auto-match", _CHECK_ICON, auto_matches, "auto")
     review_section = _section(
         "Potential Matches",
@@ -297,6 +334,7 @@ def render_report(
   .section-title.auto {{ color: var(--green); }}
   .section-title.review {{ color: var(--teal); }}
   .section-title.manual {{ color: var(--amber); }}
+  .section-title.new-since {{ color: var(--green); }}
   .section-subtitle {{
     color: var(--text-secondary);
     font-size: 0.85rem;
@@ -470,6 +508,7 @@ def render_report(
 
     <div class="metrics-grid">{metrics}
     </div>
+{new_since_section}
 {auto_section}
 {review_section}
 {manual_check_section}

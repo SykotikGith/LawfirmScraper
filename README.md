@@ -172,16 +172,22 @@ extending coverage to new firms:
 
 `scraper/report.py` renders `report.html` (and an identical `index.html`)
 on every run: a metrics row (new matches, firms scanned, needs review,
-last run time), an auto-match section, and a "Potential Matches" section
+last run time), a "New Since Last Run" section at the top (a filtered
+view — every posting flagged new, pulled from both the auto-match and
+review pools, so "what changed" doesn't require scanning the full list;
+these same postings still appear in their normal section below too, NEW
+badge and all), an auto-match section, and a "Potential Matches" section
 (the review-manually tier — titled "Needs your judgment" on the
 dashboard, since it's about the job title itself needing a second look,
 not a scraper problem), each posting card linking straight to the real
 job listing. Each card shows keyword-match pills, a work-arrangement pill
 ("Remote" or "remote status unclear — verify" — see the work-arrangement
 filter above) in the same monospace pill style, and a rotated "NEW" badge
-for postings not seen on a previous run. Empty sections show a plain "no
-matches this run" message. All scraped text is treated as untrusted and
-HTML-escaped before rendering.
+for postings not seen on a previous run (suppressed in the "New Since
+Last Run" section itself, where it'd be redundant). Empty sections show a
+plain "no matches this run" (or "nothing new since the last run") message.
+All scraped text is treated as untrusted and HTML-escaped before
+rendering.
 
 A third section, "Manual Firm Check" (amber accent, collapsed by default
 in a `<details>` toggle below a divider so it doesn't dominate the page),
