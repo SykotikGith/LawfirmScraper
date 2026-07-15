@@ -45,8 +45,34 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 12px;
+    margin-bottom: 24px;
+  }
+  .loc-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     margin-bottom: 40px;
   }
+  .loc-filter-btn {
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 7px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--green-border);
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+  }
+  .loc-filter-btn:hover { border-color: var(--green); color: var(--text-primary); }
+  .loc-filter-btn.active {
+    background: var(--green-badge-bg);
+    border-color: var(--green);
+    color: var(--green-badge-text);
+  }
+  body[data-loc-filter="us"] .job-card:not([data-loc~="us"]) { display: none; }
+  body[data-loc-filter="remote"] .job-card:not([data-loc~="remote"]) { display: none; }
   .metric-card {
     background: var(--card-bg);
     border: 1px solid var(--green-border);
@@ -269,7 +295,7 @@
 <body>
   <div class="page">
     <h1>Law Firm Career Radar</h1>
-    <p class="subtitle">IT / Knowledge Management / Legal-AI role filter — updated Jul 15, 2026 04:40 AM UTC</p>
+    <p class="subtitle">IT / Knowledge Management / Legal-AI role filter — updated Jul 15, 2026 04:50 AM UTC</p>
 
     <div class="metrics-grid">
       <div class="metric-card">
@@ -292,9 +318,15 @@
         <div class="metric-label">Needs review</div>
       </div>
       <div class="metric-card">
-        <div class="metric-value metric-value-small">Jul 15, 2026 04:40 AM UTC</div>
+        <div class="metric-value metric-value-small">Jul 15, 2026 04:50 AM UTC</div>
         <div class="metric-label">Last run</div>
       </div>
+    </div>
+
+    <div class="loc-filter" role="group" aria-label="Filter by location">
+      <button type="button" class="loc-filter-btn active" data-loc-filter="all">All Locations</button>
+      <button type="button" class="loc-filter-btn" data-loc-filter="us">US Only</button>
+      <button type="button" class="loc-filter-btn" data-loc-filter="remote">Remote</button>
     </div>
 
     <section class="section">
@@ -321,14 +353,14 @@
         <div class="job-location">Location not specified</div>
         <div class="job-tags"><span class="pill kw-pill">Business Process Optimization</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
       </a>
-      <a class="job-card auto" href="https://stblaw.wd1.myworkdayjobs.com/en-US/careers/job/New-York-NY/Senior-AI-Enablement---Adoption-Analyst_R-2026-581" target="_blank" rel="noopener noreferrer">
+      <a class="job-card auto" href="https://stblaw.wd1.myworkdayjobs.com/en-US/careers/job/New-York-NY/Senior-AI-Enablement---Adoption-Analyst_R-2026-581" data-loc="us" target="_blank" rel="noopener noreferrer">
         
         <div class="job-firm">Simpson Thacher</div>
         <div class="job-title">Senior AI Enablement &amp; Adoption Analyst</div>
         <div class="job-location">New York, NY</div>
         <div class="job-tags"><span class="pill kw-pill">AI Enablement</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
       </a>
-      <a class="job-card auto" href="https://stblaw.wd1.myworkdayjobs.com/en-US/careers/job/New-York-NY/AI-Enablement---Adoption-Analyst_R-2026-580" target="_blank" rel="noopener noreferrer">
+      <a class="job-card auto" href="https://stblaw.wd1.myworkdayjobs.com/en-US/careers/job/New-York-NY/AI-Enablement---Adoption-Analyst_R-2026-580" data-loc="us" target="_blank" rel="noopener noreferrer">
         
         <div class="job-firm">Simpson Thacher</div>
         <div class="job-title">AI Enablement + Adoption Analyst</div>
@@ -342,14 +374,14 @@
         <div class="job-location">5 Locations</div>
         <div class="job-tags"><span class="pill kw-pill">Legal Tech</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
       </a>
-      <a class="job-card auto" href="https://job-boards.greenhouse.io/gibsondunn/jobs/4253456009" target="_blank" rel="noopener noreferrer">
+      <a class="job-card auto" href="https://job-boards.greenhouse.io/gibsondunn/jobs/4253456009" data-loc="us" target="_blank" rel="noopener noreferrer">
         
         <div class="job-firm">Gibson Dunn</div>
         <div class="job-title">Knowledge Management Data Steward – Transactions &amp; Regulatory</div>
         <div class="job-location">California; Century City; Colorado; Dallas; Denver; Houston; Los Angeles; New York; New York City; Orange County; Palo Alto; San Francisco; Texas; Washington, D.C.</div>
         <div class="job-tags"><span class="pill kw-pill">Knowledge Management</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
       </a>
-      <a class="job-card auto" href="https://job-boards.greenhouse.io/gibsondunn/jobs/4253439009" target="_blank" rel="noopener noreferrer">
+      <a class="job-card auto" href="https://job-boards.greenhouse.io/gibsondunn/jobs/4253439009" data-loc="us" target="_blank" rel="noopener noreferrer">
         
         <div class="job-firm">Gibson Dunn</div>
         <div class="job-title">Legal Technology Solutions Architect</div>
@@ -398,7 +430,7 @@
         <div class="job-location">Chicago</div>
         <div class="job-tags"><span class="pill kw-pill">Knowledge Management</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
       </a>
-      <a class="job-card auto" href="https://recruiting.ultipro.com/fox1001frllp/JobBoard/88a19d60-0e84-49c7-b754-509a756678e7/OpportunityDetail?opportunityId=5ba762ed-285c-4ecc-b4c6-951605501d46" target="_blank" rel="noopener noreferrer">
+      <a class="job-card auto" href="https://recruiting.ultipro.com/fox1001frllp/JobBoard/88a19d60-0e84-49c7-b754-509a756678e7/OpportunityDetail?opportunityId=5ba762ed-285c-4ecc-b4c6-951605501d46" data-loc="us" target="_blank" rel="noopener noreferrer">
         
         <div class="job-firm">Fox Rothschild</div>
         <div class="job-title">KM Research Analyst</div>
@@ -532,7 +564,7 @@
       </a>
       <a class="manual-check-card" href="https://ommcareers.viglobalcloud.com/viRecruitSelfApply/RecDefault.aspx?Tag=84c08942-ea6c-4707-a535-258e400c6b3d" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">O&#x27;Melveny &amp; Myers</div>
-        <div class="manual-check-reason">adapter fetch failed this run (ConnectTimeout: HTTPConnectionPool(host=&#x27;www.videsktop.com&#x27;, port=80): Max retries exceeded with url: / (Caused by ConnectTimeoutError(&lt;HTTPConnection(host=&#x27;www.videsktop.com&#x27;, port=80) at 0x7f22e73eb1d0&gt;, &#x27;Connection to www.videsktop.com timed out. (connect timeout=30)&#x27;))) — may be transient, worth checking by hand if it keeps happening</div>
+        <div class="manual-check-reason">adapter fetch failed this run (ConnectTimeout: HTTPConnectionPool(host=&#x27;www.videsktop.com&#x27;, port=80): Max retries exceeded with url: / (Caused by ConnectTimeoutError(&lt;HTTPConnection(host=&#x27;www.videsktop.com&#x27;, port=80) at 0x7f86817c9ac0&gt;, &#x27;Connection to www.videsktop.com timed out. (connect timeout=30)&#x27;))) — may be transient, worth checking by hand if it keeps happening</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
       <a class="manual-check-card" href="https://talent.orrick.com/staff-us/jobs" target="_blank" rel="noopener noreferrer">
@@ -564,5 +596,17 @@
     </details>
     <footer>Generated automatically by the law firm ATS scraper.</footer>
   </div>
+  <script>
+    (function () {
+      var buttons = document.querySelectorAll(".loc-filter-btn");
+      buttons.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          buttons.forEach(function (b) { b.classList.remove("active"); });
+          btn.classList.add("active");
+          document.body.setAttribute("data-loc-filter", btn.getAttribute("data-loc-filter"));
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
