@@ -244,18 +244,18 @@
 <body>
   <div class="page">
     <h1>Law Firm Career Radar</h1>
-    <p class="subtitle">IT / Knowledge Management / Legal-AI role filter — updated Jul 14, 2026 11:20 PM UTC</p>
+    <p class="subtitle">IT / Knowledge Management / Legal-AI role filter — updated Jul 15, 2026 04:01 AM UTC</p>
 
     <div class="metrics-grid">
       <div class="metric-card">
         <div class="metric-value-stack">
-          <div class="metric-stack-line"><span class="metric-stack-tag">New:</span> <span class="accent-green">1</span></div>
+          <div class="metric-stack-line"><span class="metric-stack-tag">New:</span> <span class="accent-green">0</span></div>
           <div class="metric-stack-line"><span class="metric-stack-tag">Total:</span> <span>20</span></div>
         </div>
         <div class="metric-label">Matches this run</div>
       </div>
       <div class="metric-card">
-        <div class="metric-value ">59</div>
+        <div class="metric-value ">69</div>
         <div class="metric-label">Firms scanned</div>
       </div>
       <div class="metric-card">
@@ -263,7 +263,7 @@
         <div class="metric-label">Needs review</div>
       </div>
       <div class="metric-card">
-        <div class="metric-value metric-value-small">Jul 14, 2026 11:20 PM UTC</div>
+        <div class="metric-value metric-value-small">Jul 15, 2026 04:01 AM UTC</div>
         <div class="metric-label">Last run</div>
       </div>
     </div>
@@ -391,7 +391,7 @@
         <div class="job-tags"><span class="pill kw-pill">Legal Tech</span><span class="pill wa-pill-unclear">remote status unclear — verify</span></div>
       </a>
       <a class="job-card auto" href="https://careers.mintz.com/viRecruitSelfApply/RecDefault.aspx?Tag=fdfa0684-8265-4911-aece-f31f96213ea9" target="_blank" rel="noopener noreferrer">
-        <span class="new-badge">NEW</span>
+        
         <div class="job-firm">Mintz Levin</div>
         <div class="job-title">Knowledge Management and Innovation Strategist - Boston</div>
         <div class="job-location">Boston</div>
@@ -424,11 +424,6 @@
       <h2 class="section-title manual"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>Needs Manual Check</h2>
       <p class="section-subtitle">Firms the scraper can't reach automatically — worth checking by hand.</p>
       <div class="job-grid">
-      <a class="manual-check-card" href="https://jobs.silkroad.com/AkinGump/AkinGump" target="_blank" rel="noopener noreferrer">
-        <div class="manual-check-firm">Akin Gump</div>
-        <div class="manual-check-reason">Confirmed real SilkRoad OpenHire search page (jobs.silkroad.com/AkinGump/AkinGump) -- same platform already working for WilmerHale, but a different URL shape (jobs.silkroad.com/&lt;company&gt;/&lt;company&gt; instead of &lt;company&gt;-openhire.silkroad.com/epostings/...). Unlike WilmerHale, the fuseaction=app.jobsearch trick that returns real results directly doesn&#x27;t apply here -- tried multiple fuseaction guesses and a real POST submission of the actual search form (with its genuine hidden fields: SearchString/SelectedLocations/SelectedCategory/SelectedPositionType) over 3 diagnostic rounds, always getting the same empty search-form shell back rather than results. This tenant&#x27;s results likely load via a separate AJAX call after submission (session/token-based) -- would need real browser network inspection to find it.</div>
-        <div class="manual-check-link-hint">Check firm's site →</div>
-      </a>
       <a class="manual-check-card" href="https://www.arnoldporter.com/en/careers/professional-staff/current-opportunities" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">Arnold &amp; Porter</div>
         <div class="manual-check-reason">Confirmed Coveo (static.cloud.coveo.com), the exact same enterprise search layer already blocking Covington &amp; Burling -- job data is fetched via a JS search API call after page load. Checked specifically for an embedded organizationId/accessToken in the static HTML (Coveo sites sometimes expose these for a public search widget) and found neither -- genuinely invisible to static HTML scraping, not just unconfirmed.</div>
@@ -449,34 +444,19 @@
         <div class="manual-check-reason">Real tenant confirmed on Workday wd1 (path-specific-error signal) but the site slug was never found -- the business-professionals page uses Coveo (static.cloud.coveo.com), an enterprise search layer on their Sitecore CMS, not a job board ATS directly. Job data is fetched via a JS search API call after page load, invisible to static HTML scraping.</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
-      <a class="manual-check-card" href="https://www.crowell.com/en/careers" target="_blank" rel="noopener noreferrer">
-        <div class="manual-check-firm">Crowell &amp; Moring</div>
-        <div class="manual-check-reason">Real careers landing and apply-now pages found, but the careers page is an unusually large 4MB with no embedded JSON state and no known ATS platform domain present anywhere in it.</div>
-        <div class="manual-check-link-hint">Check firm's site →</div>
-      </a>
       <a class="manual-check-card" href="https://www.davispolk.com" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">Davis Polk</div>
         <div class="manual-check-reason">Real tenant confirmed on Workday wd5 (path-specific-error signal), apparently dormant/internal. The real careers path wasn&#x27;t found -- davispolk.com/careers returns 403 (bot-protected) and the bare domain has no ATS trace.</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
-      <a class="manual-check-card" href="https://www.dentons.com/en/careers/careers-in-the-united-states/business-services-in-the-united-states/" target="_blank" rel="noopener noreferrer">
-        <div class="manual-check-firm">Dentons</div>
-        <div class="manual-check-reason">The firm&#x27;s own sitemap directly indexes individual job posting URLs (e.g. .../careers/careers-in-the-united-states/business-services-in-the-united-states/2026/july/legal-administrative-assistant-newyork) -- a real, bespoke career site, not a 3rd-party ATS. But the category LISTING page itself is Angular-rendered with zero job links in static HTML, so there&#x27;s no automatable way to discover current postings short of relying on the sitemap.xml itself as the listing source (untested, would be a fragile/unusual adapter design for this project).</div>
-        <div class="manual-check-link-hint">Check firm's site →</div>
-      </a>
-      <a class="manual-check-card" href="https://www.duanemorris.com/site/careers.html#tab_SupportStaffOpportunities" target="_blank" rel="noopener noreferrer">
-        <div class="manual-check-firm">Duane Morris</div>
-        <div class="manual-check-reason">User pointed at duanemorris.com/site/careers.html#tab_SupportStaffOpportunities -- confirmed real careers page, but the tab_SupportStaffOpportunities anchor isn&#x27;t present anywhere in the static HTML (no matching id, no iframe embedding an external ATS either), so whatever renders that tab&#x27;s content is pure client-side JS with no static/SSR fallback found. Still not confirmed as a genuine bot-protection-style block (no 403, no WAF/challenge page) -- just couldn&#x27;t locate the real data source via static probing.</div>
-        <div class="manual-check-link-hint">Check firm's site →</div>
-      </a>
       <a class="manual-check-card" href="https://www.foley.com/careers/" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">Foley &amp; Lardner</div>
-        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;foley&#x27; (found embedded in foley.com/careers), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick/Milbank -- not scrapable with a plain HTTP client.</div>
+        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;foley&#x27; (found embedded in foley.com/careers), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick/Milbank -- not scrapable with a plain HTTP client. CONFIRMED still blocked with a genuine headless-Chromium Playwright session too.</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
       <a class="manual-check-card" href="https://www.grsm.com/careers" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">Gordon Rees</div>
-        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;grsm&#x27; (Gordon Rees Scully Mansukhani), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick/Milbank -- not scrapable with a plain HTTP client.</div>
+        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;grsm&#x27; (Gordon Rees Scully Mansukhani), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick/Milbank -- not scrapable with a plain HTTP client. CONFIRMED still blocked with a genuine headless-Chromium Playwright session too.</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
       <a class="manual-check-card" href="https://klgates.recsolu.com/job_boards/1" target="_blank" rel="noopener noreferrer">
@@ -484,39 +464,24 @@
         <div class="manual-check-reason">Real &#x27;All Current Openings&#x27; link found, leading to klgates.recsolu.com -- RecSolu (Yello Enterprise), a platform not otherwise seen in this project. The board is JS-rendered with no job data in static HTML; several guessed REST API endpoints (/api/v1/job_boards/.../jobs) returned 401 Unauthorized -- a real API exists but requires credentials this project doesn&#x27;t have and shouldn&#x27;t try to bypass.</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
-      <a class="manual-check-card" href="https://staffjobsus.kirkland.com/jobs/search/" target="_blank" rel="noopener noreferrer">
-        <div class="manual-check-firm">Kirkland &amp; Ellis</div>
-        <div class="manual-check-reason">Real careers site confirmed (staffjobsus.kirkland.com/jobs/search/), but blocked by a Cloudflare bot-management challenge (&#x27;Just a moment...&#x27; interstitial, confirmed via response body/CSP headers) -- a different bot-protection vendor than the AWS WAF/Imperva blocks seen elsewhere in this project, but the same category of obstacle. Underlying ATS platform not identified (blocked before any platform signal was visible).</div>
-        <div class="manual-check-link-hint">Check firm's site →</div>
-      </a>
-      <a class="manual-check-card" href="https://careers.hsfkramer.com/global/en/us/search-results" target="_blank" rel="noopener noreferrer">
-        <div class="manual-check-firm">Kramer Levin (now Herbert Smith Freehills Kramer)</div>
-        <div class="manual-check-reason">Confirmed real Phenom People career site (careers.hsfkramer.com) -- found the actual REST endpoint shape used by the platform (/api/apply/v2/jobs?domain=&lt;tenant&gt;&amp;start=N&amp;num=N, same convention Ogletree Deakins&#x27; Jibe platform coincidentally uses) via the page&#x27;s embedded phApp.ddo JS config, but every domain value tried (careers.hsfkramer.com, hsfkramer.com, hsfkramer, the full URL path) returned {&quot;errorMsg&quot;: &quot;Tenant not identified&quot;} -- the real tenant identifier Phenom expects isn&#x27;t present anywhere in the static page config found so far (4 diagnostic rounds). Would need real browser network inspection to capture the actual outgoing request.</div>
-        <div class="manual-check-link-hint">Check firm's site →</div>
-      </a>
       <a class="manual-check-card" href="https://www.lw.com" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">Latham &amp; Watkins</div>
-        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;lw&#x27; (careers-lw.icims.com), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick/Milbank -- not scrapable with a plain HTTP client.</div>
+        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;lw&#x27; (careers-lw.icims.com), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick/Milbank -- not scrapable with a plain HTTP client. CONFIRMED still blocked with a genuine headless-Chromium Playwright session too.</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
       <a class="manual-check-card" href="https://www.lewisbrisbois.com/careers" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">Lewis Brisbois</div>
-        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;lewisbrisbois&#x27;, blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick/Milbank -- not scrapable with a plain HTTP client.</div>
+        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;lewisbrisbois&#x27;, blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick/Milbank -- not scrapable with a plain HTTP client. CONFIRMED still blocked with a genuine headless-Chromium Playwright session too.</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
       <a class="manual-check-card" href="https://www.mayerbrown.com" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">Mayer Brown</div>
-        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;mayerbrown&#x27; (note: globalcareers- subdomain prefix, a third variant after careers-/jobs- seen for other firms), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge -- not scrapable with a plain HTTP client.</div>
-        <div class="manual-check-link-hint">Check firm's site →</div>
-      </a>
-      <a class="manual-check-card" href="https://www.mcdermottlaw.com/careers" target="_blank" rel="noopener noreferrer">
-        <div class="manual-check-firm">McDermott Will &amp; Emery</div>
-        <div class="manual-check-reason">Real tenant confirmed on Workday wd5 (path-specific-error signal), apparently dormant/internal. mwe.com/careers redirects to mcdermottlaw.com/careers, which is blocked by an Imperva Incapsula bot-protection challenge -- not scrapable with a plain HTTP client, same category as iCIMS&#x27;s AWS WAF block.</div>
+        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;mayerbrown&#x27; (note: globalcareers- subdomain prefix, a third variant after careers-/jobs- seen for other firms), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge -- not scrapable with a plain HTTP client. CONFIRMED still blocked with a genuine headless-Chromium Playwright session too.</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
       <a class="manual-check-card" href="https://careers-milbank.icims.com/jobs/intro?hashed=-435594439" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">Milbank</div>
-        <div class="manual-check-reason">Real ATS is iCIMS (found via the firm&#x27;s own careers page), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick. A Workday tenant also exists on wd1 but is apparently dormant/internal, not used for external recruiting.</div>
+        <div class="manual-check-reason">Real ATS is iCIMS (found via the firm&#x27;s own careers page), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick. A Workday tenant also exists on wd1 but is apparently dormant/internal, not used for external recruiting. CONFIRMED still blocked with a genuine headless-Chromium Playwright session too.</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
       <a class="manual-check-card" href="https://careers.mofo.com/" target="_blank" rel="noopener noreferrer">
@@ -526,47 +491,32 @@
       </a>
       <a class="manual-check-card" href="https://www.nelsonmullins.com/careers" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">Nelson Mullins</div>
-        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;nelsonmullins&#x27; (found embedded in nelsonmullins.com/careers), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick/Milbank -- not scrapable with a plain HTTP client.</div>
+        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;nelsonmullins&#x27; (found embedded in nelsonmullins.com/careers), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick/Milbank -- not scrapable with a plain HTTP client. CONFIRMED still blocked with a genuine headless-Chromium Playwright session too.</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
       <a class="manual-check-card" href="https://ommcareers.viglobalcloud.com/viRecruitSelfApply/RecDefault.aspx?Tag=84c08942-ea6c-4707-a535-258e400c6b3d" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">O&#x27;Melveny &amp; Myers</div>
-        <div class="manual-check-reason">adapter fetch failed this run (ConnectTimeout: HTTPConnectionPool(host=&#x27;www.videsktop.com&#x27;, port=80): Max retries exceeded with url: / (Caused by ConnectTimeoutError(&lt;HTTPConnection(host=&#x27;www.videsktop.com&#x27;, port=80) at 0x7fead312b260&gt;, &#x27;Connection to www.videsktop.com timed out. (connect timeout=30)&#x27;))) — may be transient, worth checking by hand if it keeps happening</div>
+        <div class="manual-check-reason">adapter fetch failed this run (ConnectTimeout: HTTPConnectionPool(host=&#x27;www.videsktop.com&#x27;, port=80): Max retries exceeded with url: / (Caused by ConnectTimeoutError(&lt;HTTPConnection(host=&#x27;www.videsktop.com&#x27;, port=80) at 0x7fa885380aa0&gt;, &#x27;Connection to www.videsktop.com timed out. (connect timeout=30)&#x27;))) — may be transient, worth checking by hand if it keeps happening</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
       <a class="manual-check-card" href="https://talent.orrick.com/staff-us/jobs" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">Orrick</div>
-        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;orrick&#x27;, but blocked by an AWS WAF &#x27;Human Verification&#x27; challenge -- not scrapable with a plain HTTP client.</div>
-        <div class="manual-check-link-hint">Check firm's site →</div>
-      </a>
-      <a class="manual-check-card" href="https://paulweiss.taleo.net/careersection/ex/jobsearch.ftl" target="_blank" rel="noopener noreferrer">
-        <div class="manual-check-firm">Paul Weiss</div>
-        <div class="manual-check-reason">Confirmed Taleo Enterprise career section (paulweiss.taleo.net/careersection/ex/jobsearch.ftl), but it&#x27;s the search FORM, not results -- classic Taleo Enterprise (not the newer REST-based career sites) executes search via a self-submitting POST back to the same jobsearch.ftl URL (confirmed &lt;form action=&quot;jobsearch.ftl&quot;&gt;), with no discoverable AJAX/REST endpoint or TFS_-prefixed JS config exposed in static HTML. Would need real browser network inspection of an actual search submission to find scrapeable params/response shape.</div>
+        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;orrick&#x27;, but blocked by an AWS WAF &#x27;Human Verification&#x27; challenge -- not scrapable with a plain HTTP client. CONFIRMED still blocked (405, &#x27;Human Verification&#x27; challenge page) with a genuine headless-Chromium Playwright session too -- genuinely not scrapable, not just unconfirmed with a real browser.</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
       <a class="manual-check-card" href="https://ropesgray.applicantstack.com/x/openings" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">Ropes &amp; Gray</div>
-        <div class="manual-check-reason">ropesgray.com 403s on every path (bot protection), blocking the embedded-link-discovery technique used for every other firm here. A real ApplicantStack tenant may exist (ropesgray.applicantstack.com/x/openings returned 0 postings), but that&#x27;s not enough to confirm identity.</div>
+        <div class="manual-check-reason">Confirmed Cloudflare bot-management block (real &#x27;Attention Required!&#x27; challenge page, not just a 403) on ropesgrayrecruiting.com&#x27;s US Careers page, verified with a real headless-Chromium browser session -- not scrapable even with Playwright. A real ApplicantStack tenant may exist (ropesgray.applicantstack.com/x/openings returned 0 postings), but that&#x27;s not enough to confirm identity.</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
-      <a class="manual-check-card" href="https://florecruit.com/v2/app/sheppardbusinessservices/jobs" target="_blank" rel="noopener noreferrer">
-        <div class="manual-check-firm">Sheppard Mullin</div>
-        <div class="manual-check-reason">The marketing careers page (sheppard.com/careers, Sitecore JSS + Next.js) has zero job data in static/SSR content -- but the real ATS was found: FloRecruit (florecruit.com/v2/app/sheppardbusinessservices/jobs), a Next.js static-export shell (__NEXT_DATA__ present but its pageProps are empty -- data loads client-side after export). Its JS bundle references a real /api/v2/graphql endpoint, so postings genuinely exist and are technically reachable, but automating it would mean reverse-engineering the actual GraphQL query shape (introspection likely disabled in production) -- needs real browser network inspection of the query/response, not static probing.</div>
-        <div class="manual-check-link-hint">Check firm's site →</div>
-      </a>
-      <a class="manual-check-card" href="https://myjobs.adp.com/venablebusinessprofessionalcareers/cx" target="_blank" rel="noopener noreferrer">
-        <div class="manual-check-firm">Venable</div>
-        <div class="manual-check-reason">Confirmed ADP myjobs client-side Angular app (myjobs.adp.com/venablebusinessprofessionalcareers/cx) -- static HTML is just an empty app shell. The main JS bundle references /cx/rm/v1/core/identity and /cx/staffing/v2/job-applicant(s) paths, but those are account/application-management endpoints, not a job-listing search API; several sibling-path guesses (/cx/rm/v1/jobs, /cx/rm/v2/jobs, etc.) all just returned the same SPA shell (client-side routing, no server-side 404). The real job-search endpoint wasn&#x27;t discoverable via static probing -- would need real browser network inspection.</div>
-        <div class="manual-check-link-hint">Check firm's site →</div>
-      </a>
-      <a class="manual-check-card" href="https://portal.velaw.com/viDesktopEx/viRecruitSelfApply/ReDefault.aspx?Tag=bf5353fd-6c9b-41e3-a72f-7abd61690415" target="_blank" rel="noopener noreferrer">
+      <a class="manual-check-card" href="https://portal.velaw.com/viDesktopEx/viRecruitSelfApply/ReDefault.aspx?FilterREID=7" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">Vinson &amp; Elkins</div>
         <div class="manual-check-reason">adapter ran but returned zero postings this run — may be transient or the site structure changed</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
       <a class="manual-check-card" href="https://www.willkie.com/careers" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">Willkie Farr &amp; Gallagher</div>
-        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;jobs-willkie&#x27; (note: jobs- subdomain prefix, not the more common careers- prefix seen for Orrick/Milbank/Nelson Mullins/Foley &amp; Lardner), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge -- not scrapable with a plain HTTP client.</div>
+        <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;jobs-willkie&#x27; (note: jobs- subdomain prefix, not the more common careers- prefix seen for Orrick/Milbank/Nelson Mullins/Foley &amp; Lardner), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge -- not scrapable with a plain HTTP client. CONFIRMED still blocked with a genuine headless-Chromium Playwright session too.</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
       </div>
