@@ -1,30 +1,32 @@
-"""Round 6 -- last 3 firms (Ropes & Gray confirmed Cloudflare-blocked in round 5,
-moved to MANUAL_CHECK_FIRMS, done).
+"""Round 7 -- closing out the last 3 firms.
 
-- Paul Weiss: round 5 found the real row1 <tr> and confirmed the title
-  ("Business Services Assistant") via a[id*='reqTitleLinkAction'], but the
-  outerHTML dump got truncated before showing location/date. This grabs
-  row.inner_text() instead (clean visible text, no HTML noise) for row1,
-  and also counts how many rowN links exist so an adapter knows how to
-  loop.
-- Duane Morris: round 5 confirmed the careers page has a list of city
-  names (Atlanta, Austin, Boca Raton, ...) as the "Current Opportunities"
-  links, not actual job postings. This dumps each city link's href to see
-  where they actually point -- likely a different ATS/portal per office,
-  or a shared one with a location filter param.
-- Crowell & Moring: round 5's regex-based href extraction failed against
-  the real corrupted string for reasons still unclear (worked in isolated
-  testing, not against the live page). Since we already know the intended
-  destination from the raw href text itself
-  (https://www.crowell.com/en/careers/professional-staff/open-positions),
-  this skips parsing the broken link entirely and just navigates straight
-  there to see whether that destination page is plain scrapable HTML.
+- Paul Weiss: round 6 confirmed 11 real rows with title, requisition ID,
+  work location, schedule, and posting date, but no real per-job href
+  (postback-only JS). Classic Taleo Enterprise career sections commonly
+  serve a separate detail page at
+  careersection/<section>/jobdetail.ftl?job=<requisitionID> -- this
+  tries that guessed URL for row1's requisition ID (26000223) to see if
+  it's a real, working, linkable detail page.
+- Duane Morris: round 6 confirmed the city names are Bootstrap-style
+  accordion toggles (href="#collapse-atlanta" etc.), not page
+  navigations. Bootstrap accordions typically have their panel content
+  already present in the raw server-rendered HTML, just hidden by CSS
+  until expanded -- this checks whether div#collapse-atlanta (and a
+  couple others) already contain real job links in the DOM without
+  needing to click anything, which would mean a plain requests +
+  BeautifulSoup adapter works with zero JS execution needed.
+- Crowell & Moring: round 6 confirmed the site embeds Greenhouse
+  (for=crowellmoring), but via the newer job-boards.greenhouse.io embed
+  UI with a validityToken, not the classic public REST API this project
+  already has a GreenhouseAdapter for. This checks whether the classic
+  https://boards-api.greenhouse.io/v1/boards/crowellmoring/jobs endpoint
+  (same one GreenhouseAdapter already calls for other firms) is also
+  live for this token -- if so, no new adapter is needed, just a config
+  entry.
 
 Usage: python -m scraper.diagnose_browser
 """
 from __future__ import annotations
-
-import re
 
 from playwright.sync_api import sync_playwright
 
@@ -51,31 +53,29 @@ def main() -> None:
         browser = p.chromium.launch(headless=True)
 
         def paul_weiss():
-            section("Paul Weiss -- row inner_text + row count")
+            section("Paul Weiss -- guessed Taleo jobdetail.ftl URL for requisition 26000223")
             ctx = browser.new_context(user_agent=UA)
             page = ctx.new_page()
-            page.goto("https://paulweiss.taleo.net/careersection/ex/jobsearch.ftl", wait_until="load")
-            page.wait_for_timeout(WAIT_MS)
-            try:
-                page.get_by_role("button", name=re.compile("search", re.I)).first.click(timeout=5000)
-            except Exception as exc:
-                print(f"  could not click Search: {exc}")
-            page.wait_for_timeout(WAIT_MS)
-
-            title_links = page.query_selector_all("a[id*='reqTitleLinkAction']")
-            print(f"  total title links found: {len(title_links)}")
-            for link in title_links:
-                print(f"    id={link.get_attribute('id')!r} text={link.inner_text()!r}")
-
-            row1 = page.query_selector("a[id='requisitionListInterface.reqTitleLinkAction.row1']")
-            if row1:
-                row = row1.evaluate_handle("el => el.closest('tr')")
-                row_text = row.evaluate("el => el ? el.innerText : null")
-                print(f"  row1 inner_text: {row_text!r}")
+            for guess in [
+                "https://paulweiss.taleo.net/careersection/ex/jobdetail.ftl?job=26000223",
+                "https://paulweiss.taleo.net/careersection/ex/jobdetail.ftl?job=26000223&lang=en",
+            ]:
+                try:
+                    resp = page.goto(guess, wait_until="load")
+                    print(f"  {guess}")
+                    print(f"    status: {resp.status if resp else None}")
+                    print(f"    title: {page.title()!r}")
+                    body = page.inner_text("body")
+                    idx = body.find("Business Services Assistant")
+                    print(f"    'Business Services Assistant' found at index {idx}")
+                    if idx != -1:
+                        print(f"    context: {body[max(0, idx-100):idx+300]!r}")
+                except Exception as exc:
+                    print(f"    EXCEPTION: {type(exc).__name__}: {exc}")
             ctx.close()
 
         def duane_morris():
-            section("Duane Morris -- city link hrefs under Support Staff Opportunities")
+            section("Duane Morris -- checking accordion panel content in raw DOM")
             ctx = browser.new_context(user_agent=UA)
             page = ctx.new_page()
             page.goto(
@@ -83,44 +83,35 @@ def main() -> None:
                 wait_until="load",
             )
             page.wait_for_timeout(WAIT_MS)
-            cities = [
-                "Multiple Locations", "Atlanta", "Austin", "Boca Raton", "Boston",
-                "Chicago", "Dallas", "Fort Worth", "Houston", "Los Angeles",
-                "New York", "North Jersey", "Philadelphia", "Pittsburgh",
-                "San Diego", "San Francisco", "Silicon Valley", "Washington D.C.",
-            ]
-            for city in cities:
-                try:
-                    link = page.get_by_role("link", name=city, exact=True).first
-                    href = link.get_attribute("href", timeout=3000)
-                    print(f"    {city}: {href!r}")
-                except Exception as exc:
-                    print(f"    {city}: EXCEPTION {type(exc).__name__}: {exc}")
+            for panel_id in ["collapse-atlanta", "collapse-multiple", "collapse-newyork"]:
+                el = page.query_selector(f"#{panel_id}")
+                if el is None:
+                    print(f"  #{panel_id}: not found in DOM")
+                    continue
+                text = el.inner_text().strip()
+                links = el.query_selector_all("a")
+                print(f"  #{panel_id}: inner_text[:800]={text[:800]!r}")
+                print(f"  #{panel_id}: {len(links)} <a> tags")
+                for link in links[:10]:
+                    print(f"      href={link.get_attribute('href')!r} text={link.inner_text()!r}")
             ctx.close()
 
         def crowell_moring():
-            section("Crowell & Moring -- navigating straight to the known open-positions URL")
+            section("Crowell & Moring -- testing the classic Greenhouse public API")
             ctx = browser.new_context(user_agent=UA)
             page = ctx.new_page()
-            candidates = []
-
-            def on_resp(r):
-                ct = r.headers.get("content-type", "")
-                if "json" in ct.lower() or re.search(r"job|career|search|api", r.url, re.I):
-                    if not any(n in r.url.lower() for n in ["gtm.js", "analytics", ".woff", ".css", ".png", ".jpg", ".svg", "cookielaw", "onetrust"]):
-                        candidates.append((r.url, r.status, ct))
-
-            page.on("response", on_resp)
-            page.goto(
-                "https://www.crowell.com/en/careers/professional-staff/open-positions",
-                wait_until="load",
-            )
-            page.wait_for_timeout(WAIT_MS)
-            print(f"  page title: {page.title()!r}")
-            print(f"  final URL: {page.url}")
-            for url, status, ct in candidates[:20]:
-                print(f"    [{status}] {ct} {url}")
-            print(f"  body text[:2000]: {page.inner_text('body')[:2000]!r}")
+            api_url = "https://boards-api.greenhouse.io/v1/boards/crowellmoring/jobs?content=true"
+            resp = ctx.request.get(api_url, timeout=15000)
+            print(f"  {api_url}")
+            print(f"  status: {resp.status}")
+            if resp.ok:
+                data = resp.json()
+                jobs = data.get("jobs", [])
+                print(f"  total jobs: {len(jobs)}")
+                for job in jobs[:8]:
+                    print(f"    {job.get('title')!r} | {(job.get('location') or {}).get('name')!r}")
+            else:
+                print(f"  body[:500]: {resp.text()[:500]!r}")
             ctx.close()
 
         run_safely("Paul Weiss", paul_weiss)
