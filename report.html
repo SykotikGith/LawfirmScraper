@@ -74,6 +74,7 @@
     line-height: 1.3;
   }
   .metric-stack-line .accent-green { color: var(--green); }
+  .metric-stack-line .accent-amber { color: var(--amber); }
   .metric-stack-tag {
     font-size: 0.75rem;
     font-weight: 600;
@@ -268,7 +269,7 @@
 <body>
   <div class="page">
     <h1>Law Firm Career Radar</h1>
-    <p class="subtitle">IT / Knowledge Management / Legal-AI role filter — updated Jul 15, 2026 04:30 AM UTC</p>
+    <p class="subtitle">IT / Knowledge Management / Legal-AI role filter — updated Jul 15, 2026 04:40 AM UTC</p>
 
     <div class="metrics-grid">
       <div class="metric-card">
@@ -279,15 +280,19 @@
         <div class="metric-label">Matches this run</div>
       </div>
       <div class="metric-card">
-        <div class="metric-value ">69</div>
-        <div class="metric-label">Firms scanned</div>
+        <div class="metric-value-stack">
+          <div class="metric-stack-line"><span class="metric-stack-tag">Automated:</span> <span class="accent-green">67</span></div>
+          <div class="metric-stack-line"><span class="metric-stack-tag">Partial:</span> <span class="accent-amber">2</span></div>
+          <div class="metric-stack-line"><span class="metric-stack-tag">Manual:</span> <span class="accent-amber">17</span></div>
+        </div>
+        <div class="metric-label">Firm coverage (86 tracked)</div>
       </div>
       <div class="metric-card">
         <div class="metric-value accent-teal">2</div>
         <div class="metric-label">Needs review</div>
       </div>
       <div class="metric-card">
-        <div class="metric-value metric-value-small">Jul 15, 2026 04:30 AM UTC</div>
+        <div class="metric-value metric-value-small">Jul 15, 2026 04:40 AM UTC</div>
         <div class="metric-label">Last run</div>
       </div>
     </div>
@@ -527,7 +532,7 @@
       </a>
       <a class="manual-check-card" href="https://ommcareers.viglobalcloud.com/viRecruitSelfApply/RecDefault.aspx?Tag=84c08942-ea6c-4707-a535-258e400c6b3d" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">O&#x27;Melveny &amp; Myers</div>
-        <div class="manual-check-reason">adapter fetch failed this run (ConnectTimeout: HTTPConnectionPool(host=&#x27;www.videsktop.com&#x27;, port=80): Max retries exceeded with url: / (Caused by ConnectTimeoutError(&lt;HTTPConnection(host=&#x27;www.videsktop.com&#x27;, port=80) at 0x7fab0a325fd0&gt;, &#x27;Connection to www.videsktop.com timed out. (connect timeout=30)&#x27;))) — may be transient, worth checking by hand if it keeps happening</div>
+        <div class="manual-check-reason">adapter fetch failed this run (ConnectTimeout: HTTPConnectionPool(host=&#x27;www.videsktop.com&#x27;, port=80): Max retries exceeded with url: / (Caused by ConnectTimeoutError(&lt;HTTPConnection(host=&#x27;www.videsktop.com&#x27;, port=80) at 0x7f22e73eb1d0&gt;, &#x27;Connection to www.videsktop.com timed out. (connect timeout=30)&#x27;))) — may be transient, worth checking by hand if it keeps happening</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
       <a class="manual-check-card" href="https://talent.orrick.com/staff-us/jobs" target="_blank" rel="noopener noreferrer">
