@@ -103,6 +103,29 @@
     font-size: 0.85rem;
     margin: -8px 0 16px;
   }
+  .manual-check-details {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--amber-border);
+  }
+  summary.section-title {
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+  }
+  summary.section-title::-webkit-details-marker { display: none; }
+  summary.section-title::marker { content: ""; }
+  .section-count {
+    color: var(--text-secondary);
+    font-weight: 400;
+    font-size: 0.85rem;
+  }
+  .chevron {
+    margin-left: auto;
+    font-size: 0.8rem;
+    transition: transform 0.15s ease;
+  }
+  details[open] .chevron { transform: rotate(90deg); }
   .empty-state {
     color: var(--text-secondary);
     font-style: italic;
@@ -244,7 +267,7 @@
 <body>
   <div class="page">
     <h1>Law Firm Career Radar</h1>
-    <p class="subtitle">IT / Knowledge Management / Legal-AI role filter — updated Jul 15, 2026 04:01 AM UTC</p>
+    <p class="subtitle">IT / Knowledge Management / Legal-AI role filter — updated Jul 15, 2026 04:15 AM UTC</p>
 
     <div class="metrics-grid">
       <div class="metric-card">
@@ -263,13 +286,14 @@
         <div class="metric-label">Needs review</div>
       </div>
       <div class="metric-card">
-        <div class="metric-value metric-value-small">Jul 15, 2026 04:01 AM UTC</div>
+        <div class="metric-value metric-value-small">Jul 15, 2026 04:15 AM UTC</div>
         <div class="metric-label">Last run</div>
       </div>
     </div>
 
     <section class="section">
       <h2 class="section-title auto"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Auto-match</h2>
+      
       <div class="job-grid">
       <a class="job-card auto" href="https://job-boards.greenhouse.io/wilsonelser/jobs/5198354008" target="_blank" rel="noopener noreferrer">
         
@@ -401,7 +425,8 @@
     </section>
 
     <section class="section">
-      <h2 class="section-title review"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>Review manually</h2>
+      <h2 class="section-title review"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>Potential Matches</h2>
+      <p class="section-subtitle">Needs your judgment — the title matched a keyword but isn&#x27;t a clear auto-match.</p>
       <div class="job-grid">
       <a class="job-card review" href="https://jacksonlewis.wd1.myworkdayjobs.com/en-US/JacksonLewisBusinessandLegalProfessionalsCareers/job/US---CO---Denver/Knowledge-Management-Team-Director_R423-2026" target="_blank" rel="noopener noreferrer">
         
@@ -420,10 +445,9 @@
       </div>
     </section>
 
-    <section class="section">
-      <h2 class="section-title manual"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>Needs Manual Check</h2>
-      <p class="section-subtitle">Firms the scraper can't reach automatically — worth checking by hand.</p>
-      <div class="job-grid">
+    <details class="section manual-check-details">
+      <summary class="section-title manual"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg><span>Manual Firm Check</span><span class="section-count">(21)</span><span class="chevron">▸</span></summary>
+      <p class="section-subtitle">Scraper can't reach this firm automatically — worth checking by hand.</p><div class="job-grid">
       <a class="manual-check-card" href="https://www.arnoldporter.com/en/careers/professional-staff/current-opportunities" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">Arnold &amp; Porter</div>
         <div class="manual-check-reason">Confirmed Coveo (static.cloud.coveo.com), the exact same enterprise search layer already blocking Covington &amp; Burling -- job data is fetched via a JS search API call after page load. Checked specifically for an embedded organizationId/accessToken in the static HTML (Coveo sites sometimes expose these for a public search widget) and found neither -- genuinely invisible to static HTML scraping, not just unconfirmed.</div>
@@ -464,6 +488,11 @@
         <div class="manual-check-reason">Real &#x27;All Current Openings&#x27; link found, leading to klgates.recsolu.com -- RecSolu (Yello Enterprise), a platform not otherwise seen in this project. The board is JS-rendered with no job data in static HTML; several guessed REST API endpoints (/api/v1/job_boards/.../jobs) returned 401 Unauthorized -- a real API exists but requires credentials this project doesn&#x27;t have and shouldn&#x27;t try to bypass.</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
+      <a class="manual-check-card" href="https://staffjobsus.kirkland.com/jobs/search/" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Kirkland &amp; Ellis</div>
+        <div class="manual-check-reason">adapter ran but returned zero postings this run — may be transient or the site structure changed</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
       <a class="manual-check-card" href="https://www.lw.com" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">Latham &amp; Watkins</div>
         <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;lw&#x27; (careers-lw.icims.com), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge as Orrick/Milbank -- not scrapable with a plain HTTP client. CONFIRMED still blocked with a genuine headless-Chromium Playwright session too.</div>
@@ -496,7 +525,7 @@
       </a>
       <a class="manual-check-card" href="https://ommcareers.viglobalcloud.com/viRecruitSelfApply/RecDefault.aspx?Tag=84c08942-ea6c-4707-a535-258e400c6b3d" target="_blank" rel="noopener noreferrer">
         <div class="manual-check-firm">O&#x27;Melveny &amp; Myers</div>
-        <div class="manual-check-reason">adapter fetch failed this run (ConnectTimeout: HTTPConnectionPool(host=&#x27;www.videsktop.com&#x27;, port=80): Max retries exceeded with url: / (Caused by ConnectTimeoutError(&lt;HTTPConnection(host=&#x27;www.videsktop.com&#x27;, port=80) at 0x7fa885380aa0&gt;, &#x27;Connection to www.videsktop.com timed out. (connect timeout=30)&#x27;))) — may be transient, worth checking by hand if it keeps happening</div>
+        <div class="manual-check-reason">adapter fetch failed this run (ConnectTimeout: HTTPConnectionPool(host=&#x27;www.videsktop.com&#x27;, port=80): Max retries exceeded with url: / (Caused by ConnectTimeoutError(&lt;HTTPConnection(host=&#x27;www.videsktop.com&#x27;, port=80) at 0x7f67019e0c50&gt;, &#x27;Connection to www.videsktop.com timed out. (connect timeout=30)&#x27;))) — may be transient, worth checking by hand if it keeps happening</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
       <a class="manual-check-card" href="https://talent.orrick.com/staff-us/jobs" target="_blank" rel="noopener noreferrer">
@@ -519,8 +548,13 @@
         <div class="manual-check-reason">Confirmed iCIMS tenant &#x27;jobs-willkie&#x27; (note: jobs- subdomain prefix, not the more common careers- prefix seen for Orrick/Milbank/Nelson Mullins/Foley &amp; Lardner), blocked by the same AWS WAF &#x27;Human Verification&#x27; challenge -- not scrapable with a plain HTTP client. CONFIRMED still blocked with a genuine headless-Chromium Playwright session too.</div>
         <div class="manual-check-link-hint">Check firm's site →</div>
       </a>
+      <a class="manual-check-card" href="https://careers-winstontaylor-americas.viglobalcloud.com/viRecruitSelfApply/RecDefault.aspx?Tag=ebd45de2-7676-4bca-b282-f92bfe9d5968" target="_blank" rel="noopener noreferrer">
+        <div class="manual-check-firm">Winston Taylor (fka Winston &amp; Strawn)</div>
+        <div class="manual-check-reason">adapter fetch failed this run (HTTPError: 502 Server Error: Bad Gateway for url: http://www.winston.com) — may be transient, worth checking by hand if it keeps happening</div>
+        <div class="manual-check-link-hint">Check firm's site →</div>
+      </a>
       </div>
-    </section>
+    </details>
     <footer>Generated automatically by the law firm ATS scraper.</footer>
   </div>
 </body>
