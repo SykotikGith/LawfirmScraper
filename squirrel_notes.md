@@ -28,16 +28,18 @@ Jobs by category over time, etc. Needs weeks of accumulated run history to mean
 anything. Not viable yet. Revisit in a couple months once there's real history.
 
 **AmLaw 200 expansion**
-Deferred until AmLaw 100 is fully scoped with the pipeline-health dashboard in
-place. Diminishing returns risk: smaller firms, less KM/AI infrastructure investment.
-
-**iCIMS WAF block**
-Lewis Brisbois, Gordon Rees, Orrick, Milbank all blocked by AWS WAF bot challenge.
-Currently flagged "manual check needed" (Option 3 from our discussion). Playwright/
-browser automation would unblock it, one-time cost that pays off across every
-iCIMS tenant at once. Not urgent, easy to revisit if the need arises.
+Deferred until the pipeline-health/coverage diagnostics page (see In progress) is
+built. AmLaw 100 firm coverage itself is essentially complete now — that's no
+longer the blocker, the dashboard/diagnostics work is. Diminishing returns risk
+unchanged for AmLaw 200 itself: smaller firms, less KM/AI infrastructure investment.
 
 ## From ChatGPT review session (accepted items)
+
+**Today's priority order:**
+1. Move diagnostics off the dashboard + rename the manual-check labels
+2. "New Since Last Run" section
+3. Coverage metrics
+4. Location filtering
 
 **"New Since Last Run" section**
 Add a dedicated section at the top of the dashboard showing only postings new
@@ -46,18 +48,11 @@ Cheap to build since dedup/state tracking already exists — just needs a
 filtered view. Once match volume grows, "what changed" matters more than
 "everything available."
 
-**Move diagnostics off the main dashboard**
-The "Needs Manual Check" section (28 entries of dense technical prose) is
-currently dominating the page below only 20 actual job matches — backwards
-for a tool meant to answer "what should I look at today." Move to a
-collapsible section or a separate diagnostics page. Fold in the redundant
-"Firm Intelligence"/"Scraper Health Dashboard" ideas here too — same concept,
-one page, not two.
-
-**Coverage metrics**
-Add a simple breakdown to the summary metrics: firms tracked / automated /
-partial coverage / manual. Cheap, mostly just recounting what's already
-tracked internally.
+**Move diagnostics off the main dashboard + coverage metrics**
+See the merged "Pipeline health / coverage / diagnostics page" entry under
+In progress — this was the same underlying work described three separate
+times (pipeline health dashboard, coverage metrics, this item), now tracked
+in one place.
 
 **Location filtering**
 Not hypothetical — Norton Rose Fulbright's UK-based Newcastle postings are
@@ -91,7 +86,21 @@ If it doesn't serve one of those, it's lower priority.
 
 - AmLaw 100 expansion, Wave 1 (firms I've personally supported) then Wave 2
 - Remote/hybrid/onsite detection and hard-exclude for onsite/hybrid
-- Pipeline health dashboard (adapter failures, manual-review firms, no-postings firms)
-- Playwright integration underway for JS-rendering-only Manual Check firms
-  (Category 1), bot-protection firms (Category 2) being attempted as a
-  secondary pass
+- Pipeline health / coverage / diagnostics page (merged entry — this was
+  "pipeline health dashboard," "coverage metrics," and "move diagnostics off
+  the main dashboard" described three separate times, same underlying work).
+  A dedicated page/section showing coverage breakdown (firms tracked /
+  automated / partial / manual), adapter failures, and the current "Needs
+  Manual Check" list, moved off the main matches page so the dashboard's
+  primary view stays focused on "what should I look at today."
+- Playwright integration for Manual Check firms: Category 1
+  (JS-rendering-only, no active bot protection) is done — 9 of 10 firms
+  automated, 1 (Ropes & Gray) confirmed genuinely Cloudflare-blocked even
+  with a real browser. Category 2 (WAF/Cloudflare/Imperva-blocked firms) is
+  the current secondary pass — round 1 confirmed the iCIMS WAF block (Lewis
+  Brisbois, Gordon Rees, Orrick, Milbank, Nelson Mullins, Foley & Lardner,
+  Mayer Brown, Latham & Watkins, Willkie Farr) still holds even against a
+  genuine headless-Chromium session, so that one's no longer "just needs
+  Playwright" — it's a real, confirmed dead end, not a cost/priority
+  question. Kirkland & Ellis and McDermott broke through, though, and are
+  being built out now.
