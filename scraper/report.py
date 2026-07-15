@@ -85,18 +85,29 @@ def _card(entry: ReportEntry, section: str) -> str:
       </a>"""
 
 
-def _section(title: str, icon: str, entries: list[ReportEntry], section: str) -> str:
+def _section(
+    title: str,
+    icon: str,
+    entries: list[ReportEntry],
+    section: str,
+    subtitle: str | None = None,
+) -> str:
     header = f'<h2 class="section-title {section}">{icon}{html.escape(title)}</h2>'
+    subtitle_html = (
+        f'<p class="section-subtitle">{html.escape(subtitle)}</p>' if subtitle else ""
+    )
     if not entries:
         return f"""
     <section class="section">
       {header}
+      {subtitle_html}
       <p class="empty-state">no matches this run</p>
     </section>"""
     cards = "".join(_card(e, section) for e in entries)
     return f"""
     <section class="section">
       {header}
+      {subtitle_html}
       <div class="job-grid">{cards}
       </div>
     </section>"""
@@ -113,21 +124,26 @@ def _manual_check_card(entry: ManualCheckEntry) -> str:
 
 
 def _manual_check_section(entries: list[ManualCheckEntry]) -> str:
-    header = f'<h2 class="section-title manual">{_SEARCH_ICON}Needs Manual Check</h2>'
+    count = len(entries)
+    summary = (
+        f'<summary class="section-title manual">{_SEARCH_ICON}'
+        f"<span>Manual Firm Check</span>"
+        f'<span class="section-count">({count})</span>'
+        f'<span class="chevron">▸</span></summary>'
+    )
     if not entries:
-        return f"""
-    <section class="section">
-      {header}
-      <p class="empty-state">nothing needs manual checking right now</p>
-    </section>"""
-    cards = "".join(_manual_check_card(e) for e in sorted(entries, key=lambda e: e.firm))
+        body = '<p class="empty-state">nothing needs manual checking right now</p>'
+    else:
+        cards = "".join(_manual_check_card(e) for e in sorted(entries, key=lambda e: e.firm))
+        body = (
+            '<p class="section-subtitle">Scraper can\'t reach this firm automatically — '
+            f'worth checking by hand.</p><div class="job-grid">{cards}\n      </div>'
+        )
     return f"""
-    <section class="section">
-      {header}
-      <p class="section-subtitle">Firms the scraper can't reach automatically — worth checking by hand.</p>
-      <div class="job-grid">{cards}
-      </div>
-    </section>"""
+    <details class="section manual-check-details">
+      {summary}
+      {body}
+    </details>"""
 
 
 def _metric_card(value: str, label: str, css_class: str = "") -> str:
@@ -171,7 +187,14 @@ def render_report(
     ])
 
     auto_section = _section("Auto-match", _CHECK_ICON, auto_matches, "auto")
-    review_section = _section("Review manually", _WARN_ICON, review_matches, "review")
+    review_section = _section(
+        "Potential Matches",
+        _WARN_ICON,
+        review_matches,
+        "review",
+        subtitle="Needs your judgment — the title matched a keyword but isn't a clear "
+        "auto-match.",
+    )
     manual_check_section = _manual_check_section(manual_check)
 
     return f"""<!doctype html>
@@ -279,6 +302,29 @@ def render_report(
     font-size: 0.85rem;
     margin: -8px 0 16px;
   }}
+  .manual-check-details {{
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--amber-border);
+  }}
+  summary.section-title {{
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+  }}
+  summary.section-title::-webkit-details-marker {{ display: none; }}
+  summary.section-title::marker {{ content: ""; }}
+  .section-count {{
+    color: var(--text-secondary);
+    font-weight: 400;
+    font-size: 0.85rem;
+  }}
+  .chevron {{
+    margin-left: auto;
+    font-size: 0.8rem;
+    transition: transform 0.15s ease;
+  }}
+  details[open] .chevron {{ transform: rotate(90deg); }}
   .empty-state {{
     color: var(--text-secondary);
     font-style: italic;

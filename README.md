@@ -172,24 +172,31 @@ extending coverage to new firms:
 
 `scraper/report.py` renders `report.html` (and an identical `index.html`)
 on every run: a metrics row (new matches, firms scanned, needs review,
-last run time), an auto-match section, and a review-manually section,
-each posting card linking straight to the real job listing. Each card
-shows keyword-match pills, a work-arrangement pill ("Remote" or "remote
-status unclear — verify" — see the work-arrangement filter above) in the
-same monospace pill style, and a rotated "NEW" badge for postings not
-seen on a previous run. Empty sections show a plain "no matches this run"
-message. All scraped text is treated as untrusted and HTML-escaped before
-rendering.
+last run time), an auto-match section, and a "Potential Matches" section
+(the review-manually tier — titled "Needs your judgment" on the
+dashboard, since it's about the job title itself needing a second look,
+not a scraper problem), each posting card linking straight to the real
+job listing. Each card shows keyword-match pills, a work-arrangement pill
+("Remote" or "remote status unclear — verify" — see the work-arrangement
+filter above) in the same monospace pill style, and a rotated "NEW" badge
+for postings not seen on a previous run. Empty sections show a plain "no
+matches this run" message. All scraped text is treated as untrusted and
+HTML-escaped before rendering.
 
-A third section, "Needs Manual Check" (amber accent), lists every firm
-the scraper couldn't reach automatically — combining `MANUAL_CHECK_FIRMS`
-(the permanent, documented list: WAF blocks, SPA-only sites, no
-discoverable ATS, etc.) with any active `FIRMS` entry whose adapter
-failed or returned zero postings *this specific run* (which might be
-transient, or might be the first sign a site changed structure). Each
-card shows the firm name, the specific reason, and a direct link to the
-firm's careers page or main site to check by hand — this is what used to
-only be visible in raw console output/job summary.
+A third section, "Manual Firm Check" (amber accent, collapsed by default
+in a `<details>` toggle below a divider so it doesn't dominate the page),
+lists every firm the scraper couldn't reach automatically — combining
+`MANUAL_CHECK_FIRMS` (the permanent, documented list: WAF blocks,
+SPA-only sites, no discoverable ATS, etc.) with any active `FIRMS` entry
+whose adapter failed or returned zero postings *this specific run*
+(which might be transient, or might be the first sign a site changed
+structure). Each card shows the firm name, the specific reason, and a
+direct link to the firm's careers page or main site to check by hand —
+this is what used to only be visible in raw console output/job summary.
+Named and separated from "Potential Matches" specifically because the
+two are easy to conflate but mean different things: one is about a job
+title needing a judgment call, the other is about the scraper's
+technical reach.
 
 ## Automation
 
