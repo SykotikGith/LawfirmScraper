@@ -1,15 +1,25 @@
-"""Category 2 experimental pass -- per the original Playwright request,
-these are the WAF/Cloudflare/Imperva-blocked firms to try with a real
-headless browser as a second pass after Category 1 (now fully done).
-Explicit instruction: don't force it if the challenge still blocks a
-real browser, just report which succeed vs. which are genuinely stuck.
+"""Category 2, round 2 -- the two real breakthroughs from round 1.
 
-9 of these are iCIMS tenants blocked by AWS WAF's "Human Verification"
-challenge (confirmed via plain HTTP in earlier research); Kirkland &
-Ellis is a Cloudflare "Just a moment..." challenge; McDermott is an
-Imperva Incapsula challenge. This navigates each with a real
-headless-Chromium session and checks whether the challenge page still
-shows, or whether real job content gets through.
+Round 1 confirmed the 9 iCIMS AWS WAF tenants (Orrick, Milbank, Lewis
+Brisbois, Gordon Rees, Foley & Lardner, Nelson Mullins, Mayer Brown,
+Latham & Watkins, Willkie Farr) are STILL blocked (405, "Human
+Verification" challenge) even with a genuine headless-Chromium session
+-- config.py's MANUAL_CHECK_FIRMS entries for all 9 have already been
+updated to reflect that confirmed-with-a-real-browser finding, nothing
+more to try there per the "don't force it" instruction.
+
+But two firms broke through:
+- Kirkland & Ellis: staffjobsus.kirkland.com/jobs/search/ rendered a
+  full real job board (200, real category/location facet counts) with
+  a genuine headless browser -- the Cloudflare challenge that blocks
+  plain HTTP didn't trigger this time. This finds the actual per-job
+  row markup so an adapter can be built.
+- McDermott Will & Emery: mcdermottlaw.com/careers rendered the real
+  marketing homepage (200) past the Imperva block that blocks plain
+  HTTP -- but that's just the homepage, not the job listing itself.
+  This clicks through "SEE OPEN ROLES" to find the actual listing page
+  and checks whether IT also renders past the block, or hits a second
+  challenge layer.
 
 Usage: python -m scraper.diagnose_browser
 """
@@ -24,27 +34,6 @@ UA = (
     "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 )
 WAIT_MS = 5_000
-
-CHALLENGE_SIGNATURES = [
-    "just a moment", "attention required", "human verification",
-    "access denied", "pardon our interruption", "checking your browser",
-    "cf-browser-verification", "request unsuccessful", "incident id",
-    "are you a robot", "verify you are a human", "sorry, you have been blocked",
-]
-
-FIRMS = [
-    ("Orrick", "https://careers-orrick.icims.com/jobs/search?pr=0&in_iframe=1"),
-    ("Milbank", "https://careers-milbank.icims.com/jobs/intro?hashed=-435594439"),
-    ("Lewis Brisbois", "https://careers-lewisbrisbois.icims.com/jobs/search"),
-    ("Gordon Rees", "https://careers-grsm.icims.com/jobs/search"),
-    ("Foley & Lardner", "https://careers-foley.icims.com/jobs/intro?hashed=-626009846"),
-    ("Nelson Mullins", "https://careers-nelsonmullins.icims.com/jobs/search"),
-    ("Mayer Brown", "https://globalcareers-mayerbrown.icims.com/jobs/search?hashed=124489139"),
-    ("Latham & Watkins", "https://careers-lw.icims.com/jobs/search?hashed=-625915638"),
-    ("Willkie Farr & Gallagher", "https://jobs-willkie.icims.com/jobs/search?hashed=-625885970"),
-    ("Kirkland & Ellis", "https://staffjobsus.kirkland.com/jobs/search/"),
-    ("McDermott Will & Emery", "https://www.mcdermottlaw.com/careers"),
-]
 
 
 def section(title: str) -> None:
@@ -62,28 +51,58 @@ def main() -> None:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
 
-        def check(name: str, url: str):
-            section(f"{name} -- {url}")
+        def kirkland():
+            section("Kirkland & Ellis -- finding real job-row markup")
             ctx = browser.new_context(user_agent=UA)
             page = ctx.new_page()
-            resp = page.goto(url, wait_until="load")
+            candidates = []
+
+            def on_resp(r):
+                ct = r.headers.get("content-type", "")
+                if "json" in ct.lower() or re.search(r"job|search|api", r.url, re.I):
+                    if not any(n in r.url.lower() for n in ["gtm.js", "analytics", ".woff", ".css", ".png", ".jpg", ".svg", "cookielaw", "onetrust"]):
+                        candidates.append((r.url, r.status, ct))
+
+            page.on("response", on_resp)
+            page.goto("https://staffjobsus.kirkland.com/jobs/search/", wait_until="load")
             page.wait_for_timeout(WAIT_MS)
-            print(f"  status: {resp.status if resp else None}")
-            print(f"  title: {page.title()!r}")
-            body = page.inner_text("body")
-            body_lower = body.lower()
-            hit = next((sig for sig in CHALLENGE_SIGNATURES if sig in body_lower), None)
-            if hit:
-                print(f"  BLOCKED -- challenge signature found: {hit!r}")
-            else:
-                print("  no challenge signature found -- possible real content")
-                job_count = len(re.findall(r"job|position|opening", body, re.I))
-                print(f"  job/position/opening keyword count: {job_count}")
-            print(f"  body text[:1000]: {body[:1000]!r}")
+
+            print("  network responses matching job/search/api:")
+            for url, status, ct in candidates[:20]:
+                print(f"    [{status}] {ct} {url}")
+
+            # Look for common ATS job-row containers.
+            for sel in ["li.job", "tr.job", "div.job", "[class*='job-result']", "[class*='jobresult']", "article"]:
+                els = page.query_selector_all(sel)
+                if els:
+                    print(f"  selector {sel!r}: {len(els)} elements")
+
+            # Dump a broad region of the results area for manual inspection.
+            body_html = page.content()
+            idx = body_html.find("Filter Results")
+            print(f"  HTML near 'Filter Results'[:4000]: {body_html[idx:idx+4000]!r}")
             ctx.close()
 
-        for name, url in FIRMS:
-            run_safely(name, lambda name=name, url=url: check(name, url))
+        def mcdermott():
+            section("McDermott -- clicking through to the real job listing")
+            ctx = browser.new_context(user_agent=UA)
+            page = ctx.new_page()
+            page.goto("https://www.mcdermottlaw.com/careers", wait_until="load")
+            page.wait_for_timeout(WAIT_MS)
+            try:
+                page.get_by_text("SEE OPEN ROLES", exact=False).first.click(timeout=5000)
+                page.wait_for_timeout(WAIT_MS)
+                print("  clicked 'SEE OPEN ROLES'")
+            except Exception as exc:
+                print(f"  could not click SEE OPEN ROLES: {exc}")
+            print(f"  current URL: {page.url}")
+            print(f"  title: {page.title()!r}")
+            body = page.inner_text("body")
+            print(f"  body text[:1500]: {body[:1500]!r}")
+            ctx.close()
+
+        run_safely("Kirkland & Ellis", kirkland)
+        run_safely("McDermott", mcdermott)
 
         browser.close()
 

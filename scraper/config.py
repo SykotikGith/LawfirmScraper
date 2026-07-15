@@ -957,7 +957,10 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
     # =========================================================================
     "Orrick": {
         "reason": "Confirmed iCIMS tenant 'orrick', but blocked by an AWS WAF 'Human "
-        "Verification' challenge -- not scrapable with a plain HTTP client.",
+        "Verification' challenge -- not scrapable with a plain HTTP client. CONFIRMED "
+        "still blocked (405, 'Human Verification' challenge page) with a genuine "
+        "headless-Chromium Playwright session too -- genuinely not scrapable, not just "
+        "unconfirmed with a real browser.",
         "tenant": "orrick",
         "search_url": "https://careers-orrick.icims.com/jobs/search?pr=0&in_iframe=1",
         "check_url": "https://talent.orrick.com/staff-us/jobs",
@@ -973,7 +976,8 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         # dropping it from FIRMS was correct, but that shouldn't mean losing track of it.
         "reason": "Confirmed iCIMS tenant 'lewisbrisbois', blocked by the same AWS WAF "
         "'Human Verification' challenge as Orrick/Milbank -- not scrapable with a plain "
-        "HTTP client.",
+        "HTTP client. CONFIRMED still blocked with a genuine headless-Chromium Playwright "
+        "session too.",
         "tenant": "lewisbrisbois",
         "search_url": "https://careers-lewisbrisbois.icims.com/jobs/search",
         "check_url": "https://www.lewisbrisbois.com/careers",
@@ -981,7 +985,8 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
     "Gordon Rees": {
         "reason": "Confirmed iCIMS tenant 'grsm' (Gordon Rees Scully Mansukhani), blocked "
         "by the same AWS WAF 'Human Verification' challenge as Orrick/Milbank -- not "
-        "scrapable with a plain HTTP client.",
+        "scrapable with a plain HTTP client. CONFIRMED still blocked with a genuine "
+        "headless-Chromium Playwright session too.",
         "tenant": "grsm",
         "search_url": "https://careers-grsm.icims.com/jobs/search",
         "check_url": "https://www.grsm.com/careers",
@@ -989,14 +994,16 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
     "Milbank": {
         "reason": "Real ATS is iCIMS (found via the firm's own careers page), blocked by the "
         "same AWS WAF 'Human Verification' challenge as Orrick. A Workday tenant also exists "
-        "on wd1 but is apparently dormant/internal, not used for external recruiting.",
+        "on wd1 but is apparently dormant/internal, not used for external recruiting. "
+        "CONFIRMED still blocked with a genuine headless-Chromium Playwright session too.",
         "tenant": "milbank",
         "search_url": "https://careers-milbank.icims.com/jobs/intro?hashed=-435594439",
     },
     "Nelson Mullins": {
         "reason": "Confirmed iCIMS tenant 'nelsonmullins' (found embedded in "
         "nelsonmullins.com/careers), blocked by the same AWS WAF 'Human Verification' "
-        "challenge as Orrick/Milbank -- not scrapable with a plain HTTP client.",
+        "challenge as Orrick/Milbank -- not scrapable with a plain HTTP client. CONFIRMED "
+        "still blocked with a genuine headless-Chromium Playwright session too.",
         "tenant": "nelsonmullins",
         "search_url": "https://careers-nelsonmullins.icims.com/jobs/search",
         "check_url": "https://www.nelsonmullins.com/careers",
@@ -1004,7 +1011,8 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
     "Foley & Lardner": {
         "reason": "Confirmed iCIMS tenant 'foley' (found embedded in foley.com/careers), "
         "blocked by the same AWS WAF 'Human Verification' challenge as Orrick/Milbank -- "
-        "not scrapable with a plain HTTP client.",
+        "not scrapable with a plain HTTP client. CONFIRMED still blocked with a genuine "
+        "headless-Chromium Playwright session too.",
         "tenant": "foley",
         "search_url": "https://careers-foley.icims.com/jobs/intro?hashed=-626009846",
         "check_url": "https://www.foley.com/careers/",
@@ -1016,7 +1024,8 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "reason": "Confirmed iCIMS tenant 'jobs-willkie' (note: jobs- subdomain prefix, not "
         "the more common careers- prefix seen for Orrick/Milbank/Nelson Mullins/Foley & "
         "Lardner), blocked by the same AWS WAF 'Human Verification' challenge -- not "
-        "scrapable with a plain HTTP client.",
+        "scrapable with a plain HTTP client. CONFIRMED still blocked with a genuine "
+        "headless-Chromium Playwright session too.",
         "tenant": "jobs-willkie",
         "search_url": "https://jobs-willkie.icims.com/jobs/search?hashed=-625885970",
         "check_url": "https://www.willkie.com/careers",
@@ -1091,7 +1100,8 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
     "Latham & Watkins": {
         "reason": "Confirmed iCIMS tenant 'lw' (careers-lw.icims.com), blocked by the same "
         "AWS WAF 'Human Verification' challenge as Orrick/Milbank -- not scrapable with a "
-        "plain HTTP client.",
+        "plain HTTP client. CONFIRMED still blocked with a genuine headless-Chromium "
+        "Playwright session too.",
         "tenant": "lw",
         "search_url": "https://careers-lw.icims.com/jobs/search?hashed=-625915638",
         "check_url": "https://www.lw.com",
@@ -1100,7 +1110,8 @@ MANUAL_CHECK_FIRMS: dict[str, dict] = {
         "reason": "Confirmed iCIMS tenant 'mayerbrown' (note: globalcareers- subdomain "
         "prefix, a third variant after careers-/jobs- seen for other firms), blocked by "
         "the same AWS WAF 'Human Verification' challenge -- not scrapable with a plain "
-        "HTTP client.",
+        "HTTP client. CONFIRMED still blocked with a genuine headless-Chromium Playwright "
+        "session too.",
         "tenant": "mayerbrown",
         "search_url": "https://globalcareers-mayerbrown.icims.com/jobs/search?hashed=124489139",
         "check_url": "https://www.mayerbrown.com",
