@@ -59,6 +59,17 @@ HYBRID_DAYS_RE = re.compile(
     re.IGNORECASE,
 )
 
+# "60% in-office presence" / "in-office 60% of the time" -- a percentage-based
+# split is just as explicit a partial-in-office signal as a day count, but
+# HYBRID_DAYS_RE above only matches the day-count phrasing. Confirmed missed
+# live: Mintz Levin's "This role requires 60% in-office presence; 40% remote
+# work is permissible" fell through to "unclear" instead of "hybrid".
+HYBRID_PERCENT_RE = re.compile(
+    r"\b\d{1,3}\s*%\s*(?:in-?office|on-?site|in the office)\b"
+    r"|\b(?:in-?office|on-?site)\b[^.\n]{0,20}\b\d{1,3}\s*%",
+    re.IGNORECASE,
+)
+
 ONSITE_LOCATION_RE = re.compile(r"\bon[-\s]?site\b", re.IGNORECASE)
 
 # Explicit language that rules out remote/hybrid entirely -- a plain city
@@ -110,6 +121,9 @@ def detect_work_arrangement(location: str, description: str = "") -> WorkArrange
     days_match = HYBRID_DAYS_RE.search(description) or HYBRID_DAYS_RE.search(location)
     if days_match:
         hybrid_signals.append(f'partial in-office language: "{days_match.group(0).strip()}"')
+    percent_match = HYBRID_PERCENT_RE.search(description) or HYBRID_PERCENT_RE.search(location)
+    if percent_match:
+        hybrid_signals.append(f'partial in-office language: "{percent_match.group(0).strip()}"')
     if hybrid_signals:
         return WorkArrangement(status="hybrid", signals=hybrid_signals)
 

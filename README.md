@@ -78,7 +78,8 @@ on hand — see below) job description text:
 - **Remote** — location says "Remote", "Virtual", or "Nationwide", or the
   description explicitly says fully remote / work from home.
 - **Hybrid** — location or description says "hybrid", or names a partial
-  in-office schedule ("3 days a week in office").
+  in-office schedule, either day-count ("3 days a week in office") or
+  percentage-based ("60% in-office presence").
 - **Onsite** — only when there's *explicit* contradicting language: location
   says "onsite"/"on-site" directly, or description says something like
   "on-site required," "must work from the office," or "not eligible for
@@ -108,9 +109,15 @@ other adapter — Workday, Circa Works, ApplicantStack, and custom-HTML
 firms — detects work arrangement from location text alone at this stage,
 since fetching a full description for every scraped posting (hundreds
 across 69 firms) would mean an extra HTTP request per posting; those
-firms lean on "onsite"/"unclear" more often here as a result. (See the
-JD-requirement filter below for where a description *does* get fetched
-on demand, once the set of candidate postings is much smaller.)
+firms lean on "onsite"/"unclear" more often here as a result. Once a
+posting survives that first pass, `main.py` re-checks work arrangement a
+second time against whatever description the JD-requirement filter below
+fetches (reusing the same fetch, no extra request) — this is what catches
+hybrid/onsite language that only appears in the full posting text, not
+the location field alone. That re-check is skipped, same as the JD
+check itself, for postings with no genuine per-job URL to safely fetch
+(see below) — a real, known coverage gap for those specific ATS shapes,
+not a bug.
 
 ### JD-requirement filter
 
@@ -118,11 +125,31 @@ on demand, once the set of candidate postings is much smaller.)
 filters, on the much smaller set of postings that already survived both
 (typically a couple dozen per run, not the hundreds scraped) — small
 enough that fetching each one's full description page on demand (one
-extra HTTP request per posting, cached per-run by URL since some
-adapters point every posting at the same fallback URL) is affordable in
+extra HTTP request per posting, cached per-run by URL) is affordable in
 a way it isn't earlier in the pipeline. If the adapter already has a
 description on hand (Greenhouse/Oracle/viGlobal, see above), that's
 reused instead of a redundant fetch.
+
+The fetch is only attempted when `posting.url` is a genuine per-job
+URL — `main.py`'s `_is_shared_listing_url()` skips it when the URL is
+actually the firm's shared list/search page (`list_url`/`search_url`/
+`board_url`/`api_url` in `config.py`), which is what some adapters fall
+back to when there's no real per-job link at all (Venable; viGlobal's
+postback-only row shapes — O'Melveny, Bryan Cave, Mintz Levin, Winston
+Taylor — whose "Apply" controls are ASP.NET postback LinkButtons, not
+real hrefs). Fetching a shared page and searching its whole text isn't
+scoped to any one posting — CONFIRMED live: Mintz Levin's "Knowledge
+Management and Innovation Strategist" was once excluded for "J.D.
+required" that doesn't appear anywhere in that job's actual description,
+because the fetch hit the shared listing page (every Mintz Levin posting
+falls back to the same URL) and matched text belonging to something else
+entirely on that page. Skipping the fetch for shared URLs closes this at
+the root; it also means work-arrangement and JD-requirement detection
+for postings on these specific ATS shapes stays limited to whatever the
+adapter provides at scrape time (location text only, for viGlobal's
+structured row shape) — a real, known coverage gap, not a bug, same
+category as the description-availability gap other adapters already
+have.
 
 Looks for EXPLICIT "required" framing around a law degree or bar
 admission — "J.D. required," "must have a J.D.," "active bar admission
@@ -137,7 +164,9 @@ failure, JS-rendered detail page with no server-side text) — the
 posting stays visible rather than being wrongly excluded, the same
 "don't default to the exclusionary bucket without positive evidence"
 principle used throughout this project's filters. Every exclusion is
-logged to `debug_all_titles.txt` with the exact matched phrase, so this
+logged both to `debug_all_titles.txt` (with the exact matched phrase)
+and printed to console, so it shows up in the GitHub Actions run's Step
+Summary directly, without needing to download the debug artifact — this
 can be tuned the same way the title-level Lawyer/Attorney/Counsel
 exclusions were.
 

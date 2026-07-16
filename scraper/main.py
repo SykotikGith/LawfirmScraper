@@ -22,16 +22,47 @@ DEBUG_TITLES_PATH = Path(__file__).resolve().parent.parent / "debug_all_titles.t
 DESCRIPTION_FETCH_TIMEOUT = 20
 
 
+def _is_shared_listing_url(url: str, firm_cfg: dict) -> bool:
+    """True when `url` is one of the firm's known list/search/board URLs
+    rather than a URL unique to one posting.
+
+    Root-cause fix: some adapters (Venable; viGlobal's postback-only row
+    shapes -- O'Melveny, Bryan Cave, Mintz Levin, Winston Taylor -- whose
+    "Apply" controls are ASP.NET postback LinkButtons, not real hrefs) give
+    *every* posting the exact same fallback URL: the shared list/search
+    page, not a page specific to that job. Fetching that page's full text
+    and searching it for JD-requirement language is not scoped to any one
+    posting -- a phrase found anywhere on the shared page (a different
+    job's requirements, sitewide boilerplate, a disclaimer) gets
+    misattributed to every single posting checked against it. Confirmed
+    live: Mintz Levin's "Knowledge Management and Innovation Strategist"
+    was excluded for "J.D. required" that doesn't appear anywhere in that
+    job's actual description -- because the fetch hit the shared listing
+    page, not a page about that job.
+
+    Skipping the fetch entirely for these URLs (rather than trying to
+    scope the search some other way) is the safe fix: no description text
+    means the JD check fails open, same as every other missing-data case.
+    """
+    shared_urls = {
+        firm_cfg[key]
+        for key in ("list_url", "search_url", "board_url", "api_url")
+        if firm_cfg.get(key)
+    }
+    return url in shared_urls
+
+
 def _fetch_description(url: str, session: requests.Session, cache: dict[str, str]) -> str:
-    """Best-effort full-page text fetch for the JD-requirement check.
+    """Best-effort single-posting-page text fetch for the JD-requirement check.
 
     Only called for postings that already passed the title-level and
     work-arrangement filters -- a small enough set that one extra request
     per posting is affordable, unlike fetching a description for every
-    posting scraped. Cached per-run by URL since some adapters (Venable,
-    postback-only viGlobal tenants) point every posting at the same
-    fallback URL, which would otherwise mean fetching the identical page
-    repeatedly.
+    posting scraped. Callers must first confirm `url` is NOT a shared
+    listing URL (see `_is_shared_listing_url`) -- this function has no way
+    to tell a real per-job page from a shared one on its own, and fetching
+    a shared page here would reintroduce the misattribution bug described
+    above.
 
     Returns "" on any failure (timeout, non-200, JS-rendered page with no
     server-side text) -- the JD check fails open on empty text, same as
@@ -233,9 +264,34 @@ def run(reset_seen: bool = False) -> int:
             # title-level and work-arrangement filters -- a much smaller set
             # than everything scraped, so one extra request per posting here
             # is affordable in a way it wouldn't be earlier in the pipeline.
-            description = posting.description or _fetch_description(
-                posting.url, jd_check_session, description_cache
-            )
+            # Never fetch a shared list/search page (see
+            # _is_shared_listing_url) -- its text isn't scoped to this
+            # posting, so a match found there can't be trusted as being
+            # about this job. For postings where fetching isn't possible at
+            # all (no genuine per-job URL, e.g. postback-only viGlobal
+            # tenants), work-arrangement detection is stuck with whatever
+            # the adapter provided at scrape time -- a real, documented
+            # coverage gap (same category as work_arrangement.py's existing
+            # "most adapters don't have description text" gap), not
+            # something this fetch can paper over.
+            description = posting.description
+            if not description and not _is_shared_listing_url(posting.url, firm_cfg):
+                description = _fetch_description(posting.url, jd_check_session, description_cache)
+                if description:
+                    # Re-check now that a real description might be
+                    # available -- catches hybrid/onsite language (e.g. a
+                    # percentage-based in-office split) that only shows up
+                    # in the full posting text, not the location field the
+                    # first pass above was limited to.
+                    wa = detect_work_arrangement(posting.location, description)
+                    if wa.status in ("onsite", "hybrid"):
+                        debug_file.write(
+                            f"    -> excluded from {cls.tier}: work arrangement is "
+                            f"{wa.status} (found after fetching full description) "
+                            f"({'; '.join(wa.signals)})\n"
+                        )
+                        continue
+
             jd = check_jd_requirement(description)
             if jd.excluded:
                 debug_file.write(
