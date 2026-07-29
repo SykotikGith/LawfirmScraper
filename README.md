@@ -34,6 +34,13 @@ finally writes:
   including the exact matched phrase for a JD/bar-admission exclusion.
 - `report.html` / `index.html` — an identical static HTML report (see
   below), regenerated every run.
+- `data/eval_predictions.jsonl` — append-only, one JSON line per posting
+  shown on the dashboard each run (`posting_url`, `firm`, `title`, `tier`,
+  `matched_keywords`, `review_reason`, `work_arrangement`,
+  `run_timestamp`). This is the "what did the classifier decide, and why"
+  half of the eval layer described below — unlike every other output file,
+  it's never overwritten, so it accumulates real history across runs
+  instead of only reflecting the most recent one.
 
 The live report is published via GitHub Pages at
 https://sykotikgith.github.io/law-firm-career-radar/.
@@ -307,6 +314,26 @@ separated from "Potential Matches" specifically because the two are
 easy to conflate but mean different things: one is about a job
 title needing a judgment call, the other is about the scraper's
 technical reach.
+
+## Eval layer
+
+A small system for measuring how accurate the title/keyword classifier
+actually is, separate from running the scraper itself. In progress —
+this section covers what's built so far.
+
+`data/eval_predictions.jsonl` (see Usage above) is the "predictions" half:
+one line per posting the dashboard shows, every run, recording the tier it
+landed in and why. It's intentionally scoped to only what gets *shown* —
+there's no way to measure how many genuine matches got wrongly excluded
+before ever reaching the dashboard, since those are never seen to be
+judged. That's a real, structural blind spot in what this eval layer can
+measure (precision — "of what it shows, how much is right" — yes; recall
+— "of what's really out there, how much did it catch" — no), not
+something planned to be fixed here.
+
+The other half — a "verdicts" log capturing your own judgment on each
+posting (genuine match / not interested / false positive), and a
+precision summary computed by comparing the two — is not built yet.
 
 ## Automation
 

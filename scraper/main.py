@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
@@ -20,6 +22,13 @@ from .work_arrangement import WorkArrangement, detect_work_arrangement
 
 DEBUG_TITLES_PATH = Path(__file__).resolve().parent.parent / "debug_all_titles.txt"
 DESCRIPTION_FETCH_TIMEOUT = 20
+
+# One JSON line per posting shown on the dashboard, every run -- the
+# "prediction" half of the eval layer (see eval_verdicts.jsonl, built
+# separately from what the user pastes back in). Append-only and never
+# overwritten, unlike debug_all_titles.txt, so it accumulates a real history
+# across runs instead of only reflecting the most recent one.
+EVAL_PREDICTIONS_PATH = Path(__file__).resolve().parent.parent / "data" / "eval_predictions.jsonl"
 
 
 def _is_shared_listing_url(url: str, firm_cfg: dict) -> bool:
@@ -85,6 +94,31 @@ def _fetch_description(url: str, session: requests.Session, cache: dict[str, str
 
 def _review_reason_text(mgmt_hits: list[str]) -> str:
     return "/".join(h.lower() for h in mgmt_hits) + " title"
+
+
+def _append_prediction(
+    eval_file,
+    firm_name: str,
+    posting: Posting,
+    cls: Classification,
+    wa: WorkArrangement,
+    review_reason: str | None,
+    run_timestamp: str,
+) -> None:
+    """Log one line to eval_predictions.jsonl for a posting the dashboard is
+    about to show -- the "what did the scraper decide, and why" record that
+    a verdict (from eval_verdicts.jsonl) gets compared against later."""
+    record = {
+        "posting_url": posting.url,
+        "firm": firm_name,
+        "title": posting.title,
+        "tier": cls.tier,
+        "matched_keywords": cls.ai_km_hits,
+        "review_reason": review_reason,
+        "work_arrangement": wa.status,
+        "run_timestamp": run_timestamp,
+    }
+    eval_file.write(json.dumps(record) + "\n")
 
 
 def _best_effort_check_url(firm_cfg: dict) -> str:
@@ -203,6 +237,14 @@ def run(reset_seen: bool = False) -> int:
     report_review: list[ReportEntry] = []
     dynamic_manual_check: list[ManualCheckEntry] = []
 
+    # One timestamp for the whole run, so every prediction logged during it
+    # (across every firm) shares the same run_timestamp -- makes it easy to
+    # later ask "what did the classifier look like as of this specific run"
+    # rather than getting a slightly different time per posting.
+    run_timestamp = datetime.now(timezone.utc).isoformat()
+    EVAL_PREDICTIONS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    eval_predictions_file = EVAL_PREDICTIONS_PATH.open("a", encoding="utf-8")
+
     jd_check_session = requests.Session()
     jd_check_session.headers.update(DEFAULT_HEADERS)
     description_cache: dict[str, str] = {}
@@ -318,6 +360,9 @@ def run(reset_seen: bool = False) -> int:
             is_new = store.is_new(firm_name, posting.posting_id)
             store.mark_seen(firm_name, posting.posting_id)
             if cls.tier == "auto_match":
+                _append_prediction(
+                    eval_predictions_file, firm_name, posting, cls, wa, None, run_timestamp
+                )
                 auto_matches.append((posting, cls, is_new, wa))
                 report_auto.append(
                     ReportEntry(
@@ -331,6 +376,10 @@ def run(reset_seen: bool = False) -> int:
                     )
                 )
             else:
+                review_reason = _review_reason_text(cls.mgmt_hits)
+                _append_prediction(
+                    eval_predictions_file, firm_name, posting, cls, wa, review_reason, run_timestamp
+                )
                 review_matches.append((posting, cls, is_new, wa))
                 report_review.append(
                     ReportEntry(
@@ -340,7 +389,7 @@ def run(reset_seen: bool = False) -> int:
                         url=posting.url,
                         matched_keywords=cls.ai_km_hits,
                         is_new=is_new,
-                        review_reason=_review_reason_text(cls.mgmt_hits),
+                        review_reason=review_reason,
                         work_arrangement=work_arrangement_tag,
                     )
                 )
@@ -354,6 +403,7 @@ def run(reset_seen: bool = False) -> int:
         total_new += _print_bucket("REVIEW MANUALLY", review_matches)
 
     debug_file.close()
+    eval_predictions_file.close()
     store.save()
 
     print("\n" + "=" * 72)
