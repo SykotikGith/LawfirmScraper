@@ -331,9 +331,41 @@ measure (precision — "of what it shows, how much is right" — yes; recall
 — "of what's really out there, how much did it catch" — no), not
 something planned to be fixed here.
 
-The other half — a "verdicts" log capturing your own judgment on each
-posting (genuine match / not interested / false positive), and a
-precision summary computed by comparing the two — is not built yet.
+The other half is capturing your own judgment. Every job card on the
+dashboard has three actions now, not two:
+
+- **✓ Applied** — genuine match, you pursued it.
+- **Not Interested** — a personal pass. Says nothing about whether the
+  classification was *right* — could be a perfectly good KM/Legal-AI
+  match you're skipping for an unrelated reason (location, comp,
+  whatever). Deliberately excluded from precision math for exactly that
+  reason.
+- **✗ False Positive** — the scraper was wrong to classify this as
+  auto-match/review at all. This is what precision gets computed from,
+  alongside Applied.
+
+Clicking a status button stores `{status, firm, title, verdict_at}` in
+`localStorage` under the `lfcr_posting_status` key, captured at the moment
+you click — not looked up later, since a posting can eventually stop
+appearing in future dashboard runs (job closes, scraper drops it) and by
+then there'd be nothing left to look up. Clicking "Export verdicts" (next
+to "Show dismissed") copies every recorded verdict as a JSON array to your
+clipboard, ready to paste into chat.
+
+This is a single-device, browser-only store — it doesn't sync across
+computers or browsers, and clearing browser data clears it. Getting the
+verdicts *out* of the browser and into a durable, comparable form
+(`data/eval_verdicts.jsonl`, merged against the predictions log to
+actually compute precision) is the last remaining piece, not built yet.
+
+One implementation detail worth knowing if you ever poke at
+`lfcr_posting_status` in dev tools: this status shape (an object with
+firm/title/verdict_at) replaced an earlier version that stored just a bare
+status string (`"applied"`). The dashboard migrates old entries to the new
+shape automatically the first time it loads after this change, so
+existing Applied/Not Interested marks from before this update aren't
+lost — but it's the reason the code has a migration step at all, in case
+that ever looks like unnecessary complexity later.
 
 ## Automation
 

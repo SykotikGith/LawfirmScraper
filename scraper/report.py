@@ -172,6 +172,7 @@ def _card(entry: ReportEntry, section: str, show_new_badge: bool = True) -> str:
     return f"""
       <div class="job-card {section}" data-url="{safe_url}"{loc_attr}>
         <span class="applied-badge">APPLIED</span>
+        <span class="false-positive-badge">MISCLASSIFIED</span>
         {new_badge}
         <a class="job-card-link" href="{safe_url}" target="_blank" rel="noopener noreferrer">
           <div class="job-firm">{html.escape(entry.firm)}</div>
@@ -182,6 +183,7 @@ def _card(entry: ReportEntry, section: str, show_new_badge: bool = True) -> str:
         <div class="job-actions">
           <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
           <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+          <button type="button" class="status-btn status-btn-false-positive" data-status-action="false_positive">✗ False Positive</button>
         </div>
       </div>"""
 
@@ -371,6 +373,8 @@ def render_report(
     --teal-border: #1F4A52;
     --amber: #D9A441;
     --amber-border: #4A3A22;
+    --red: #C1594F;
+    --red-border: #4A2622;
   }}
   * {{ box-sizing: border-box; }}
   body {{
@@ -670,6 +674,32 @@ def render_report(
     display: block;
     opacity: 0.5;
   }}
+  .false-positive-badge {{
+    display: none;
+    position: absolute;
+    top: -8px;
+    left: 14px;
+    background: var(--card-bg);
+    color: var(--red);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    padding: 3px 9px;
+    border-radius: 6px;
+    border: 1px solid var(--red-border);
+    transform: rotate(3deg);
+  }}
+  .job-card[data-status="false-positive"] {{ display: none; }}
+  body[data-show-dismissed="true"] .job-card[data-status="false-positive"] {{
+    display: block;
+    opacity: 0.5;
+  }}
+  body[data-show-dismissed="true"] .job-card[data-status="false-positive"] .false-positive-badge {{
+    display: inline-block;
+  }}
+  body[data-show-dismissed="true"] .job-card[data-status="false-positive"] .new-badge {{
+    display: none;
+  }}
   .job-actions {{
     display: flex;
     gap: 8px;
@@ -701,6 +731,12 @@ def render_report(
     border-color: var(--amber);
     color: var(--amber);
   }}
+  .job-card[data-status="false-positive"] .status-btn-false-positive,
+  body[data-show-dismissed="true"] .job-card[data-status="false-positive"] .status-btn-false-positive {{
+    background: var(--red-border);
+    border-color: var(--red);
+    color: var(--red);
+  }}
   .show-dismissed-toggle {{
     font-family: inherit;
     font-size: 0.82rem;
@@ -713,6 +749,11 @@ def render_report(
     margin-bottom: 40px;
   }}
   .show-dismissed-toggle:hover {{ color: var(--text-primary); }}
+  .export-verdicts-status {{
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-left: 8px;
+  }}
   footer {{
     margin-top: 48px;
     color: var(--text-secondary);
@@ -736,6 +777,8 @@ def render_report(
     </div>
 
     <button type="button" id="show-dismissed-toggle" class="show-dismissed-toggle">Show dismissed</button>
+    <button type="button" id="export-verdicts-btn" class="show-dismissed-toggle">Export verdicts</button>
+    <span id="export-verdicts-status" class="export-verdicts-status"></span>
 {new_since_section}
 {auto_section}
 {review_section}
@@ -755,33 +798,66 @@ def render_report(
     }})();
 
     (function () {{
-      // Per-posting Applied/Not Interested status, kept in localStorage
-      // (single-device only -- doesn't sync across browsers/computers,
-      // that's an accepted limitation) keyed by the posting's real URL,
-      // which is stable across dashboard regenerations even though the
-      // rest of the HTML is rebuilt from scratch every run.
+      // Per-posting Applied/Not Interested/False Positive status, kept in
+      // localStorage (single-device only -- doesn't sync across
+      // browsers/computers, that's an accepted limitation) keyed by the
+      // posting's real URL, which is stable across dashboard regenerations
+      // even though the rest of the HTML is rebuilt from scratch every run.
+      //
+      // Each entry is an object -- {{status, firm, title, verdict_at}} --
+      // not a bare status string. firm/title/verdict_at are captured at the
+      // moment you click, not looked up later at export time, because a
+      // posting can eventually stop appearing in future dashboard runs (job
+      // closes, scraper drops it) -- if we deferred the lookup to export
+      // time we'd have no way to recover its firm/title once that happens.
       var STORAGE_KEY = "lfcr_posting_status";
 
       function loadStatuses() {{
+        var statuses;
         try {{
-          return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{{}}");
+          statuses = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{{}}");
         }} catch (e) {{
-          return {{}};
+          statuses = {{}};
         }}
+        // Migrate entries from before this object shape existed (a bare
+        // status string, e.g. "applied") so earlier Applied/Not Interested
+        // clicks aren't silently lost -- without this, reading entry.status
+        // on a plain string returns undefined and every old mark would
+        // just stop showing up.
+        var migrated = false;
+        Object.keys(statuses).forEach(function (url) {{
+          if (typeof statuses[url] === "string") {{
+            var card = document.querySelector('.job-card[data-url="' + CSS.escape(url) + '"]');
+            statuses[url] = {{
+              status: statuses[url],
+              firm: card ? card.querySelector(".job-firm").textContent : "",
+              title: card ? card.querySelector(".job-title").textContent : "",
+              verdict_at: null
+            }};
+            migrated = true;
+          }}
+        }});
+        if (migrated) saveStatuses(statuses);
+        return statuses;
       }}
 
       function saveStatuses(statuses) {{
         localStorage.setItem(STORAGE_KEY, JSON.stringify(statuses));
       }}
 
+      var STATUS_ATTR = {{
+        applied: "applied",
+        not_interested: "not-interested",
+        false_positive: "false-positive"
+      }};
+
       function renderAll() {{
         var statuses = loadStatuses();
         document.querySelectorAll(".job-card[data-url]").forEach(function (card) {{
-          var status = statuses[card.getAttribute("data-url")];
-          if (status === "applied") {{
-            card.setAttribute("data-status", "applied");
-          }} else if (status === "not_interested") {{
-            card.setAttribute("data-status", "not-interested");
+          var entry = statuses[card.getAttribute("data-url")];
+          var attr = entry && STATUS_ATTR[entry.status];
+          if (attr) {{
+            card.setAttribute("data-status", attr);
           }} else {{
             card.removeAttribute("data-status");
           }}
@@ -799,8 +875,17 @@ def render_report(
         // Last Run" and its home section) shares the same URL, so setting
         // status once here and re-rendering all cards keeps them in sync.
         var statuses = loadStatuses();
-        statuses[url] = statuses[url] === action ? undefined : action;
-        if (statuses[url] === undefined) delete statuses[url];
+        var current = statuses[url];
+        if (current && current.status === action) {{
+          delete statuses[url];
+        }} else {{
+          statuses[url] = {{
+            status: action,
+            firm: card.querySelector(".job-firm").textContent,
+            title: card.querySelector(".job-title").textContent,
+            verdict_at: new Date().toISOString()
+          }};
+        }}
         saveStatuses(statuses);
         renderAll();
       }});
@@ -811,6 +896,41 @@ def render_report(
           var shown = document.body.getAttribute("data-show-dismissed") === "true";
           document.body.setAttribute("data-show-dismissed", shown ? "false" : "true");
           dismissToggle.textContent = shown ? "Show dismissed" : "Hide dismissed";
+        }});
+      }}
+
+      var exportBtn = document.getElementById("export-verdicts-btn");
+      var exportStatus = document.getElementById("export-verdicts-status");
+      if (exportBtn && exportStatus) {{
+        exportBtn.addEventListener("click", function () {{
+          var statuses = loadStatuses();
+          var records = Object.keys(statuses).map(function (url) {{
+            var entry = statuses[url];
+            return {{
+              posting_url: url,
+              status: entry.status,
+              firm: entry.firm,
+              title: entry.title,
+              verdict_at: entry.verdict_at
+            }};
+          }});
+          if (records.length === 0) {{
+            exportStatus.textContent = "Nothing to export yet.";
+            return;
+          }}
+          var json = JSON.stringify(records, null, 2);
+          var label = records.length + " verdict" + (records.length === 1 ? "" : "s");
+          function onCopied() {{
+            exportStatus.textContent = "Copied " + label + " to clipboard -- paste into chat.";
+          }}
+          function onCopyFailed() {{
+            window.prompt("Clipboard copy failed -- copy this manually and paste into chat:", json);
+          }}
+          if (navigator.clipboard && navigator.clipboard.writeText) {{
+            navigator.clipboard.writeText(json).then(onCopied, onCopyFailed);
+          }} else {{
+            onCopyFailed();
+          }}
         }});
       }}
 
