@@ -2,6 +2,11 @@
   "Alston & Bird": [
     "JR100860"
   ],
+  "Cooley": [
+    "Req4943-2",
+    "Req4891",
+    "Req4633"
+  ],
   "Cozen O'Connor": [
     "350",
     "352"
@@ -12,8 +17,14 @@
   "DLA Piper": [
     "R2026-2707"
   ],
+  "Duane Morris": [
+    "2950ad7446ac"
+  ],
   "Eversheds Sutherland": [
     "7c8edf19-496a-43c3-b36e-0563d1e1843a"
+  ],
+  "Faegre Drinker": [
+    "JR-3457"
   ],
   "Fisher Phillips": [
     "a2cc57dd281c",
@@ -23,9 +34,15 @@
   "Fox Rothschild": [
     "5ba762ed-285c-4ecc-b4c6-951605501d46"
   ],
+  "Fragomen": [
+    "REQ-026370"
+  ],
   "Gibson Dunn": [
     "4253456009",
     "4253439009"
+  ],
+  "Greenberg Traurig": [
+    "JR202601117-3"
   ],
   "Haynes and Boone": [
     "R1363"
@@ -36,17 +53,39 @@
   "Holland & Knight": [
     "R5313"
   ],
+  "Hunton Andrews Kurth": [
+    "1d0d1eea-93e2-411a-9491-a3c57ff84cae"
+  ],
   "Jackson Lewis": [
     "US - FL - Orlando; US - CO - Denver; US - NY - New York City; US - FL - Tampa; US - TX - Dallas; US - NY - Long Island; US - WA - Seattle; US - IL - Chicago; US - TX - Austin",
     "R423-2026"
   ],
+  "Kirkland & Ellis": [
+    "18083272",
+    "18083270",
+    "18083269",
+    "18083268",
+    "18083267",
+    "18083266"
+  ],
+  "McDermott Will & Emery": [
+    "50373630"
+  ],
   "Mintz Levin": [
     "f3b224160683"
+  ],
+  "Morgan Lewis": [
+    "R4069-1"
   ],
   "Norton Rose Fulbright": [
     "R-4070-1",
     "R-4077-1",
-    "R-4085-1"
+    "R-4085-1",
+    "R-4153"
+  ],
+  "Ogletree Deakins": [
+    "6576",
+    "6448"
   ],
   "Proskauer Rose": [
     "786",
@@ -69,6 +108,12 @@
   "Skadden Arps": [
     "2421",
     "2425"
+  ],
+  "White & Case": [
+    "JR101976-1",
+    "JR101272-1",
+    "JR102836",
+    "JR101681-1"
   ],
   "Wilson Elser": [
     "5198354008",
