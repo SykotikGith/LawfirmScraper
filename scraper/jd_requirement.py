@@ -4,7 +4,7 @@ Runs only on postings that already passed the title-level filter
 (auto_match or review tier) and the work-arrangement filter -- fetching a
 full description page per posting (see main.py's `_fetch_description`) is
 only affordable for that much smaller set, not every posting scraped
-across all ~69 firms.
+across all ~70 firms.
 
 Looks for EXPLICIT "required" framing around a law degree or bar admission
 -- "J.D. required", "must have a J.D.", "active bar admission required",

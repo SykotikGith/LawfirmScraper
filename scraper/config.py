@@ -73,6 +73,14 @@ FIRMS: dict[str, dict] = {
         "(London, Dubai, Montreal) -- this may be one global Workday site rather than a "
         "US-only tenant. Filter/verify by location text for 'US' postings specifically.",
     },
+    "Fragomen": {
+        "adapter": WorkdayAdapter,
+        "tenant": "fragomen",
+        "wd": "wd115",
+        "site": "FragomenCareers",
+        "notes": "Workday tenant confirmed directly by the user: "
+        "https://fragomen.wd115.myworkdayjobs.com/en-US/FragomenCareers.",
+    },
     # --- Oracle-style group ---------------------------------------------------
     "Cozen O'Connor": {
         "adapter": OracleRecruitingAdapter,

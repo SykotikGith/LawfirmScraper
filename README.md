@@ -115,7 +115,7 @@ viGlobal (trailing text already present in the row it scrapes). Every
 other adapter — Workday, Circa Works, ApplicantStack, and custom-HTML
 firms — detects work arrangement from location text alone at this stage,
 since fetching a full description for every scraped posting (hundreds
-across 69 firms) would mean an extra HTTP request per posting; those
+across 70 firms) would mean an extra HTTP request per posting; those
 firms lean on "onsite"/"unclear" more often here as a result. Once a
 posting survives that first pass, `main.py` re-checks work arrangement a
 second time against whatever description the JD-requirement filter below
@@ -182,7 +182,7 @@ exclusions were.
 `scraper/config.py` has three top-level structures:
 
 - `FIRMS` — the active, automated firm list (adapter class + tenant/URL
-  config per firm). This is what `main.py` actually scrapes. Currently 69
+  config per firm). This is what `main.py` actually scrapes. Currently 70
   firms, 2 of which carry a `partial_coverage` note (Akin Gump, Kirkland &
   Ellis — both confirmed page-1-only due to pagination the adapter can't
   get past) — surfaced on the dashboard as a distinct "Partial" count in
