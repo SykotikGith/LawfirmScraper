@@ -51,29 +51,67 @@ https://sykotikgith.github.io/law-firm-career-radar/.
 this order:
 
 1. **Excluded** — a hard-exclude term is present (`HARD_EXCLUDE_TERMS`):
-   Aderant, IT Asset (+ Specialist/Lead), Network Engineer, Engineering
-   Manager, Development Manager, Finance/Financial/Billing/Accounting/
-   Accountant, and JD/bar-required or support-staff titles (Attorney,
-   Lawyer, Counsel, Associate, Paralegal, Legal Secretary, Of Counsel,
-   Partner).
-   Checked first — wins over an AI/KM keyword match every time, so e.g.
-   "Knowledge Management Attorney" is excluded.
-2. **Auto-match** — the title contains an AI/KM keyword
-   (`AI_KM_KEYWORDS`: Knowledge Management, KM, Legal AI, AI Enablement,
-   AI Practice Transformation, Legal Technology, Legal Tech, IAM, Identity
-   and Access Management, Application Support, Process Improvement,
-   Business Process Optimization) and none of Director/Manager/Program
-   Manager/Project Manager.
-3. **Review manually** — same AI/KM keyword hit, but disqualified from
-   auto-match specifically by Director, Program Manager, or Project
-   Manager (a bare "Manager" that isn't one of those, e.g. "IT Manager",
-   is dropped instead of flagged — deliberately not in the review-trigger
-   list).
-4. **None** — no AI/KM keyword hit at all, or dropped per the bare-Manager
-   rule above. Not shown anywhere.
+   Aderant, IT Asset (+ Specialist/Lead), Development Manager,
+   Finance/Financial/Billing/Accounting/Accountant, hands-on build-role
+   terms (Engineer, Developer, Architect, Scientist — plain substrings,
+   so these also catch Engineering/Architecture/Developers without
+   separate entries), and JD/bar-required or support-staff titles
+   (Attorney, Lawyer, Counsel, Associate, Paralegal, Legal Secretary, Of
+   Counsel, Partner).
+   Checked first — wins over a Tier 1/Tier 2 phrase match every time, so
+   e.g. "Knowledge Management Attorney" is excluded despite containing
+   Tier 1's "knowledge management", and "AI Knowledge Engineer" is
+   excluded despite containing Tier 1's "AI knowledge" (this is a real,
+   known tradeoff — see below).
+2. **Auto-match (Tier 1)** — the title contains one of `TIER_1_KEYWORDS`:
+   AI enablement, AI adoption, AI training, AI optimization, AI
+   operations, applied AI, AI solution, AI knowledge, practice
+   technology, practice innovation, practice enablement, legal technology
+   advisor, legal innovation, knowledge management, knowledge engineer,
+   digital adoption, technology adoption, technology enablement.
+3. **Review manually (Tier 2)** — no Tier 1 phrase, but the title contains
+   one of `TIER_2_KEYWORDS`: innovation manager, innovation specialist,
+   director of AI, director of artificial intelligence, legal operations,
+   legal solutions, training specialist, training manager. Noisier than
+   Tier 1, but real matches have come from this bucket — surfaced rather
+   than dropped.
+4. **None** — no Tier 1 or Tier 2 phrase found. Not shown anywhere.
+
+If a title matches both a Tier 1 and a Tier 2 phrase (e.g. "Innovation
+Manager - Applied AI" hits Tier 2's "innovation manager" *and* Tier 1's
+"applied AI"), Tier 1 wins — it's checked first.
 
 Only the auto-match and review-manually tiers show up in console output
 and the HTML report.
+
+This replaced an earlier design where tier was determined by a broader
+AI/KM keyword list combined with a separate Director/Manager
+"disqualifier" list (any AI/KM hit plus a bare Director/Manager/Program
+Manager/Project Manager term downgraded or dropped the posting). That
+model made genuinely good titles invisible for two different reasons —
+titles like "Practice Technology Manager" or "Director of Artificial
+Intelligence" never matched the old, narrower AI/KM keyword list at all,
+so they were dropped as tier "none" without ever being hard-excluded.
+The fix wasn't a smarter modifier rule, it was a more precise keyword
+list — Tier 1 and Tier 2 are now two independent, purpose-built phrase
+lists; which one a title lands in is what determines the tier, not a
+keyword-plus-modifier combination. One consequence: several terms from
+the old broader list ("IAM", "Application Support", "Process
+Improvement", "Legal Tech" as a bare term, plain "Legal Technology"
+without "advisor") no longer match anything — an intentional narrowing
+based on real usage data, not an oversight.
+
+**Known tradeoff worth watching:** the hard-exclude terms Engineer/
+Architect/Scientist are plain substrings, which means they win even
+against a strong Tier 1 match in the same title — "AI Knowledge
+Engineer" and "Data Scientist, Legal Innovation" both get excluded
+despite containing Tier 1 phrases. "Knowledge Engineer" in particular is
+a real, established title in KM/ontology-building work, distinct from a
+hands-on software engineering role, so this is a genuine (if rare) false
+exclusion, not just theoretical. Accepted as a tradeoff for now since
+Engineer/Architect/Scientist are strong negative signals in the much more
+common case — revisit if postings shaped like this turn out to matter in
+practice.
 
 ### Work-arrangement filter
 

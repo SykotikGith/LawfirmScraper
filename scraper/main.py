@@ -92,8 +92,8 @@ def _fetch_description(url: str, session: requests.Session, cache: dict[str, str
     return text
 
 
-def _review_reason_text(mgmt_hits: list[str]) -> str:
-    return "/".join(h.lower() for h in mgmt_hits) + " title"
+def _review_reason_text(tier2_hits: list[str]) -> str:
+    return "/".join(h.lower() for h in tier2_hits) + " match"
 
 
 def _append_prediction(
@@ -113,7 +113,7 @@ def _append_prediction(
         "firm": firm_name,
         "title": posting.title,
         "tier": cls.tier,
-        "matched_keywords": cls.ai_km_hits,
+        "matched_keywords": cls.matched_keywords,
         "review_reason": review_reason,
         "work_arrangement": wa.status,
         "run_timestamp": run_timestamp,
@@ -213,9 +213,9 @@ def _print_bucket(
         flag = "NEW" if is_new else "seen"
         new_count += 1 if is_new else 0
         print(f"   [{flag}] {posting.title} — {posting.location}")
-        print(f"         matched: {', '.join(cls.ai_km_hits)}")
+        print(f"         matched: {', '.join(cls.matched_keywords)}")
         if cls.tier == "review":
-            print(f"         ⚠ review — may be program/people-management-heavy ({', '.join(cls.mgmt_hits)})")
+            print(f"         ⚠ review — Tier 2 match, needs a look ({', '.join(cls.matched_keywords)})")
         if wa.status == "unclear":
             print("         ⚠ remote status unclear — verify")
         print(f"         {posting.url}")
@@ -370,13 +370,13 @@ def run(reset_seen: bool = False) -> int:
                         title=posting.title,
                         location=posting.location,
                         url=posting.url,
-                        matched_keywords=cls.ai_km_hits,
+                        matched_keywords=cls.matched_keywords,
                         is_new=is_new,
                         work_arrangement=work_arrangement_tag,
                     )
                 )
             else:
-                review_reason = _review_reason_text(cls.mgmt_hits)
+                review_reason = _review_reason_text(cls.matched_keywords)
                 _append_prediction(
                     eval_predictions_file, firm_name, posting, cls, wa, review_reason, run_timestamp
                 )
@@ -387,7 +387,7 @@ def run(reset_seen: bool = False) -> int:
                         title=posting.title,
                         location=posting.location,
                         url=posting.url,
-                        matched_keywords=cls.ai_km_hits,
+                        matched_keywords=cls.matched_keywords,
                         is_new=is_new,
                         review_reason=review_reason,
                         work_arrangement=work_arrangement_tag,
