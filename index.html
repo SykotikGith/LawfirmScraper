@@ -21,6 +21,8 @@
     --teal-border: #1F4A52;
     --amber: #D9A441;
     --amber-border: #4A3A22;
+    --red: #C1594F;
+    --red-border: #4A2622;
   }
   * { box-sizing: border-box; }
   body {
@@ -320,6 +322,32 @@
     display: block;
     opacity: 0.5;
   }
+  .false-positive-badge {
+    display: none;
+    position: absolute;
+    top: -8px;
+    left: 14px;
+    background: var(--card-bg);
+    color: var(--red);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    padding: 3px 9px;
+    border-radius: 6px;
+    border: 1px solid var(--red-border);
+    transform: rotate(3deg);
+  }
+  .job-card[data-status="false-positive"] { display: none; }
+  body[data-show-dismissed="true"] .job-card[data-status="false-positive"] {
+    display: block;
+    opacity: 0.5;
+  }
+  body[data-show-dismissed="true"] .job-card[data-status="false-positive"] .false-positive-badge {
+    display: inline-block;
+  }
+  body[data-show-dismissed="true"] .job-card[data-status="false-positive"] .new-badge {
+    display: none;
+  }
   .job-actions {
     display: flex;
     gap: 8px;
@@ -351,6 +379,12 @@
     border-color: var(--amber);
     color: var(--amber);
   }
+  .job-card[data-status="false-positive"] .status-btn-false-positive,
+  body[data-show-dismissed="true"] .job-card[data-status="false-positive"] .status-btn-false-positive {
+    background: var(--red-border);
+    border-color: var(--red);
+    color: var(--red);
+  }
   .show-dismissed-toggle {
     font-family: inherit;
     font-size: 0.82rem;
@@ -363,6 +397,11 @@
     margin-bottom: 40px;
   }
   .show-dismissed-toggle:hover { color: var(--text-primary); }
+  .export-verdicts-status {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-left: 8px;
+  }
   footer {
     margin-top: 48px;
     color: var(--text-secondary);
@@ -374,7 +413,7 @@
 <body>
   <div class="page">
     <h1>Law Firm Career Radar</h1>
-    <p class="subtitle">IT / Knowledge Management / Legal-AI role filter — updated Aug 07, 2026 02:13 PM UTC</p>
+    <p class="subtitle">IT / Knowledge Management / Legal-AI role filter — updated Aug 07, 2026 07:06 PM UTC</p>
 
     <div class="metrics-grid">
       <div class="metric-card">
@@ -386,18 +425,18 @@
       </div>
       <div class="metric-card">
         <div class="metric-value-stack">
-          <div class="metric-stack-line"><span class="metric-stack-tag">Automated:</span> <span class="accent-green">67</span></div>
+          <div class="metric-stack-line"><span class="metric-stack-tag">Automated:</span> <span class="accent-green">68</span></div>
           <div class="metric-stack-line"><span class="metric-stack-tag">Partial:</span> <span class="accent-amber">2</span></div>
           <div class="metric-stack-line"><span class="metric-stack-tag">Manual:</span> <span class="accent-amber">17</span></div>
         </div>
-        <div class="metric-label">Firm coverage (86 tracked)</div>
+        <div class="metric-label">Firm coverage (87 tracked)</div>
       </div>
       <div class="metric-card">
         <div class="metric-value accent-teal">1</div>
         <div class="metric-label">Needs review</div>
       </div>
       <div class="metric-card">
-        <div class="metric-value metric-value-small">Aug 07, 2026 02:13 PM UTC</div>
+        <div class="metric-value metric-value-small">Aug 07, 2026 07:06 PM UTC</div>
         <div class="metric-label">Last run</div>
       </div>
     </div>
@@ -409,6 +448,8 @@
     </div>
 
     <button type="button" id="show-dismissed-toggle" class="show-dismissed-toggle">Show dismissed</button>
+    <button type="button" id="export-verdicts-btn" class="show-dismissed-toggle">Export verdicts</button>
+    <span id="export-verdicts-status" class="export-verdicts-status"></span>
 
     <section class="section">
       <h2 class="section-title new-since"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4" /><path d="m7 7 2.5 2.5M17 7l-2.5 2.5M7 17l2.5-2.5M17 17l-2.5-2.5" /></svg>New Since Last Run</h2>
@@ -422,6 +463,7 @@
       <div class="job-grid">
       <div class="job-card auto" data-url="https://job-boards.greenhouse.io/wilsonelser/jobs/5198354008" data-loc="us">
         <span class="applied-badge">APPLIED</span>
+        <span class="false-positive-badge">MISCLASSIFIED</span>
         
         <a class="job-card-link" href="https://job-boards.greenhouse.io/wilsonelser/jobs/5198354008" target="_blank" rel="noopener noreferrer">
           <div class="job-firm">Wilson Elser</div>
@@ -432,10 +474,12 @@
         <div class="job-actions">
           <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
           <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+          <button type="button" class="status-btn status-btn-false-positive" data-status-action="false_positive">✗ False Positive</button>
         </div>
       </div>
       <div class="job-card auto" data-url="https://dfa.fa.us1.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/job/789" data-loc="us">
         <span class="applied-badge">APPLIED</span>
+        <span class="false-positive-badge">MISCLASSIFIED</span>
         
         <a class="job-card-link" href="https://dfa.fa.us1.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/job/789" target="_blank" rel="noopener noreferrer">
           <div class="job-firm">Proskauer Rose</div>
@@ -446,10 +490,12 @@
         <div class="job-actions">
           <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
           <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+          <button type="button" class="status-btn status-btn-false-positive" data-status-action="false_positive">✗ False Positive</button>
         </div>
       </div>
       <div class="job-card auto" data-url="https://stblaw.wd1.myworkdayjobs.com/en-US/careers/job/New-York-NY/Legal-Technologist_R-2025-558" data-loc="us">
         <span class="applied-badge">APPLIED</span>
+        <span class="false-positive-badge">MISCLASSIFIED</span>
         
         <a class="job-card-link" href="https://stblaw.wd1.myworkdayjobs.com/en-US/careers/job/New-York-NY/Legal-Technologist_R-2025-558" target="_blank" rel="noopener noreferrer">
           <div class="job-firm">Simpson Thacher</div>
@@ -460,10 +506,12 @@
         <div class="job-actions">
           <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
           <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+          <button type="button" class="status-btn status-btn-false-positive" data-status-action="false_positive">✗ False Positive</button>
         </div>
       </div>
       <div class="job-card auto" data-url="https://job-boards.greenhouse.io/gibsondunn/jobs/4253456009" data-loc="us">
         <span class="applied-badge">APPLIED</span>
+        <span class="false-positive-badge">MISCLASSIFIED</span>
         
         <a class="job-card-link" href="https://job-boards.greenhouse.io/gibsondunn/jobs/4253456009" target="_blank" rel="noopener noreferrer">
           <div class="job-firm">Gibson Dunn</div>
@@ -474,10 +522,12 @@
         <div class="job-actions">
           <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
           <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+          <button type="button" class="status-btn status-btn-false-positive" data-status-action="false_positive">✗ False Positive</button>
         </div>
       </div>
       <div class="job-card auto" data-url="https://job-boards.greenhouse.io/gibsondunn/jobs/4253439009" data-loc="us">
         <span class="applied-badge">APPLIED</span>
+        <span class="false-positive-badge">MISCLASSIFIED</span>
         
         <a class="job-card-link" href="https://job-boards.greenhouse.io/gibsondunn/jobs/4253439009" target="_blank" rel="noopener noreferrer">
           <div class="job-firm">Gibson Dunn</div>
@@ -488,10 +538,12 @@
         <div class="job-actions">
           <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
           <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+          <button type="button" class="status-btn status-btn-false-positive" data-status-action="false_positive">✗ False Positive</button>
         </div>
       </div>
       <div class="job-card auto" data-url="https://alston.wd1.myworkdayjobs.com/en-US/ExternalCareer/job/New-York-City/Legal-AI-Solutions-Analyst_JR100860" data-loc="us">
         <span class="applied-badge">APPLIED</span>
+        <span class="false-positive-badge">MISCLASSIFIED</span>
         
         <a class="job-card-link" href="https://alston.wd1.myworkdayjobs.com/en-US/ExternalCareer/job/New-York-City/Legal-AI-Solutions-Analyst_JR100860" target="_blank" rel="noopener noreferrer">
           <div class="job-firm">Alston &amp; Bird</div>
@@ -502,10 +554,12 @@
         <div class="job-actions">
           <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
           <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+          <button type="button" class="status-btn status-btn-false-positive" data-status-action="false_positive">✗ False Positive</button>
         </div>
       </div>
       <div class="job-card auto" data-url="https://hklaw.wd1.myworkdayjobs.com/en-US/Holland_Knight/job/Nashville/Legal-AI-Automation-Specialist-and-Closing-Coordinator_R5313" data-loc="us">
         <span class="applied-badge">APPLIED</span>
+        <span class="false-positive-badge">MISCLASSIFIED</span>
         
         <a class="job-card-link" href="https://hklaw.wd1.myworkdayjobs.com/en-US/Holland_Knight/job/Nashville/Legal-AI-Automation-Specialist-and-Closing-Coordinator_R5313" target="_blank" rel="noopener noreferrer">
           <div class="job-firm">Holland &amp; Knight</div>
@@ -516,10 +570,12 @@
         <div class="job-actions">
           <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
           <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+          <button type="button" class="status-btn status-btn-false-positive" data-status-action="false_positive">✗ False Positive</button>
         </div>
       </div>
       <div class="job-card auto" data-url="https://skadden.wd5.myworkdayjobs.com/en-US/Skadden_Careers/job/New-York/Legal-Technology-Senior-Software-Engineer_JR_2425" data-loc="us">
         <span class="applied-badge">APPLIED</span>
+        <span class="false-positive-badge">MISCLASSIFIED</span>
         
         <a class="job-card-link" href="https://skadden.wd5.myworkdayjobs.com/en-US/Skadden_Careers/job/New-York/Legal-Technology-Senior-Software-Engineer_JR_2425" target="_blank" rel="noopener noreferrer">
           <div class="job-firm">Skadden Arps</div>
@@ -530,10 +586,12 @@
         <div class="job-actions">
           <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
           <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+          <button type="button" class="status-btn status-btn-false-positive" data-status-action="false_positive">✗ False Positive</button>
         </div>
       </div>
       <div class="job-card auto" data-url="https://sidley.wd501.myworkdayjobs.com/en-US/US/job/Los-Angeles/IAM-Analyst_R01180" data-loc="us">
         <span class="applied-badge">APPLIED</span>
+        <span class="false-positive-badge">MISCLASSIFIED</span>
         
         <a class="job-card-link" href="https://sidley.wd501.myworkdayjobs.com/en-US/US/job/Los-Angeles/IAM-Analyst_R01180" target="_blank" rel="noopener noreferrer">
           <div class="job-firm">Sidley Austin</div>
@@ -544,10 +602,12 @@
         <div class="job-actions">
           <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
           <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+          <button type="button" class="status-btn status-btn-false-positive" data-status-action="false_positive">✗ False Positive</button>
         </div>
       </div>
       <div class="job-card auto" data-url="https://recruiting.ultipro.com/fox1001frllp/JobBoard/88a19d60-0e84-49c7-b754-509a756678e7/OpportunityDetail?opportunityId=5ba762ed-285c-4ecc-b4c6-951605501d46" data-loc="us">
         <span class="applied-badge">APPLIED</span>
+        <span class="false-positive-badge">MISCLASSIFIED</span>
         
         <a class="job-card-link" href="https://recruiting.ultipro.com/fox1001frllp/JobBoard/88a19d60-0e84-49c7-b754-509a756678e7/OpportunityDetail?opportunityId=5ba762ed-285c-4ecc-b4c6-951605501d46" target="_blank" rel="noopener noreferrer">
           <div class="job-firm">Fox Rothschild</div>
@@ -558,10 +618,12 @@
         <div class="job-actions">
           <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
           <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+          <button type="button" class="status-btn status-btn-false-positive" data-status-action="false_positive">✗ False Positive</button>
         </div>
       </div>
       <div class="job-card auto" data-url="https://recruiting.ultipro.com/SUT1001EVSU/JobBoard/80eaa491-46d1-4ef3-93bb-2f523c2631c7/OpportunityDetail?opportunityId=7c8edf19-496a-43c3-b36e-0563d1e1843a" data-loc="us">
         <span class="applied-badge">APPLIED</span>
+        <span class="false-positive-badge">MISCLASSIFIED</span>
         
         <a class="job-card-link" href="https://recruiting.ultipro.com/SUT1001EVSU/JobBoard/80eaa491-46d1-4ef3-93bb-2f523c2631c7/OpportunityDetail?opportunityId=7c8edf19-496a-43c3-b36e-0563d1e1843a" target="_blank" rel="noopener noreferrer">
           <div class="job-firm">Eversheds Sutherland</div>
@@ -572,10 +634,12 @@
         <div class="job-actions">
           <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
           <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+          <button type="button" class="status-btn status-btn-false-positive" data-status-action="false_positive">✗ False Positive</button>
         </div>
       </div>
       <div class="job-card auto" data-url="https://nrf.wd3.myworkdayjobs.com/en-US/External/job/Newcastle-upon-Tyne-United-Kingdom/Analyst--Application-Support_R-4070-1">
         <span class="applied-badge">APPLIED</span>
+        <span class="false-positive-badge">MISCLASSIFIED</span>
         
         <a class="job-card-link" href="https://nrf.wd3.myworkdayjobs.com/en-US/External/job/Newcastle-upon-Tyne-United-Kingdom/Analyst--Application-Support_R-4070-1" target="_blank" rel="noopener noreferrer">
           <div class="job-firm">Norton Rose Fulbright</div>
@@ -586,10 +650,12 @@
         <div class="job-actions">
           <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
           <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+          <button type="button" class="status-btn status-btn-false-positive" data-status-action="false_positive">✗ False Positive</button>
         </div>
       </div>
       <div class="job-card auto" data-url="https://nrf.wd3.myworkdayjobs.com/en-US/External/job/Newcastle-upon-Tyne-United-Kingdom/Senior-Analyst--Application-Support_R-4077-1">
         <span class="applied-badge">APPLIED</span>
+        <span class="false-positive-badge">MISCLASSIFIED</span>
         
         <a class="job-card-link" href="https://nrf.wd3.myworkdayjobs.com/en-US/External/job/Newcastle-upon-Tyne-United-Kingdom/Senior-Analyst--Application-Support_R-4077-1" target="_blank" rel="noopener noreferrer">
           <div class="job-firm">Norton Rose Fulbright</div>
@@ -600,10 +666,12 @@
         <div class="job-actions">
           <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
           <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+          <button type="button" class="status-btn status-btn-false-positive" data-status-action="false_positive">✗ False Positive</button>
         </div>
       </div>
       <div class="job-card auto" data-url="https://www.crowell.com/en/careers/professional-staff/open-positions?gh_jid=4331120009" data-loc="us remote">
         <span class="applied-badge">APPLIED</span>
+        <span class="false-positive-badge">MISCLASSIFIED</span>
         
         <a class="job-card-link" href="https://www.crowell.com/en/careers/professional-staff/open-positions?gh_jid=4331120009" target="_blank" rel="noopener noreferrer">
           <div class="job-firm">Crowell &amp; Moring</div>
@@ -614,6 +682,7 @@
         <div class="job-actions">
           <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
           <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+          <button type="button" class="status-btn status-btn-false-positive" data-status-action="false_positive">✗ False Positive</button>
         </div>
       </div>
       </div>
@@ -625,6 +694,7 @@
       <div class="job-grid">
       <div class="job-card review" data-url="https://haynesboone.wd503.myworkdayjobs.com/en-US/HaynesandBoone/job/Dallas/Director-of-Knowledge-Management_R1363" data-loc="us">
         <span class="applied-badge">APPLIED</span>
+        <span class="false-positive-badge">MISCLASSIFIED</span>
         
         <a class="job-card-link" href="https://haynesboone.wd503.myworkdayjobs.com/en-US/HaynesandBoone/job/Dallas/Director-of-Knowledge-Management_R1363" target="_blank" rel="noopener noreferrer">
           <div class="job-firm">Haynes and Boone</div>
@@ -635,13 +705,14 @@
         <div class="job-actions">
           <button type="button" class="status-btn status-btn-applied" data-status-action="applied">✓ Applied</button>
           <button type="button" class="status-btn status-btn-not-interested" data-status-action="not_interested">Not Interested</button>
+          <button type="button" class="status-btn status-btn-false-positive" data-status-action="false_positive">✗ False Positive</button>
         </div>
       </div>
       </div>
     </section>
 
     <details class="section manual-check-details">
-      <summary class="section-title manual"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg><span>Manual Firm Check</span><span class="section-count">(23)</span><span class="chevron">▸</span></summary>
+      <summary class="section-title manual"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg><span>Manual Firm Check</span><span class="section-count">(24)</span><span class="chevron">▸</span></summary>
       <p class="section-subtitle">Scraper can't reach this firm automatically — worth checking by hand.</p><div class="manual-check-table-wrap"><table class="manual-check-table"><thead><tr><th>Firm</th><th>Reason</th><th>Link</th></tr></thead><tbody>
         <tr>
           <td class="mc-firm">Arnold &amp; Porter</td>
@@ -672,6 +743,11 @@
           <td class="mc-firm">Davis Polk</td>
           <td class="mc-reason">Workday (dormant), no careers page found</td>
           <td class="mc-link"><a href="https://www.davispolk.com" target="_blank" rel="noopener noreferrer">Check firm's site →</a></td>
+        </tr>
+        <tr>
+          <td class="mc-firm">Dentons</td>
+          <td class="mc-reason">HTTP 403 error this run</td>
+          <td class="mc-link"><a href="https://www.dentons.com/DentonsServices/career.asmx/GetJobsByState" target="_blank" rel="noopener noreferrer">Check firm's site →</a></td>
         </tr>
         <tr>
           <td class="mc-firm">Foley &amp; Lardner</td>
@@ -775,33 +851,66 @@
     })();
 
     (function () {
-      // Per-posting Applied/Not Interested status, kept in localStorage
-      // (single-device only -- doesn't sync across browsers/computers,
-      // that's an accepted limitation) keyed by the posting's real URL,
-      // which is stable across dashboard regenerations even though the
-      // rest of the HTML is rebuilt from scratch every run.
+      // Per-posting Applied/Not Interested/False Positive status, kept in
+      // localStorage (single-device only -- doesn't sync across
+      // browsers/computers, that's an accepted limitation) keyed by the
+      // posting's real URL, which is stable across dashboard regenerations
+      // even though the rest of the HTML is rebuilt from scratch every run.
+      //
+      // Each entry is an object -- {status, firm, title, verdict_at} --
+      // not a bare status string. firm/title/verdict_at are captured at the
+      // moment you click, not looked up later at export time, because a
+      // posting can eventually stop appearing in future dashboard runs (job
+      // closes, scraper drops it) -- if we deferred the lookup to export
+      // time we'd have no way to recover its firm/title once that happens.
       var STORAGE_KEY = "lfcr_posting_status";
 
       function loadStatuses() {
+        var statuses;
         try {
-          return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+          statuses = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
         } catch (e) {
-          return {};
+          statuses = {};
         }
+        // Migrate entries from before this object shape existed (a bare
+        // status string, e.g. "applied") so earlier Applied/Not Interested
+        // clicks aren't silently lost -- without this, reading entry.status
+        // on a plain string returns undefined and every old mark would
+        // just stop showing up.
+        var migrated = false;
+        Object.keys(statuses).forEach(function (url) {
+          if (typeof statuses[url] === "string") {
+            var card = document.querySelector('.job-card[data-url="' + CSS.escape(url) + '"]');
+            statuses[url] = {
+              status: statuses[url],
+              firm: card ? card.querySelector(".job-firm").textContent : "",
+              title: card ? card.querySelector(".job-title").textContent : "",
+              verdict_at: null
+            };
+            migrated = true;
+          }
+        });
+        if (migrated) saveStatuses(statuses);
+        return statuses;
       }
 
       function saveStatuses(statuses) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(statuses));
       }
 
+      var STATUS_ATTR = {
+        applied: "applied",
+        not_interested: "not-interested",
+        false_positive: "false-positive"
+      };
+
       function renderAll() {
         var statuses = loadStatuses();
         document.querySelectorAll(".job-card[data-url]").forEach(function (card) {
-          var status = statuses[card.getAttribute("data-url")];
-          if (status === "applied") {
-            card.setAttribute("data-status", "applied");
-          } else if (status === "not_interested") {
-            card.setAttribute("data-status", "not-interested");
+          var entry = statuses[card.getAttribute("data-url")];
+          var attr = entry && STATUS_ATTR[entry.status];
+          if (attr) {
+            card.setAttribute("data-status", attr);
           } else {
             card.removeAttribute("data-status");
           }
@@ -819,8 +928,17 @@
         // Last Run" and its home section) shares the same URL, so setting
         // status once here and re-rendering all cards keeps them in sync.
         var statuses = loadStatuses();
-        statuses[url] = statuses[url] === action ? undefined : action;
-        if (statuses[url] === undefined) delete statuses[url];
+        var current = statuses[url];
+        if (current && current.status === action) {
+          delete statuses[url];
+        } else {
+          statuses[url] = {
+            status: action,
+            firm: card.querySelector(".job-firm").textContent,
+            title: card.querySelector(".job-title").textContent,
+            verdict_at: new Date().toISOString()
+          };
+        }
         saveStatuses(statuses);
         renderAll();
       });
@@ -831,6 +949,41 @@
           var shown = document.body.getAttribute("data-show-dismissed") === "true";
           document.body.setAttribute("data-show-dismissed", shown ? "false" : "true");
           dismissToggle.textContent = shown ? "Show dismissed" : "Hide dismissed";
+        });
+      }
+
+      var exportBtn = document.getElementById("export-verdicts-btn");
+      var exportStatus = document.getElementById("export-verdicts-status");
+      if (exportBtn && exportStatus) {
+        exportBtn.addEventListener("click", function () {
+          var statuses = loadStatuses();
+          var records = Object.keys(statuses).map(function (url) {
+            var entry = statuses[url];
+            return {
+              posting_url: url,
+              status: entry.status,
+              firm: entry.firm,
+              title: entry.title,
+              verdict_at: entry.verdict_at
+            };
+          });
+          if (records.length === 0) {
+            exportStatus.textContent = "Nothing to export yet.";
+            return;
+          }
+          var json = JSON.stringify(records, null, 2);
+          var label = records.length + " verdict" + (records.length === 1 ? "" : "s");
+          function onCopied() {
+            exportStatus.textContent = "Copied " + label + " to clipboard -- paste into chat.";
+          }
+          function onCopyFailed() {
+            window.prompt("Clipboard copy failed -- copy this manually and paste into chat:", json);
+          }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(json).then(onCopied, onCopyFailed);
+          } else {
+            onCopyFailed();
+          }
         });
       }
 
